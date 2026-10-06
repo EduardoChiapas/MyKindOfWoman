@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Para Damaris</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+  <main id="app">
+    <section id="video-intro-container" aria-label="Introducción">
+      <div class="intro-card">
+        <h1>PARA DAMARIS</h1>
+        <p>Presiona <strong>ESPACIO</strong> o toca la pantalla para entrar.</p>
+      </div>
+    </section>
+
+    <section id="game-container" aria-label="Casa de Toriel">
+      <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+      <div id="hud" aria-hidden="true">
+        <span id="room-name"></span>
+        <span>Flechas: mover · Z/Enter: interactuar · F2: colisiones</span>
+      </div>
+
+      <div id="dialog-box" class="hidden" role="dialog" aria-live="polite">
+        <p id="dialog-text"></p>
+        <span class="dialog-hint">X / Esc para cerrar</span>
+      </div>
+
+      <div id="interactive-book" class="hidden" role="dialog" aria-modal="true">
+        <div class="book-content">
+          <h2>El Libro para Damaris</h2>
+          <p>Aquí puedes poner páginas, recuerdos, animaciones o mensajes.</p>
+          <p class="instruction">Presiona X o Esc para cerrar</p>
+        </div>
+      </div>
+
+      <!-- CONTROLES TÁCTILES (solo visibles en móviles) -->
+      <div id="mobile-controls" aria-label="Controles táctiles">
+        <div class="mobile-dpad" aria-label="Direcciones">
+          <button type="button" class="mobile-btn dpad-up" data-key="ArrowUp" aria-label="Arriba">▲</button>
+          <button type="button" class="mobile-btn dpad-left" data-key="ArrowLeft" aria-label="Izquierda">◀</button>
+          <button type="button" class="mobile-btn dpad-right" data-key="ArrowRight" aria-label="Derecha">▶</button>
+          <button type="button" class="mobile-btn dpad-down" data-key="ArrowDown" aria-label="Abajo">▼</button>
+        </div>
+
+        <div class="mobile-actions" aria-label="Acciones">
+          <button type="button" class="mobile-btn action-btn action-x" data-action="x" aria-label="Cancelar o cerrar">X</button>
+          <button type="button" class="mobile-btn action-btn action-z" data-action="z" aria-label="Interactuar">Z</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

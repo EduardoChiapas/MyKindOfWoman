@@ -79,6 +79,9 @@ La tercera puerta visible del corredor continúa cerrada porque la hoja suminist
 
 
 ## Controles móviles
-- Joystick virtual: movimiento (incluye diagonales).
-- Z: interactuar.
-- X: cerrar/cancelar.
+- Joystick virtual **analógico**: velocidad proporcional a cuánto se desplaza la palanca e incluye diagonales.
+- **Z**: interactuar.
+- **X**: cerrar/cancelar.
+- Botón **⛶**: entrar en pantalla completa.
+- Botón **↙**: salir de pantalla completa.
+- El canvas conserva su relación 4:3 y se escala para aprovechar el espacio disponible sin deformarse.

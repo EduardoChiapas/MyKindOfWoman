@@ -353,20 +353,17 @@ const joystickBase = document.getElementById('joystick-base');
 const joystickKnob = document.getElementById('joystick-knob');
 const btnZ = document.getElementById('btn-z');
 const btnX = document.getElementById('btn-x');
+const btnFullscreen = document.getElementById('btn-fullscreen');
+const btnExitFullscreen = document.getElementById('btn-exit-fullscreen');
 
-const JOYSTICK_THRESHOLD = 15;
+const joystickData = { x: 0, y: 0, active: false };
 let joystickTouchId = null;
-
-function releaseMobileDirections() {
-  keys.ArrowUp = false;
-  keys.ArrowDown = false;
-  keys.ArrowLeft = false;
-  keys.ArrowRight = false;
-}
 
 function resetJoystick() {
   joystickTouchId = null;
-  releaseMobileDirections();
+  joystickData.x = 0;
+  joystickData.y = 0;
+  joystickData.active = false;
 
   if (joystickKnob) {
     joystickKnob.style.transform = 'translate(0px, 0px)';
@@ -390,29 +387,22 @@ function updateJoystickFromTouch(touch) {
 
   const dx = touch.clientX - centerX;
   const dy = touch.clientY - centerY;
-
   const distance = Math.hypot(dx, dy);
   const angle = Math.atan2(dy, dx);
 
   const baseRadius = rect.width / 2;
   const knobRadius = joystickKnob.offsetWidth / 2;
-  const maxDistance = Math.max(0, baseRadius - knobRadius - 1);
-  const visualDistance = Math.min(distance, maxDistance);
+  const maxDistance = Math.max(1, baseRadius - knobRadius - 1);
+  const clampedDistance = Math.min(distance, maxDistance);
 
-  const knobX = Math.cos(angle) * visualDistance;
-  const knobY = Math.sin(angle) * visualDistance;
-
+  const knobX = Math.cos(angle) * clampedDistance;
+  const knobY = Math.sin(angle) * clampedDistance;
   joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
 
-  if (gameState !== 'PLAYING' || distance < JOYSTICK_THRESHOLD) {
-    releaseMobileDirections();
-    return;
-  }
-
-  keys.ArrowLeft = dx < -JOYSTICK_THRESHOLD;
-  keys.ArrowRight = dx > JOYSTICK_THRESHOLD;
-  keys.ArrowUp = dy < -JOYSTICK_THRESHOLD;
-  keys.ArrowDown = dy > JOYSTICK_THRESHOLD;
+  const normalizedDistance = clampedDistance / maxDistance;
+  joystickData.x = Math.cos(angle) * normalizedDistance;
+  joystickData.y = Math.sin(angle) * normalizedDistance;
+  joystickData.active = true;
 }
 
 if (joystickBase) {
@@ -495,6 +485,71 @@ document.addEventListener('visibilitychange', () => {
 });
 
 window.addEventListener('blur', resetJoystick);
+
+// ============================================================
+// PANTALLA COMPLETA MÓVIL
+// ============================================================
+function isFullscreenActive() {
+  return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function syncFullscreenButtons() {
+  const active = isFullscreenActive();
+
+  if (btnFullscreen) btnFullscreen.classList.toggle('hidden', active);
+  if (btnExitFullscreen) btnExitFullscreen.classList.toggle('hidden', !active);
+}
+
+async function enterFullscreen() {
+  const root = document.documentElement;
+
+  try {
+    if (root.requestFullscreen) {
+      await root.requestFullscreen();
+    } else if (root.webkitRequestFullscreen) {
+      root.webkitRequestFullscreen();
+    }
+  } catch (error) {
+    console.warn('No se pudo activar pantalla completa:', error);
+  }
+
+  syncFullscreenButtons();
+}
+
+async function exitFullscreen() {
+  try {
+    if (document.exitFullscreen) {
+      await document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  } catch (error) {
+    console.warn('No se pudo salir de pantalla completa:', error);
+  }
+
+  syncFullscreenButtons();
+}
+
+function bindFullscreenButton(button, handler) {
+  if (!button) return;
+
+  button.addEventListener('touchstart', (event) => {
+    event.preventDefault();
+    handler();
+  }, { passive: false });
+
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    handler();
+  });
+}
+
+bindFullscreenButton(btnFullscreen, enterFullscreen);
+bindFullscreenButton(btnExitFullscreen, exitFullscreen);
+
+document.addEventListener('fullscreenchange', syncFullscreenButtons);
+document.addEventListener('webkitfullscreenchange', syncFullscreenButtons);
+syncFullscreenButtons();
 
 // ============================================================
 // COLISIONES
@@ -739,7 +794,7 @@ function updateCamera() {
 // ============================================================
 function startGame() {
   introContainer.style.display = 'none';
-  gameContainer.style.display = 'block';
+  gameContainer.style.display = 'grid';
   gameState = 'PLAYING';
   currentRoom = 'entrance';
   placePlayerAtFeet(160, 206);
@@ -758,13 +813,25 @@ function update() {
 
   let dx = 0;
   let dy = 0;
+  let usingJoystick = false;
 
-  if (keys.ArrowUp) dy -= player.speed;
-  if (keys.ArrowDown) dy += player.speed;
-  if (keys.ArrowLeft) dx -= player.speed;
-  if (keys.ArrowRight) dx += player.speed;
+  if (joystickData.active) {
+    dx = joystickData.x * player.speed;
+    dy = joystickData.y * player.speed;
+    usingJoystick = true;
+  } else {
+    if (keys.ArrowUp) dy -= player.speed;
+    if (keys.ArrowDown) dy += player.speed;
+    if (keys.ArrowLeft) dx -= player.speed;
+    if (keys.ArrowRight) dx += player.speed;
 
-  player.isMoving = dx !== 0 || dy !== 0;
+    if (dx !== 0 && dy !== 0) {
+      dx *= Math.SQRT1_2;
+      dy *= Math.SQRT1_2;
+    }
+  }
+
+  player.isMoving = Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01;
 
   if (!player.isMoving) {
     player.frameX = 0;
@@ -772,13 +839,23 @@ function update() {
     return;
   }
 
-  if (dx !== 0 && dy !== 0) {
-    dx *= Math.SQRT1_2;
-    dy *= Math.SQRT1_2;
-  }
-
-  // Dirección visual priorizando el eje vertical cuando ambos están pulsados.
-  if (dy < 0) {
+  if (usingJoystick) {
+    if (Math.abs(joystickData.y) > Math.abs(joystickData.x)) {
+      if (joystickData.y < 0) {
+        player.direction = 'up';
+        player.frameY = 1;
+      } else {
+        player.direction = 'down';
+        player.frameY = 0;
+      }
+    } else if (joystickData.x < 0) {
+      player.direction = 'left';
+      player.frameY = 2;
+    } else {
+      player.direction = 'right';
+      player.frameY = 3;
+    }
+  } else if (dy < 0) {
     player.direction = 'up';
     player.frameY = 1;
   } else if (dy > 0) {
@@ -792,6 +869,8 @@ function update() {
     player.frameY = 3;
   }
 
+  // El joystick es analógico, pero seguimos usando movePlayer para conservar
+  // todas las colisiones y el deslizamiento por paredes del motor existente.
   movePlayer(dx, dy);
   checkRoomExit();
 

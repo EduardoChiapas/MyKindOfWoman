@@ -347,11 +347,12 @@ window.addEventListener('blur', () => {
 
 
 // ============================================================
-// CONTROLES TÁCTILES MÓVILES — JOYSTICK
+// CONTROLES TÁCTILES MÓVILES — JOYSTICK ANALÓGICO
 // ============================================================
 const joystickBase = document.getElementById('joystick-base');
 const joystickKnob = document.getElementById('joystick-knob');
-const mobileActionButtons = document.querySelectorAll('#mobile-controls [data-action]');
+const btnZ = document.getElementById('btn-z');
+const btnX = document.getElementById('btn-x');
 
 const JOYSTICK_THRESHOLD = 15;
 let joystickTouchId = null;
@@ -372,11 +373,9 @@ function resetJoystick() {
   }
 }
 
-function findJoystickTouch(touchList) {
-  if (joystickTouchId === null) return null;
-
+function getTouchByIdentifier(touchList, identifier) {
   for (const touch of touchList) {
-    if (touch.identifier === joystickTouchId) return touch;
+    if (touch.identifier === identifier) return touch;
   }
 
   return null;
@@ -391,15 +390,17 @@ function updateJoystickFromTouch(touch) {
 
   const dx = touch.clientX - centerX;
   const dy = touch.clientY - centerY;
+
   const distance = Math.hypot(dx, dy);
   const angle = Math.atan2(dy, dx);
 
-  // Mantiene completamente la palanca dentro de la base.
+  const baseRadius = rect.width / 2;
   const knobRadius = joystickKnob.offsetWidth / 2;
-  const maxRadius = Math.max(0, rect.width / 2 - knobRadius - 2);
-  const clampedDistance = Math.min(distance, maxRadius);
-  const knobX = Math.cos(angle) * clampedDistance;
-  const knobY = Math.sin(angle) * clampedDistance;
+  const maxDistance = Math.max(0, baseRadius - knobRadius - 1);
+  const visualDistance = Math.min(distance, maxDistance);
+
+  const knobX = Math.cos(angle) * visualDistance;
+  const knobY = Math.sin(angle) * visualDistance;
 
   joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
 
@@ -408,7 +409,6 @@ function updateJoystickFromTouch(touch) {
     return;
   }
 
-  // Permite diagonales: cada eje se activa de forma independiente.
   keys.ArrowLeft = dx < -JOYSTICK_THRESHOLD;
   keys.ArrowRight = dx > JOYSTICK_THRESHOLD;
   keys.ArrowUp = dy < -JOYSTICK_THRESHOLD;
@@ -429,7 +429,9 @@ if (joystickBase) {
   joystickBase.addEventListener('touchmove', (event) => {
     event.preventDefault();
 
-    const touch = findJoystickTouch(event.touches);
+    if (joystickTouchId === null) return;
+
+    const touch = getTouchByIdentifier(event.touches, joystickTouchId);
     if (touch) updateJoystickFromTouch(touch);
   }, { passive: false });
 
@@ -438,7 +440,7 @@ if (joystickBase) {
 
     if (joystickTouchId === null) return;
 
-    const endedTouch = findJoystickTouch(event.changedTouches);
+    const endedTouch = getTouchByIdentifier(event.changedTouches, joystickTouchId);
     if (endedTouch) resetJoystick();
   };
 
@@ -446,18 +448,21 @@ if (joystickBase) {
   joystickBase.addEventListener('touchcancel', finishJoystickTouch, { passive: false });
 }
 
-mobileActionButtons.forEach((button) => {
+function bindActionButton(button, action) {
+  if (!button) return;
+
   button.addEventListener('touchstart', (event) => {
     event.preventDefault();
-
-    const action = button.dataset.action;
 
     if (action === 'z' && gameState === 'PLAYING') {
       checkInteraction();
       return;
     }
 
-    if (action === 'x' && (gameState === 'DIALOG' || gameState === 'BOOK')) {
+    if (
+      action === 'x' &&
+      (gameState === 'DIALOG' || gameState === 'BOOK')
+    ) {
       closeInteraction();
     }
   }, { passive: false });
@@ -473,16 +478,18 @@ mobileActionButtons.forEach((button) => {
   button.addEventListener('touchcancel', (event) => {
     event.preventDefault();
   }, { passive: false });
-});
+}
 
-// En móvil no hay tecla ESPACIO durante la intro: un toque inicia el juego.
+bindActionButton(btnZ, 'z');
+bindActionButton(btnX, 'x');
+
 introContainer.addEventListener('touchstart', (event) => {
   if (gameState !== 'INTRO') return;
+
   event.preventDefault();
   startGame();
 }, { passive: false });
 
-// Evita direcciones pegadas si se interrumpe el toque o la app pierde foco.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) resetJoystick();
 });

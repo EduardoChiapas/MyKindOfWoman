@@ -145,9 +145,8 @@ body {
   margin-top: 34px;
 }
 
-
 /* ==========================================================
-   CONTROLES TÁCTILES MÓVILES
+   CONTROLES TÁCTILES MÓVILES — JOYSTICK
    ========================================================== */
 body,
 button {
@@ -161,7 +160,7 @@ body {
   overscroll-behavior: none;
 }
 
-/* En PC no se muestran. */
+/* Oculto en equipos sin puntero táctil. */
 #mobile-controls {
   display: none;
 }
@@ -176,87 +175,81 @@ body {
     display: block;
     pointer-events: none;
     z-index: 100;
+    touch-action: none;
   }
 
-  .mobile-dpad {
+  /* Joystick: tamaños rígidos para no deformarse al rotar el celular. */
+  #joystick-base {
     position: absolute;
     left: 20px;
     bottom: 20px;
-    width: 150px;
-    height: 150px;
+    width: 116px;
+    height: 116px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.05);
     pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #joystick-knob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 48px;
+    height: 48px;
+    margin-left: -24px;
+    margin-top: -24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.05);
+    transform: translate(0px, 0px);
+    pointer-events: none;
+    will-change: transform;
   }
 
   .mobile-actions {
     position: absolute;
     right: 20px;
     bottom: 20px;
-    width: 120px;
-    height: 105px;
+    width: 126px;
+    height: 96px;
     pointer-events: auto;
+    touch-action: none;
   }
 
   .mobile-btn {
     position: absolute;
     display: grid;
     place-items: center;
-    width: 50px;
-    height: 50px;
-    min-width: 50px;
-    min-height: 50px;
-    max-width: 50px;
-    max-height: 50px;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+    max-width: 52px;
+    max-height: 52px;
     padding: 0;
     margin: 0;
     box-sizing: border-box;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.05);
     color: rgba(255, 255, 255, 0.3);
-    font: 27px/1 'VT323', monospace;
+    font: 29px/1 'VT323', monospace;
     pointer-events: auto;
+    touch-action: none;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
-    touch-action: none;
   }
 
   .mobile-btn:active {
     background-color: rgba(255, 255, 255, 0.15);
-  }
-
-  /* D-Pad rígido de 3 x 3 botones. */
-  .dpad-up {
-    top: 0;
-    left: 50px;
-  }
-
-  .dpad-left {
-    top: 50px;
-    left: 0;
-  }
-
-  .dpad-right {
-    top: 50px;
-    left: 100px;
-  }
-
-  .dpad-down {
-    top: 100px;
-    left: 50px;
-  }
-
-  /* Botones de acción circulares y de tamaño fijo. */
-  .mobile-actions .mobile-btn {
-    width: 50px;
-    height: 50px;
-    min-width: 50px;
-    min-height: 50px;
-    max-width: 50px;
-    max-height: 50px;
-    border-radius: 50%;
-    font-size: 29px;
   }
 
   .action-x {
@@ -269,7 +262,6 @@ body {
     bottom: 0;
   }
 
-  /* El HUD de teclado estorba en pantallas táctiles. */
   #hud span:last-child {
     display: none;
   }

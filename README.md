@@ -76,3 +76,9 @@ Pulsa **F2**:
 ## Nota
 
 La tercera puerta visible del corredor continúa cerrada porque la hoja suministrada no incluye otro cuarto de HOME que corresponda claramente a esa puerta.
+
+
+## Controles móviles
+- Joystick virtual: movimiento (incluye diagonales).
+- Z: interactuar.
+- X: cerrar/cancelar.

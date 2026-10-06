@@ -347,10 +347,14 @@ window.addEventListener('blur', () => {
 
 
 // ============================================================
-// CONTROLES TÁCTILES MÓVILES
+// CONTROLES TÁCTILES MÓVILES — JOYSTICK
 // ============================================================
-const mobileDirectionButtons = document.querySelectorAll('#mobile-controls [data-key]');
+const joystickBase = document.getElementById('joystick-base');
+const joystickKnob = document.getElementById('joystick-knob');
 const mobileActionButtons = document.querySelectorAll('#mobile-controls [data-action]');
+
+const JOYSTICK_THRESHOLD = 15;
+let joystickTouchId = null;
 
 function releaseMobileDirections() {
   keys.ArrowUp = false;
@@ -359,23 +363,88 @@ function releaseMobileDirections() {
   keys.ArrowRight = false;
 }
 
-mobileDirectionButtons.forEach((button) => {
-  const key = button.dataset.key;
+function resetJoystick() {
+  joystickTouchId = null;
+  releaseMobileDirections();
 
-  button.addEventListener('touchstart', (event) => {
+  if (joystickKnob) {
+    joystickKnob.style.transform = 'translate(0px, 0px)';
+  }
+}
+
+function findJoystickTouch(touchList) {
+  if (joystickTouchId === null) return null;
+
+  for (const touch of touchList) {
+    if (touch.identifier === joystickTouchId) return touch;
+  }
+
+  return null;
+}
+
+function updateJoystickFromTouch(touch) {
+  if (!joystickBase || !joystickKnob || !touch) return;
+
+  const rect = joystickBase.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  const dx = touch.clientX - centerX;
+  const dy = touch.clientY - centerY;
+  const distance = Math.hypot(dx, dy);
+  const angle = Math.atan2(dy, dx);
+
+  // Mantiene completamente la palanca dentro de la base.
+  const knobRadius = joystickKnob.offsetWidth / 2;
+  const maxRadius = Math.max(0, rect.width / 2 - knobRadius - 2);
+  const clampedDistance = Math.min(distance, maxRadius);
+  const knobX = Math.cos(angle) * clampedDistance;
+  const knobY = Math.sin(angle) * clampedDistance;
+
+  joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+  if (gameState !== 'PLAYING' || distance < JOYSTICK_THRESHOLD) {
+    releaseMobileDirections();
+    return;
+  }
+
+  // Permite diagonales: cada eje se activa de forma independiente.
+  keys.ArrowLeft = dx < -JOYSTICK_THRESHOLD;
+  keys.ArrowRight = dx > JOYSTICK_THRESHOLD;
+  keys.ArrowUp = dy < -JOYSTICK_THRESHOLD;
+  keys.ArrowDown = dy > JOYSTICK_THRESHOLD;
+}
+
+if (joystickBase) {
+  joystickBase.addEventListener('touchstart', (event) => {
     event.preventDefault();
-    if (gameState !== 'PLAYING') return;
-    keys[key] = true;
+
+    if (joystickTouchId !== null || event.changedTouches.length === 0) return;
+
+    const touch = event.changedTouches[0];
+    joystickTouchId = touch.identifier;
+    updateJoystickFromTouch(touch);
   }, { passive: false });
 
-  const release = (event) => {
+  joystickBase.addEventListener('touchmove', (event) => {
     event.preventDefault();
-    keys[key] = false;
+
+    const touch = findJoystickTouch(event.touches);
+    if (touch) updateJoystickFromTouch(touch);
+  }, { passive: false });
+
+  const finishJoystickTouch = (event) => {
+    event.preventDefault();
+
+    if (joystickTouchId === null) return;
+
+    const endedTouch = findJoystickTouch(event.changedTouches);
+    if (endedTouch) resetJoystick();
   };
 
-  button.addEventListener('touchend', release, { passive: false });
-  button.addEventListener('touchcancel', release, { passive: false });
-});
+  joystickBase.addEventListener('touchend', finishJoystickTouch, { passive: false });
+  joystickBase.addEventListener('touchcancel', finishJoystickTouch, { passive: false });
+}
 
 mobileActionButtons.forEach((button) => {
   button.addEventListener('touchstart', (event) => {
@@ -393,6 +462,10 @@ mobileActionButtons.forEach((button) => {
     }
   }, { passive: false });
 
+  button.addEventListener('touchmove', (event) => {
+    event.preventDefault();
+  }, { passive: false });
+
   button.addEventListener('touchend', (event) => {
     event.preventDefault();
   }, { passive: false });
@@ -402,17 +475,19 @@ mobileActionButtons.forEach((button) => {
   }, { passive: false });
 });
 
-// En móvil no hay tecla ESPACIO accesible durante la intro: un toque inicia el juego.
+// En móvil no hay tecla ESPACIO durante la intro: un toque inicia el juego.
 introContainer.addEventListener('touchstart', (event) => {
   if (gameState !== 'INTRO') return;
   event.preventDefault();
   startGame();
 }, { passive: false });
 
-// Evita que una dirección quede "pegada" si el navegador pierde el toque/foco.
+// Evita direcciones pegadas si se interrumpe el toque o la app pierde foco.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) releaseMobileDirections();
+  if (document.hidden) resetJoystick();
 });
+
+window.addEventListener('blur', resetJoystick);
 
 // ============================================================
 // COLISIONES

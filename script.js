@@ -17,9 +17,28 @@ const roomNameLabel = document.getElementById('room-name');
 const VIEW_W = canvas.width;
 const VIEW_H = canvas.height;
 
+// La oscuridad tiene su propio búfer: destination-out debe borrar únicamente
+// esta capa, nunca los píxeles del mapa ni del jugador ya dibujados.
+const lightingCanvas = document.createElement('canvas');
+lightingCanvas.width = VIEW_W;
+lightingCanvas.height = VIEW_H;
+const lightingCtx = lightingCanvas.getContext('2d');
+const TORCH_RADIUS = 440;
+
+// No se reproduce al cargar: play() se llama dentro del gesto que inicia el juego.
+const bgm = new Audio('assets/audio/undertale.mp3');
+bgm.loop = true;
+bgm.preload = 'auto';
+
+const bgmDown = new Audio('assets/audio/undertale_down.mp3');
+bgmDown.loop = true;
+bgmDown.preload = 'auto';
+
 // Los fondos extraídos de la hoja se dibujan a 2x.
 // Así conservamos el pixel-art y el corredor puede desplazarse con cámara.
 const ROOM_SCALE = 2;
+const NOMINAL_FPS = 60;
+const JOYSTICK_DEADZONE = 0.15;
 
 function loadImage(src) {
   const image = new Image();
@@ -35,7 +54,8 @@ const roomImages = {
   hallway: loadImage('assets/rooms/hallway.png'),
   friskRoom: loadImage('assets/rooms/frisk_room.png'),
   torielRoom: loadImage('assets/rooms/toriel_room.png'),
-  kitchen: loadImage('assets/rooms/kitchen.png')
+  kitchen: loadImage('assets/rooms/kitchen.png'),
+  basementHallway: loadImage('assets/rooms/basement.png')
 };
 
 // Convierte medidas tomadas directamente sobre el PNG original
@@ -87,6 +107,44 @@ const STAGGER_FRAMES = 9;
 const SPAWN_CLEARANCE_NATIVE = 14;
 const TRANSITION_GRACE_FRAMES = 10;
 let transitionGraceFrames = 0;
+let lastFrameTime = null;
+let animationElapsed = 0;
+// Cristal del espejo: el marco del PNG permanece intacto.
+const MIRROR_GLASS = R(649, 38, 45, 18);
+
+// Medidas nativas del pasamanos inferior y sus postes en entrance.png.
+// La apertura queda entre dos postes completos, sin partir sus hitboxes.
+const STAIR_LOWER_RAIL = Object.freeze({
+  x: 68,
+  y: 128,
+  width: 158,
+  height: 13,
+  openingLeft: 121,
+  openingRight: 199
+});
+
+// Descanso y ambas ramas de madera. El vacío central queda fuera de esta unión.
+const STAIR_WALKABLE = [
+  R(78, 74, 39, 54),
+  R(117, 74, 10, 24),
+  ...Array.from({ length: 11 }, (_, i) => R(125 + 8 * i, 74 - i, 8, 27)),
+  R(205, 64, 10, 27),
+  R(213, 64, 19, 18),
+
+  R(117, 108, 8, 20),
+  ...Array.from({ length: 11 }, (_, i) =>
+    R(125 + 8 * i, 108 + i, 8, 20 - i)
+  ),
+  R(213, 118, 2, 10),
+
+  // Paso bajo el barandal, hasta el suelo delantero en y=141.
+  R(
+    STAIR_LOWER_RAIL.openingLeft,
+    STAIR_LOWER_RAIL.y - 1,
+    STAIR_LOWER_RAIL.openingRight - STAIR_LOWER_RAIL.openingLeft,
+    STAIR_LOWER_RAIL.height + 1
+  )
+];
 
 // ============================================================
 // CASA DE TORIEL
@@ -98,6 +156,13 @@ let transitionGraceFrames = 0;
 //
 // Las coordenadas están basadas en los PNG recortados de la hoja que subiste.
 // ============================================================
+// Una única fuente de datos para el lore; convertir a mundo sólo al cargar.
+function houseInteractives(roomId) {
+  return HOUSE_LORE[roomId].map(item => ({
+    ...item, ...R(item.x, item.y, item.width, item.height)
+  }));
+}
+
 const rooms = {
   entrance: {
     label: 'Entrada',
@@ -105,38 +170,91 @@ const rooms = {
     nativeWidth: 320,
     nativeHeight: 240,
     walkable: [
-      R(38, 58, 244, 160),
+      // 1. Suelo principal de la habitación
+      R(37, 141, 245, 77),
+      R(226, 58, 16, 20),
+      R(226, 78, 56, 63),
       R(0, 145, 45, 72),
       R(275, 145, 45, 72),
       R(139, 214, 42, 26),
-      // Centro/hueco negro de las escaleras: se puede recorrer.
-      R(116, 92, 99, 34)
+
+      // 2. Acceso superior derecho hacia los escalones de subida
+      R(213, 64, 19, 18),
+
+      // 3. Rampa de escalones superiores (subida hacia la izquierda)
+      ...Array.from({ length: 11 }, (_, i) => R(125 + 8 * i, 74 - i, 8, 27)),
+      R(117, 74, 10, 24),
+
+      // 4. Descanso lateral izquierdo (giro en U)
+      R(78, 74, 39, 54),
+
+      // 5. Rampa de escalones inferiores (bajada hacia la derecha al sótano)
+      R(117, 105, 98, 23)
     ],
     solids: [
-      R(42, 20, 28, 47),
-      R(242, 47, 39, 31),
+      // Barandal vertical izquierdo completo (desde y=55 hasta y=128 para evitar que Frisk lo atraviese)
+      R(73, 55, 5, 73),
 
-      // Barandas/bordes de la escalera. El centro negro queda libre.
-      R(77, 56, 138, 7),
-      R(77, 56, 8, 80),
-      R(207, 56, 8, 80),
-      // Borde inferior dividido para dejar una entrada caminable al hueco.
-      R(77, 129, 45, 7),
-      R(200, 129, 15, 7)
+      // Barandal/pared vertical derecha
+      R(223, 83, 5, 45),
+
+      // Vacío negro del PNG: franjas de 1 px que siguen ambas rampas sin invadir la madera.
+      ...Array.from({ length: 10 }, (_, i) => R(207 - 8 * i, 94 + i, 8 + 8 * i, 1)),
+      R(127, 104, 88, 3),
+      ...Array.from({ length: 11 }, (_, i) => R(134 + 8 * i, 107 + i, 81 - 8 * i, 1)),
+
+      // Barandal horizontal frontal inferior
+      R(68, 128, 160, 12)
     ],
     exits: [
       { ...R(0, 147, 12, 59), dir: 'left', target: 'livingRoom', spawn: [287, 178], facing: 'left' },
-      { ...R(308, 147, 12, 59), dir: 'right', target: 'hallway', spawn: [20, 105], facing: 'right' }
-    ],
-    interactives: [
-      { ...R(41, 18, 31, 55), text: '* Una planta muy bien cuidada.' },
-      { ...R(241, 44, 42, 37), text: '* Un mueble pequeño. Todo está perfectamente ordenado.' },
-      { ...R(103, 18, 116, 28), text: '* Un cuadro sencillo cuelga de la pared.' },
+      { ...R(308, 147, 12, 59), dir: 'right', target: 'hallway', spawn: [20, 105], facing: 'right' },
 
-      // Solo responde al llegar al final del hueco negro y pulsar Z/Enter.
-      { ...R(194, 98, 19, 24), text: '* Las escaleras continúan hacia el sótano.\n* Esa zona todavía no está disponible.' }
-    ]
+      // Entrada al sótano (al final de los escalones inferiores, en la pared derecha)
+      {
+        ...R(205, 95, 15, 33),
+        activation: 'feetCenter',
+        target: 'basementHallway',
+        spawn: (typeof BasementMaze !== 'undefined') ? BasementMaze.spawnNative : [100, 100],
+        facing: 'right'
+      }
+    ],
+    interactives: houseInteractives('entrance'),
+
+    drawForeground: function(ctx, camera) {
+      const image = roomImages.entranceFg || roomImages.entrance;
+      if (!image || !image.complete || image.naturalWidth <= 0) return;
+
+      const feet = getPlayerHitbox();
+
+      // Solo se dibuja el barandal sobre el jugador si está detrás de él (dentro de la rampa inferior).
+      // Si ya pisó el suelo inferior (Y >= 141) o si está arriba, no debe taparlo.
+      if (feet.y + feet.height >= 141 * ROOM_SCALE || feet.y + feet.height / 2 < 95 * ROOM_SCALE) return;
+
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+
+      // Recorte exacto de la madera del barandal frontal (Y=127, alto=13) para no cortar al sprite en los pies
+      const srcX = 68;
+      const srcY = 127;
+      const srcW = 158;
+      const srcH = 13;
+
+      const destY = srcY * ROOM_SCALE - camera.y;
+
+      ctx.drawImage(
+        image,
+        srcX, srcY, srcW, srcH,
+        Math.round(srcX * ROOM_SCALE - camera.x),
+        Math.round(destY),
+        srcW * ROOM_SCALE,
+        srcH * ROOM_SCALE
+      );
+
+      ctx.restore();
+    }
   },
+
   livingRoom: {
     label: 'Sala',
     image: roomImages.livingRoom,
@@ -156,11 +274,7 @@ const rooms = {
       { ...R(301, 104, 19, 86), dir: 'right', target: 'entrance', spawn: [32, 178], facing: 'right' },
       { ...R(46, 0, 40, 14), dir: 'up', target: 'kitchen', spawn: [66, 145], facing: 'up' }
     ],
-    interactives: [
-      { ...R(132, 42, 73, 38), text: '* El fuego de la chimenea crepita suavemente.' },
-      { ...R(209, 13, 66, 61), text: '* Una colección de libros viejos.\n* Varios tratan sobre monstruos y plantas.' },
-      { ...R(278, 27, 23, 51), text: '* Un perchero junto a la estantería.' }
-    ]
+    interactives: houseInteractives('livingRoom')
   },
 
   hallway: {
@@ -169,7 +283,9 @@ const rooms = {
     nativeWidth: 745,
     nativeHeight: 156,
     walkable: [
-      R(0, 72, 745, 66),
+      // El sprite termina 3 px de mundo debajo de su hitbox de pies.
+      // El límite exacto de los pies es y=264; el sprite queda en y<=267.
+      R(0, 72, 745, 60),
       R(153, 20, 35, 64),
       R(363, 20, 35, 64),
       R(573, 20, 35, 64)
@@ -187,19 +303,7 @@ const rooms = {
       { ...R(158, 63, 24, 13), dir: 'up', target: 'friskRoom', spawn: [88, 205], facing: 'up' },
       { ...R(368, 63, 24, 13), dir: 'up', target: 'torielRoom', spawn: [150, 205], facing: 'up' }
     ],
-    interactives: [
-      { ...R(207, 34, 43, 51), text: '* Una maceta con flores.' },
-
-      // Pintura marrón situada junto a la primera puerta.
-      { ...R(247, 14, 54, 31), text: '* Un pequeño paisaje cuelga en la pared.' },
-
-      { ...R(321, 33, 33, 52), text: '* Las hojas de esta planta casi rozan el suelo.' },
-      { ...R(521, 37, 42, 50), text: '* Otra planta. Toriel realmente las cuida.' },
-      { ...R(571, 18, 38, 45), text: '* La puerta no se abre.' },
-
-      // Espejo morado del extremo derecho. Interacción independiente de la pintura.
-      { ...R(645, 33, 55, 28), text: '* Eres tú, a pesar de todo sigues siendo tú.' }
-    ]
+    interactives: houseInteractives('hallway')
   },
   friskRoom: {
     label: 'Tu habitación',
@@ -231,13 +335,7 @@ const rooms = {
     exits: [
       { ...R(70, 219, 38, 15), dir: 'down', target: 'hallway', spawn: [170, 84], facing: 'down' }
     ],
-    interactives: [
-      { ...R(18, 57, 64, 77), text: '* Una cama muy cómoda.' },
-      { ...R(103, 28, 59, 60), text: '* Una estantería llena de libros.' },
-      { ...R(165, 52, 54, 33), text: '* Un cajón. Parece tener espacio para guardar recuerdos.' },
-      { ...R(25, 131, 35, 61), text: '* Sobre la mesa hay algo especial.', action: 'book' },
-      { ...R(185, 166, 36, 48), text: '* Una planta crece tranquilamente en la esquina.' }
-    ]
+    interactives: houseInteractives('friskRoom')
   },
   torielRoom: {
     label: 'Habitación de Toriel',
@@ -254,8 +352,7 @@ const rooms = {
       R(20, 52, 54, 31),
       // Armario alto con la flor.
       R(86, 28, 31, 55),
-      // Mesita angosta a la izquierda de la cama.
-      R(139, 96, 15, 32),
+      // La alfombra a la izquierda de la cama es únicamente visual.
       // Cama.
       R(151, 59, 64, 72),
       // Silla del escritorio.
@@ -266,12 +363,7 @@ const rooms = {
     exits: [
       { ...R(132, 219, 36, 15), dir: 'down', target: 'hallway', spawn: [380, 84], facing: 'down' }
     ],
-    interactives: [
-      { ...R(20, 52, 54, 31), text: '* Los cajones están ordenados con mucho cuidado.' },
-      { ...R(86, 28, 31, 55), text: '* Un armario alto con una flor encima.' },
-      { ...R(151, 59, 64, 72), text: '* La cama de Toriel está perfectamente arreglada.' },
-      { ...R(180, 141, 33, 58), text: '* Un escritorio con papeles y libros.' }
-    ]
+    interactives: houseInteractives('torielRoom')
   },
   kitchen: {
     label: 'Cocina',
@@ -287,8 +379,7 @@ const rooms = {
       R(20, 23, 39, 60),
       // Fregadero/mesita superior izquierda.
       R(59, 47, 31, 19),
-      // Cajonera inferior bajo el fregadero.
-      R(59, 82, 31, 15),
+      // La alfombra bajo el fregadero no tiene colisión.
       // Encimera y gabinetes centrales.
       R(91, 49, 54, 33),
       // Estufa/horno.
@@ -297,13 +388,19 @@ const rooms = {
     exits: [
       { ...R(46, 153, 40, 10), dir: 'down', target: 'livingRoom', spawn: [66, 57], facing: 'down' }
     ],
-    interactives: [
-      { ...R(20, 23, 39, 60), text: '* El refrigerador está lleno de comida.' },
-      { ...R(59, 47, 31, 19), text: '* El fregadero está impecable.' },
-      { ...R(91, 49, 54, 33), text: '* La encimera está perfectamente ordenada.' },
-      { ...R(147, 42, 30, 41), text: '* El horno todavía conserva un poco de calor.' },
-      { ...R(59, 82, 31, 15), text: '* Huele a algo recién horneado.' }
-    ]
+    interactives: houseInteractives('kitchen')
+  },
+
+  basementHallway: {
+    label: 'Laberinto del sótano',
+    image: roomImages.basementHallway,
+    nativeWidth: BasementMaze.nativeWidth,
+    nativeHeight: BasementMaze.nativeHeight,
+    walkable: BasementMaze.walkable,
+    solids: BasementMaze.solids,
+    exits: BasementMaze.exits,
+    interactives: BasementMaze.interactives,
+    render: BasementMaze.draw
   }
 
 };
@@ -400,8 +497,12 @@ function updateJoystickFromTouch(touch) {
   joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
 
   const normalizedDistance = clampedDistance / maxDistance;
-  joystickData.x = Math.cos(angle) * normalizedDistance;
-  joystickData.y = Math.sin(angle) * normalizedDistance;
+  // Zona muerta radial y remapeo continuo: sin salto de velocidad al salir.
+  const strength = normalizedDistance <= JOYSTICK_DEADZONE
+    ? 0
+    : (normalizedDistance - JOYSTICK_DEADZONE) / (1 - JOYSTICK_DEADZONE);
+  joystickData.x = Math.cos(angle) * strength;
+  joystickData.y = Math.sin(angle) * strength;
   joystickData.active = true;
 }
 
@@ -577,18 +678,35 @@ function getPlayerHitbox(x = player.x, y = player.y) {
 }
 
 function hitboxInsideWalkable(hitbox, room) {
-  const inset = 1;
-  const corners = [
-    [hitbox.x + inset, hitbox.y + inset],
-    [hitbox.x + hitbox.width - inset, hitbox.y + inset],
-    [hitbox.x + inset, hitbox.y + hitbox.height - inset],
-    [hitbox.x + hitbox.width - inset, hitbox.y + hitbox.height - inset]
-  ];
+  // Cobertura exacta de la unión de rectángulos. Cuatro esquinas no bastan:
+  // en una esquina cóncava podrían dejar pasar parte de los pies sobre vacío.
+  const epsilon = 1e-7;
+  const right = hitbox.x + hitbox.width;
+  const bottom = hitbox.y + hitbox.height;
+  const candidates = room.walkable.filter(area => rectsOverlap(hitbox, area));
+  if (!candidates.length) return false;
+  const cuts = [...new Set([hitbox.x, right, ...candidates.flatMap(area => [
+    Math.max(hitbox.x, area.x), Math.min(right, area.x + area.width)
+  ])])].sort((a, b) => a - b);
 
-  return corners.every(([x, y]) => room.walkable.some((area) => pointInsideRect(x, y, area)));
+  for (let i = 0; i < cuts.length - 1; i += 1) {
+    if (cuts[i + 1] - cuts[i] <= epsilon) continue;
+    const x = (cuts[i] + cuts[i + 1]) / 2;
+    const spans = candidates.filter(area => x >= area.x && x <= area.x + area.width)
+      .map(area => [Math.max(hitbox.y, area.y), Math.min(bottom, area.y + area.height)])
+      .sort((a, b) => a[0] - b[0]);
+    let coveredTo = hitbox.y;
+    for (const [top, end] of spans) {
+      if (top > coveredTo + epsilon) break;
+      coveredTo = Math.max(coveredTo, end);
+    }
+    if (coveredTo < bottom - epsilon) return false;
+  }
+  return true;
 }
 
 function canOccupy(x, y) {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
   const room = rooms[currentRoom];
   const hitbox = getPlayerHitbox(x, y);
 
@@ -599,16 +717,24 @@ function canOccupy(x, y) {
 }
 
 function movePlayer(dx, dy) {
-  // Ejes separados: Frisk se desliza por paredes y esquinas en vez de quedarse pegado.
-  if (dx !== 0) {
-    const nextX = player.x + dx;
-    if (canOccupy(nextX, player.y)) player.x = nextX;
+  const previousX = player.x;
+  const previousY = player.y;
+  // Subpasos de hasta 1 px evitan saltar obstáculos al usar deltaTime.
+  const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))));
+  const stepX = dx / steps;
+  const stepY = dy / steps;
+
+  for (let step = 0; step < steps; step += 1) {
+    // Ejes separados: conservar el deslizamiento por paredes.
+    if (stepX !== 0 && canOccupy(player.x + stepX, player.y)) {
+      player.x += stepX;
+    }
+    if (stepY !== 0 && canOccupy(player.x, player.y + stepY)) {
+      player.y += stepY;
+    }
   }
 
-  if (dy !== 0) {
-    const nextY = player.y + dy;
-    if (canOccupy(player.x, nextY)) player.y = nextY;
-  }
+  return Math.abs(player.x - previousX) > 0.000001 || Math.abs(player.y - previousY) > 0.000001;
 }
 
 // Coloca los PIES del personaje en una coordenada tomada del PNG base.
@@ -688,6 +814,15 @@ function showDialog(text) {
 function changeRoom(exit) {
   currentRoom = exit.target;
 
+  // Ambas pistas siguen reproduciéndose; aquí sólo se intercambian volúmenes.
+  if (currentRoom === 'basementHallway') {
+    bgm.volume = 0;
+    bgmDown.volume = 0.5;
+  } else {
+    bgm.volume = 1;
+    bgmDown.volume = 0;
+  }
+
   // 1) Coloca los pies en el punto de entrada definido para ese cuarto.
   placePlayerAtFeet(exit.spawn[0], exit.spawn[1]);
 
@@ -706,6 +841,8 @@ function changeRoom(exit) {
   }
 
   player.frameX = 0;
+  player.isMoving = false;
+  animationElapsed = 0;
   transitionGraceFrames = TRANSITION_GRACE_FRAMES;
   roomNameLabel.textContent = rooms[currentRoom].label;
   updateCamera();
@@ -719,6 +856,9 @@ function checkRoomExit() {
 
   const exit = room.exits.find((candidate) => {
     if (candidate.dir && candidate.dir !== player.direction) return false;
+    if (candidate.activation === 'feetCenter') {
+      return pointInsideRect(hitbox.x + hitbox.width / 2, hitbox.y + hitbox.height / 2, candidate);
+    }
     return rectsOverlap(hitbox, candidate);
   });
 
@@ -730,25 +870,38 @@ function checkRoomExit() {
 // ============================================================
 function interactionProbe() {
   const hitbox = getPlayerHitbox();
-  const probe = {
-    x: hitbox.x - 8,
-    y: hitbox.y - 8,
-    width: hitbox.width + 16,
-    height: hitbox.height + 16
+  const margin = 6;
+  const reach = 36;
+  if (player.direction === 'up') return {
+    x: hitbox.x - margin, y: hitbox.y - reach,
+    width: hitbox.width + margin * 2, height: reach + margin
   };
-
-  const reach = 24;
-  if (player.direction === 'up') probe.y -= reach;
-  if (player.direction === 'down') probe.y += reach;
-  if (player.direction === 'left') probe.x -= reach;
-  if (player.direction === 'right') probe.x += reach;
-
-  return probe;
+  if (player.direction === 'down') return {
+    x: hitbox.x - margin, y: hitbox.y + hitbox.height - margin,
+    width: hitbox.width + margin * 2, height: reach + margin
+  };
+  if (player.direction === 'left') return {
+    x: hitbox.x - reach, y: hitbox.y - margin,
+    width: reach + margin, height: hitbox.height + margin * 2
+  };
+  return {
+    x: hitbox.x + hitbox.width - margin, y: hitbox.y - margin,
+    width: reach + margin, height: hitbox.height + margin * 2
+  };
 }
 
 function checkInteraction() {
+  if (gameState !== 'PLAYING') return;
   const probe = interactionProbe();
-  const object = rooms[currentRoom].interactives.find((item) => rectsOverlap(probe, item));
+  const feet = getPlayerHitbox();
+  const centerX = feet.x + feet.width / 2;
+  const centerY = feet.y + feet.height / 2;
+  const distanceToObject = item => Math.hypot(
+    centerX - Math.max(item.x, Math.min(centerX, item.x + item.width)),
+    centerY - Math.max(item.y, Math.min(centerY, item.y + item.height))
+  );
+  const object = rooms[currentRoom].interactives.filter(item => rectsOverlap(probe, item))
+    .sort((a, b) => distanceToObject(a) - distanceToObject(b))[0];
   if (!object) return;
 
   if (object.action === 'book') {
@@ -793,6 +946,23 @@ function updateCamera() {
 // GAME LOOP
 // ============================================================
 function startGame() {
+  if (gameState !== 'INTRO') return;
+
+  bgm.volume = 1;
+  bgmDown.volume = 0;
+
+  // Las dos llamadas ocurren en el mismo gesto de Espacio/touchstart,
+  // sin esperar promesas ni reiniciar pistas al cambiar de habitación.
+  for (const track of [bgm, bgmDown]) {
+    try {
+      const playback = track.play();
+      if (playback && typeof playback.catch === 'function') {
+        playback.catch(error => console.warn('No se pudo iniciar el BGM:', track.src, error));
+      }
+    } catch (error) {
+      console.warn('No se pudo iniciar el BGM:', track.src, error);
+    }
+  }
   introContainer.style.display = 'none';
   gameContainer.style.display = 'grid';
   gameState = 'PLAYING';
@@ -800,16 +970,21 @@ function startGame() {
   placePlayerAtFeet(160, 206);
   roomNameLabel.textContent = rooms[currentRoom].label;
   updateCamera();
+  lastFrameTime = null;
   requestAnimationFrame(gameLoop);
 }
 
-function update() {
+function update(deltaSeconds = 1 / NOMINAL_FPS) {
   if (gameState !== 'PLAYING') {
+    player.isMoving = false;
+    player.frameX = 0;
+    animationElapsed = 0;
     updateCamera();
     return;
   }
 
-  if (transitionGraceFrames > 0) transitionGraceFrames -= 1;
+  const frameFactor = deltaSeconds * NOMINAL_FPS;
+  transitionGraceFrames = Math.max(0, transitionGraceFrames - frameFactor);
 
   let dx = 0;
   let dy = 0;
@@ -831,10 +1006,14 @@ function update() {
     }
   }
 
+  // speed conserva sus unidades a 60 FPS; la velocidad real es 171 px/s.
+  dx *= frameFactor;
+  dy *= frameFactor;
   player.isMoving = Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01;
 
   if (!player.isMoving) {
     player.frameX = 0;
+    animationElapsed = 0;
     updateCamera();
     return;
   }
@@ -871,11 +1050,18 @@ function update() {
 
   // El joystick es analógico, pero seguimos usando movePlayer para conservar
   // todas las colisiones y el deslizamiento por paredes del motor existente.
-  movePlayer(dx, dy);
+  player.isMoving = movePlayer(dx, dy);
   checkRoomExit();
 
-  if (gameFrame % STAGGER_FRAMES === 0) {
-    player.frameX = (player.frameX + 1) % 4;
+  if (player.isMoving) {
+    animationElapsed += frameFactor;
+    while (animationElapsed >= STAGGER_FRAMES) {
+      player.frameX = (player.frameX + 1) % 4;
+      animationElapsed -= STAGGER_FRAMES;
+    }
+  } else {
+    player.frameX = 0;
+    animationElapsed = 0;
   }
 
   updateCamera();
@@ -891,11 +1077,16 @@ function worldToScreen(rect) {
 }
 
 function draw() {
+  const room = rooms[currentRoom];
+
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
   drawRoom();
+  if (currentRoom === 'hallway') drawMirrorReflection();
   drawPlayer();
+  if (rooms[currentRoom].drawForeground) rooms[currentRoom].drawForeground(ctx, camera);
+  drawLighting();
 
   if (debugCollisions) drawDebug();
 }
@@ -905,6 +1096,10 @@ function drawRoom() {
   const roomW = room.nativeWidth * ROOM_SCALE;
   const roomH = room.nativeHeight * ROOM_SCALE;
 
+  if (room.render) {
+    room.render(ctx, camera, VIEW_W, VIEW_H);
+    return;
+  }
   if (room.image.complete && room.image.naturalWidth > 0) {
     ctx.drawImage(
       room.image,
@@ -913,33 +1108,123 @@ function drawRoom() {
       roomW,
       roomH
     );
+    if (currentRoom === 'hallway') {
+      // El color morado estaba incorporado en el fondo original, no en clip().
+      // Retirar sólo el cristal antiguo antes de pintar el nuevo gris/celeste.
+      const glass = worldToScreen(MIRROR_GLASS);
+      ctx.clearRect(Math.round(glass.x), Math.round(glass.y), glass.width, glass.height);
+    }
   }
 }
 
+function mirrorReflectionPose() {
+  if (currentRoom !== 'hallway') return null;
+  const feet = getPlayerHitbox();
+  const centerX = feet.x + feet.width / 2;
+  const centerY = feet.y + feet.height / 2;
+  // Frente al cristal, sobre el piso del corredor, con alcance visual limitado.
+  const reflectionY = player.y - 30;
+  if (centerX < MIRROR_GLASS.x - 12 || centerX > MIRROR_GLASS.x + MIRROR_GLASS.width + 12 ||
+      centerY < 144 || !rectsOverlap({ x: player.x, y: reflectionY,
+        width: player.width, height: player.height }, MIRROR_GLASS)) return null;
+  // Intercambiar UP/DOWN mediante filas; el canvas y los lados quedan normales.
+  const rows = { up: 0, down: 1, left: 2, right: 3 };
+  return {
+    x: player.x, y: reflectionY,
+    frameX: player.frameX, frameY: rows[player.direction]
+  };
+}
+
+function drawMirrorReflection() {
+  if (currentRoom !== 'hallway') return;
+  const glass = worldToScreen(MIRROR_GLASS);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(Math.round(glass.x), Math.round(glass.y), glass.width, glass.height);
+  ctx.clip();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(180, 190, 200, 0.6)';
+  ctx.fillRect(Math.round(glass.x), Math.round(glass.y), glass.width, glass.height);
+  const reflection = mirrorReflectionPose();
+  if (reflection && playerSprite.complete && playerSprite.naturalWidth > 0) {
+    ctx.globalAlpha = 0.5;
+    drawSpriteFrame(reflection.frameX, reflection.frameY,
+      Math.round(reflection.x - camera.x), Math.round(reflection.y - camera.y));
+  }
+  ctx.restore();
+}
+
+function drawSpriteFrame(frameX, frameY, screenX, screenY) {
+  const sourceWidth = playerSprite.naturalWidth / 4;
+  const sourceHeight = playerSprite.naturalHeight / 4;
+  ctx.drawImage(playerSprite, frameX * sourceWidth, frameY * sourceHeight,
+    sourceWidth, sourceHeight, screenX, screenY, player.width, player.height);
+}
+
 function drawPlayer() {
-  const screenX = Math.round(player.x - camera.x);
-  const screenY = Math.round(player.y - camera.y);
+  const { x: screenX, y: screenY } = playerScreenPosition();
 
   if (playerSprite.complete && playerSprite.naturalWidth > 0) {
-    const sourceWidth = playerSprite.naturalWidth / 4;
-    const sourceHeight = playerSprite.naturalHeight / 4;
-
-    ctx.drawImage(
-      playerSprite,
-      player.frameX * sourceWidth,
-      player.frameY * sourceHeight,
-      sourceWidth,
-      sourceHeight,
-      screenX,
-      screenY,
-      player.width,
-      player.height
-    );
+    drawSpriteFrame(player.frameX, player.frameY, screenX, screenY);
     return;
   }
 
   ctx.fillStyle = '#ff4040';
   ctx.fillRect(screenX, screenY, player.width, player.height);
+}
+
+function playerScreenPosition() {
+  return {
+    x: Math.round(player.x - camera.x),
+    y: Math.round(player.y - camera.y)
+  };
+}
+
+function carveRadialLight(ctx, x, y, radius) {
+  const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+  gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+  gradient.addColorStop(0.25, 'rgba(0, 0, 0, 1)');
+  gradient.addColorStop(0.6, 'rgba(0, 0, 0, 0.5)');
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+}
+
+function drawLighting() {
+  lightingCtx.save();
+  lightingCtx.setTransform(1, 0, 0, 1, 0, 0);
+  lightingCtx.globalAlpha = 1;
+  lightingCtx.globalCompositeOperation = 'source-over';
+  // Limpiar en cada fotograma evita rastros luminosos al mover la cámara.
+  lightingCtx.clearRect(0, 0, VIEW_W, VIEW_H);
+  lightingCtx.fillStyle = currentRoom === 'basementHallway'
+    ? 'rgba(20, 15, 35, 0.6)'
+    : 'rgba(15, 15, 30, 0.2)';
+  lightingCtx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  lightingCtx.globalCompositeOperation = 'destination-out';
+  const screen = playerScreenPosition();
+  carveRadialLight(lightingCtx, screen.x + player.width / 2,
+    screen.y + player.height / 2, TORCH_RADIUS);
+
+  if (currentRoom === 'basementHallway') {
+    for (const light of BasementMaze.lights) {
+      // El renderizador del laberinto redondea su transformación de cámara.
+      const x = light.x - Math.round(camera.x);
+      const y = light.y - Math.round(camera.y);
+      if (x + light.radius < 0 || x - light.radius > VIEW_W ||
+          y + light.radius < 0 || y - light.radius > VIEW_H) continue;
+      carveRadialLight(lightingCtx, x, y, light.radius);
+    }
+  }
+  lightingCtx.globalCompositeOperation = 'source-over';
+  lightingCtx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(lightingCanvas, 0, 0);
+  ctx.restore();
 }
 
 function drawRects(list, fillStyle) {
@@ -970,9 +1255,14 @@ function drawDebug() {
   ctx.restore();
 }
 
-function gameLoop() {
+function gameLoop(timestamp) {
+  // Limitar pausas largas (pestaña oculta) para evitar teletransportes.
+  const deltaSeconds = lastFrameTime === null
+    ? 1 / NOMINAL_FPS
+    : Math.min(0.05, Math.max(0, (timestamp - lastFrameTime) / 1000));
+  lastFrameTime = timestamp;
   gameFrame += 1;
-  update();
+  update(deltaSeconds);
   draw();
   requestAnimationFrame(gameLoop);
 }

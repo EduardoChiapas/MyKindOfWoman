@@ -1,87 +1,41 @@
-# Casa de Toriel - proyecto web
+# Casa de Toriel — escalera en U y sótano morado
 
-Proyecto web estilo Undertale usando la hoja de sprites proporcionada, con habitaciones recortadas, movimiento, cámara, interacciones y colisiones.
+Descomprime todo el ZIP y abre toriel_house_project/index.html. No requiere instalación, compilación ni servicios externos. También funciona en un servidor estático.
 
 ## Controles
 
-- **Espacio**: entrar al juego desde la intro.
-- **Flechas**: mover a Frisk.
-- **Z** o **Enter**: interactuar.
-- **X** o **Esc**: cerrar diálogo/libro.
-- **F2**: mostrar/ocultar las zonas de colisión.
+- Espacio o toque en «Para Damaris»: iniciar el juego y el BGM.
+- Flechas o joystick móvil: caminar. Zona muerta del joystick: 15 %.
+- Z / Enter: examinar el objeto frente al personaje.
+- X / Esc: cerrar diálogo o libro.
+- F2: mostrar colisiones, salidas y hitboxes interactivas.
 
-## Correcciones de esta versión
+## Correcciones integradas
 
-- Se eliminó el **spawn trap** entre habitaciones:
-  - cada cambio de mapa coloca a Frisk en el punto definido;
-  - luego lo separa automáticamente unos **14 píxeles nativos** del trigger de salida más cercano;
-  - además hay unos fotogramas de gracia para evitar un rebote instantáneo entre habitaciones.
-- En el **Corredor**, el cuadro y el espejo son objetos independientes:
-  - cuadro: `* Un pequeño paisaje cuelga en la pared.`
-  - espejo: `* Eres tú, a pesar de todo sigues siendo tú.`
-- Se reajustaron las hitboxes de muebles en:
-  - Cocina
-  - Habitación de Toriel
-  - Habitación de Frisk
-- Las **escaleras de la Entrada** ya no son un bloque rectangular completo:
-  - el centro negro es caminable;
-  - las barandas/bordes son sólidos;
-  - solo al llegar al extremo del hueco y pulsar **Z/Enter** aparece el mensaje del sótano.
+La Entrada utiliza exactamente tres sólidos de barandal, con un grosor de dos píxeles nativos. La boca de acceso por el lado derecho queda libre. El suelo de los muebles se excluye de walkable en lugar de añadir otros sólidos.
 
-## Habitaciones incluidas
+STAIR_WALKABLE describe una U invertida: descansillo izquierdo, peldaños superiores y rama derecha hasta una llegada profunda pequeña. La superficie central negra queda fuera de walkable. El trigger R(199, 96, 16, 9) ocupa sólo negro puro y se activa cuando el centro de los pies entra en él. La llegada mide 16 píxeles nativos de ancho frente a los 10 de la hitbox. Para bajar, acércate por el lado derecho, camina hacia los peldaños superiores y avanza hacia el fondo. El retorno del sótano aparece en el descansillo izquierdo, con una ruta libre de regreso a la casa.
 
-- `assets/rooms/entrance.png` - entrada con escaleras.
-- `assets/rooms/living_room.png` - sala con chimenea y librero.
-- `assets/rooms/hallway.png` - corredor largo con cuadro, plantas, puerta y espejo.
-- `assets/rooms/frisk_room.png` - habitación azul.
-- `assets/rooms/toriel_room.png` - habitación de Toriel.
-- `assets/rooms/kitchen.png` - cocina.
-- `assets/rooms/stairs.png` - sprite fuente de las escaleras.
-- `assets/source/home_and_new_home_sheet.png` - hoja original usada como referencia.
+El laberinto conserva sus cruces, circuito, desviaciones, callejones, puerta final y dimensiones de 3000 × 2500 unidades de mundo. Su renderizador usa suelo morado #5a456b y variantes próximas, con muros #2d2236. La penumbra es rgba(20, 15, 35, 0.6). La casa conserva rgba(15, 15, 30, 0.2). El halo del jugador mantiene radio 440 y las 14 lámparas conservan sus luces.
 
-## Depuración de colisiones
+El espejo utiliza una máscara con clip. Dentro se pinta primero rgba(180, 190, 200, 0.6) y después el clon del jugador con alpha 0.5 y posición player.y - 30. Se intercambian las filas UP/DOWN sin invertir el canvas. El marco y el texto original se conservan.
 
-Pulsa **F2**:
+Hay siete hitboxes invisibles nuevas en los remates de los callejones: forgotten-1 a forgotten-7. Sus textos «* [Espacio para objeto olvidado N]» pueden editarse en el arreglo interactives de basement.js. No añaden colisiones. Se conservan las otras interacciones de la casa y el sótano: 55 en total.
 
-- verde tenue = área caminable
-- rojo = sólido / mueble
-- cian = salida / puerta
-- azul = objeto interactuable
-- amarillo = hitbox de Frisk
-- borde blanco = alcance de interacción
+El MP3 completo está incluido en assets/audio/undertale.mp3. Se inicia en el gesto de Espacio o toque de la introducción y continúa en bucle durante cambios de habitación y diálogos.
 
-## Estructura
+## Archivos y coordenadas
 
-```text
-/
-├─ index.html
-├─ style.css
-├─ script.js
-├─ README.md
-└─ assets/
-   ├─ player/
-   │  └─ frisk.png
-   ├─ rooms/
-   │  ├─ entrance.png
-   │  ├─ living_room.png
-   │  ├─ hallway.png
-   │  ├─ frisk_room.png
-   │  ├─ toriel_room.png
-   │  ├─ kitchen.png
-   │  └─ stairs.png
-   └─ source/
-      └─ home_and_new_home_sheet.png
-```
+- script.js: movimiento, colisiones, datos de Entrada, espejo, iluminación y BGM.
+- basement.js: geometría, paleta, renderizado e interacciones del laberinto.
+- lore.js: interacciones de la casa.
+- index.html / style.css: interfaz y controles.
+- assets/: imágenes y audio completos.
 
-## Nota
+R() convierte píxeles nativos a mundo con escala 2. La hitbox completa de los pies mide 20 × 12 unidades y usa offsets (14, 53). La cobertura se comprueba contra la unión completa de walkable y los movimientos se subdividen para evitar atravesar obstáculos finos. La cámara sigue ambos ejes del mapa.
 
-La tercera puerta visible del corredor continúa cerrada porque la hoja suministrada no incluye otro cuarto de HOME que corresponda claramente a esa puerta.
+## Verificación
 
+Pasaron 24 suites de lógica, incluyendo 949 posiciones de descenso, siete columnas de acceso hasta el trigger, ida y regreso, hueco central, obstáculos, todos los spawns, los 885 cuadrados conectados del laberinto, sus empalmes, las 55 interacciones, joystick y animación. La comprobación sobre el PNG confirma que el trigger ocupa 144 píxeles negros y que el interior negro central no se incluye en los peldaños.
 
-## Controles móviles
-- Joystick virtual **analógico**: velocidad proporcional a cuánto se desplaza la palanca e incluye diagonales.
-- **Z**: interactuar.
-- **X**: cerrar/cancelar.
-- Botón **⛶**: entrar en pantalla completa.
-- Botón **↙**: salir de pantalla completa.
-- El canvas conserva su relación 4:3 y se escala para aprovechar el espacio disponible sin deformarse.
+En navegador se confirmó el descenso al sótano, el reflejo de pie sobre el cristal gris celeste y la arquitectura morada visible. La capa de luz conserva el mapa y restaura source-over. El BGM inicia tras Espacio y continúa en los cambios de habitación. No hubo errores de consola. Los controles privados de prueba no forman parte del proyecto entregado.

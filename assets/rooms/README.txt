@@ -1,29 +1,18 @@
-FONDOS DE HABITACIONES
-======================
+FONDOS ORIGINALES
+================
 
-El proyecto funciona aunque esta carpeta no tenga imágenes: script.js dibuja
-fondos provisionales para poder probar movimiento, puertas y colisiones.
+Los fondos de la casa conservan sus dimensiones nativas y se dibujan a 2x.
+No convertirlos a 800x600: las colisiones están medidas sobre estos PNG.
 
-Cuando tengas los fondos de las habitaciones que tienes permiso de usar,
-ponlos aquí con estos nombres exactos:
+entrance.png: 320x240
+living_room.png: 320x240
+hallway.png: 745x156
+frisk_room.png: 239x234
+toriel_room.png: 227x234
+kitchen.png: 196x163
 
-- entrance.png
-- living_room.png
-- hallway.png
-- frisk_room.png
-- toriel_room.png
-- kitchen.png
-- basement.png
+El nuevo sótano se dibuja con basement.js a partir de la geometría del laberinto.
+basement.png y stairs.png permanecen como referencias del proyecto original.
+Las alfombras forman parte del fondo y no son sólidos.
 
-Recomendación: exportarlos a 800x600 PNG para que coincidan exactamente con
-las coordenadas de colisión actuales.
-
-Para ajustar colisiones:
-1. Abre el juego.
-2. Presiona F2.
-3. Rojo = colisión sólida.
-4. Verde = puerta/transición.
-5. Azul = objeto interactuable.
-6. Amarillo = hitbox real del personaje.
-
-Después edita los rectángulos dentro de la constante `rooms` en script.js.
+F2 muestra suelo, sólidos, salidas, interacciones, pies y alcance.

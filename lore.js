@@ -8,38 +8,46 @@ const HOUSE_LORE = {
   entrance: [
     {
       id: 'entrance_plant', x: 41, y: 18, width: 31, height: 55,
-      text: '* Esta planta recibe agua todos los días.\n* Nadie le ha preguntado si también extraña el sol.'
+      text: '* Esta planta recibe agua todos los días.\n* La tierra está húmeda. Alguien acaba de cuidarla.'
     },
     {
       id: 'entrance_landscape', x: 109, y: 17, width: 101, height: 43,
-      text: '* Un paisaje de colores que casi se han desvanecido.\n* El marco sigue esperando que algo vuelva a pasar dentro.'
+      text: '* Un paisaje de colores suaves.\n* Hasta las montañas parecen abrigadas.'
     },
     {
       id: 'entrance_candle', x: 222, y: 28, width: 11, height: 31,
-      text: '* Una vela tan pequeña para una casa tan silenciosa.\n* Aun así, cumple con su trabajo.'
+      text: '* Una vela pequeña ilumina la entrada.\n* Parece una manera tranquila de decir: «Bienvenido».'
     },
     {
       id: 'entrance_portrait', x: 237, y: 20, width: 20, height: 38,
-      text: '* El marco guarda un retrato muy antiguo.\n* El polvo ha borrado el nombre, pero alguien lo sigue limpiando.'
+      text: '* El marco guarda un retrato muy antiguo.\n* El cristal está limpio. Aquí los recuerdos reciben mucho cuidado.'
     },
     {
       id: 'entrance_console', x: 242, y: 47, width: 40, height: 32,
-      text: '* Los cajones están ordenados por tamaño.\n* El más pequeño parece reservado para cosas difíciles de decir.'
+      text: '* Los cajones guardan manteles cuidadosamente doblados.\n* Siempre parece haber uno más, por si llega alguien.'
     }
   ],
 
   livingRoom: [
     {
       id: 'living_fireplace', x: 132, y: 39, width: 72, height: 42,
-      text: '* El fuego crepita como una conversación en voz baja.\n* Por un momento, la casa parece menos grande.'
+      text: '* El fuego crepita en voz baja.\n* El calor llega hasta tus manos.\n* No tienes ninguna prisa.'
     },
     {
       id: 'living_library', x: 211, y: 13, width: 63, height: 61,
-      text: '* Libros sobre monstruos, plantas y recetas imposibles.\n* Un separador lleva años en la misma página.\n* Quizá alguien no quiso que terminara.'
+      text: '* Libros sobre monstruos, plantas y recetas caseras.\n* Un recetario tiene anotaciones en los márgenes.\n* «Un poquito más de canela».'
     },
     {
       id: 'living_umbrella_stand', x: 280, y: 29, width: 22, height: 49,
-      text: '* Paraguas esperando una lluvia que nunca llega.\n* Al menos aquí no se pierde ninguno.'
+      text: '* Los paraguas están juntos en su sitio.\n* Uno es bastante más pequeño que los demás.'
+    },
+    {
+      id: 'living_table', x: 76, y: 107, width: 92, height: 50,
+      text: '* Una tarta descansa junto al florero.\n* El aroma a canela llega antes que tú.\n* Parece que alguien ya contaba con tu visita.'
+    },
+    {
+      id: 'living_chair', x: 214, y: 111, width: 47, height: 50,
+      text: '* Un sillón junto a la chimenea.\n* El respaldo está gastado de una forma muy cómoda.\n* Es fácil imaginar un cuento que dure toda la tarde.'
     }
   ],
 
@@ -66,7 +74,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'hallway_middle_candle', x: 435, y: 48, width: 11, height: 26,
-      text: '* La cera se ha enfriado en pequeñas lágrimas.\n* La vela no tiene nada que añadir.'
+      text: '* Una gota de cera se ha quedado a medio camino.\n* Incluso la vela se toma las cosas con calma.'
     },
     {
       id: 'hallway_last_candle', x: 525, y: 48, width: 11, height: 26,
@@ -82,7 +90,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'hallway_mirror_candle', x: 625, y: 47, width: 11, height: 27,
-      text: '* Esta vela ilumina el espejo.\n* También ilumina el lugar donde estarías si no hubieras venido.'
+      text: '* Esta vela ilumina el espejo.\n* Su luz hace que tu reflejo parezca un poco más abrigado.'
     },
     {
       id: 'mirror', x: 645, y: 33, width: 55, height: 29,
@@ -101,7 +109,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'frisk_little_plant', x: 83, y: 38, width: 20, height: 51,
-      text: '* Una planta pequeña junto a tu cama.\n* Ahora los dos tenéis una habitación propia.'
+      text: '* Una planta pequeña junto a tu cama.\n* Ahora los dos tienen una habitación propia.'
     },
     {
       id: 'frisk_bookshelf', x: 104, y: 29, width: 58, height: 60,
@@ -125,7 +133,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'frisk_corner_plant', x: 185, y: 166, width: 36, height: 48,
-      text: '* Esta planta ocupa todo un rincón.\n* Parece que le cuesta dejar espacio para sus sentimientos.'
+      text: '* Esta planta ocupa todo un rincón.\n* Sus hojas están limpias y su maceta acaba de regarse.'
     }
   ],
 
@@ -140,7 +148,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'toriel_bed', x: 151, y: 59, width: 64, height: 73,
-      text: '* La cama está perfectamente hecha.\n* Los cuadros de arriba siguen derechos.\n* Hay días en los que ordenar es lo único que se puede hacer.'
+      text: '* La cama está perfectamente hecha.\n* La colcha es suave y los cuadros están derechos.\n* Todo tiene el cuidado de las cosas queridas.'
     },
     {
       id: 'toriel_wall_drawing', x: 129, y: 24, width: 19, height: 37,
@@ -148,7 +156,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'toriel_chair', x: 157, y: 142, width: 18, height: 26,
-      text: '* El asiento conserva una ligera hendidura.\n* Aquí se han pensado muchas respuestas antes de decirlas.'
+      text: '* El asiento conserva una ligera hendidura.\n* Aquí se han leído muchos cuentos en voz baja.'
     },
     {
       id: 'toriel_desk', x: 180, y: 141, width: 33, height: 59,
@@ -163,7 +171,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'kitchen_sink', x: 60, y: 47, width: 29, height: 21,
-      text: '* El fregadero está impecable.\n* Parece que alguien lavó hasta el silencio.'
+      text: '* El fregadero está impecable.\n* Los platos se secan ordenados, listos para la próxima comida.'
     },
     {
       id: 'kitchen_counter', x: 91, y: 49, width: 54, height: 34,
@@ -171,7 +179,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'kitchen_stove', x: 147, y: 42, width: 30, height: 42,
-      text: '* El horno todavía conserva un poco de calor.\n* La campana guarda un aroma dulce.\n* Incluso vacía, esta cocina insiste en recibirte.'
+      text: '* El horno todavía conserva un poco de calor.\n* Huele a canela y a algo recién horneado.\n* Es un aroma que invita a quedarse.'
     }
   ]
 };

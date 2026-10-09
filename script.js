@@ -76,6 +76,15 @@ const keys = {
   ArrowLeft: false,
   ArrowRight: false
 };
+const MOVEMENT_KEYS = Object.freeze({
+  ArrowUp: 'ArrowUp', KeyW: 'ArrowUp',
+  ArrowDown: 'ArrowDown', KeyS: 'ArrowDown',
+  ArrowLeft: 'ArrowLeft', KeyA: 'ArrowLeft',
+  ArrowRight: 'ArrowRight', KeyD: 'ArrowRight'
+});
+const heldMovementKeys = new Set();
+const directionPressOrder = [];
+const DIRECTION_ROWS = Object.freeze({ down: 0, up: 1, left: 2, right: 3 });
 
 let gameState = 'INTRO';
 let currentRoom = 'entrance';
@@ -87,7 +96,7 @@ const player = {
   y: 0,
   width: 48,
   height: 68,
-  speed: 2.85,
+  speed: 3,
   frameX: 0,
   frameY: 0,
   direction: 'down',
@@ -103,12 +112,17 @@ const PLAYER_HITBOX = {
 };
 
 const camera = { x: 0, y: 0 };
+const cameraTracking = { x: 0, y: 0, room: null };
+const CAMERA_DEADZONE = { x: 24, y: 18 };
 const STAGGER_FRAMES = 9;
 const SPAWN_CLEARANCE_NATIVE = 14;
 const TRANSITION_GRACE_FRAMES = 10;
 let transitionGraceFrames = 0;
 let lastFrameTime = null;
 let animationElapsed = 0;
+const roomTransition = { phase: 'idle', elapsed: 0, opacity: 0, exit: null };
+const ROOM_FADE_OUT_SECONDS = 0.12;
+const ROOM_FADE_IN_SECONDS = 0.16;
 // Cristal del espejo: el marco del PNG permanece intacto.
 const MIRROR_GLASS = R(649, 38, 45, 18);
 
@@ -405,15 +419,55 @@ const rooms = {
 
 };
 
+// Keep visual props and their physical footprints in the same data source.
+for (const [roomId, room] of Object.entries(rooms)) {
+  for (const prop of HouseAmbience.propsForRoom(roomId)) {
+    const solid = prop.solid;
+    room.solids.push(R(solid.x, solid.y, solid.width, solid.height));
+  }
+}
+
 // ============================================================
 // INPUT
 // ============================================================
+function syncMovementKeys() {
+  Object.keys(keys).forEach(key => {
+    keys[key] = [...heldMovementKeys].some(code => MOVEMENT_KEYS[code] === key);
+  });
+}
+
+function resetMovementInput() {
+  heldMovementKeys.clear();
+  directionPressOrder.length = 0;
+  Object.keys(keys).forEach(key => { keys[key] = false; });
+  player.isMoving = false;
+  player.frameX = 0;
+  animationElapsed = 0;
+  // La siguiente imagen empieza con un delta normal al volver a la ventana.
+  lastFrameTime = null;
+}
+
+function facePlayer(direction) {
+  player.direction = direction;
+  player.frameY = DIRECTION_ROWS[direction];
+}
+
 window.addEventListener('keydown', (event) => {
-  if (event.code in keys || event.code === 'Space') event.preventDefault();
+  if (event.target && (event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))) return;
+  const movementKey = MOVEMENT_KEYS[event.code];
+  if (movementKey || ['Space', 'KeyZ', 'KeyX', 'Enter'].includes(event.code)) event.preventDefault();
 
-  if (event.code in keys) keys[event.code] = true;
+  if (movementKey) {
+    heldMovementKeys.add(event.code);
+    syncMovementKeys();
+    if (!event.repeat) {
+      const previousIndex = directionPressOrder.indexOf(movementKey);
+      if (previousIndex !== -1) directionPressOrder.splice(previousIndex, 1);
+      directionPressOrder.push(movementKey);
+    }
+  }
 
-  if (gameState === 'INTRO' && event.code === 'Space') {
+  if (gameState === 'INTRO' && ['Space', 'Enter', 'KeyZ'].includes(event.code)) {
     startGame();
     return;
   }
@@ -427,6 +481,14 @@ window.addEventListener('keydown', (event) => {
 
   if (gameState === 'PLAYING' && (event.code === 'KeyZ' || event.code === 'Enter')) {
     checkInteraction();
+    return;
+  }
+
+  if (gameState === 'DIALOG' && ['KeyZ', 'Enter', 'Space'].includes(event.code)) {
+    // Enter on the focused next button must not also generate a native click.
+    event.preventDefault();
+    advanceInteraction();
+    return;
   }
 
   if ((gameState === 'DIALOG' || gameState === 'BOOK') && (event.code === 'KeyX' || event.code === 'Escape')) {
@@ -435,12 +497,17 @@ window.addEventListener('keydown', (event) => {
 });
 
 window.addEventListener('keyup', (event) => {
-  if (event.code in keys) keys[event.code] = false;
+  const movementKey = MOVEMENT_KEYS[event.code];
+  if (!movementKey) return;
+  heldMovementKeys.delete(event.code);
+  syncMovementKeys();
+  if (!keys[movementKey]) {
+    const previousIndex = directionPressOrder.indexOf(movementKey);
+    if (previousIndex !== -1) directionPressOrder.splice(previousIndex, 1);
+  }
 });
 
-window.addEventListener('blur', () => {
-  Object.keys(keys).forEach((key) => { keys[key] = false; });
-});
+window.addEventListener('blur', resetMovementInput);
 
 
 // ============================================================
@@ -550,6 +617,11 @@ function bindActionButton(button, action) {
       return;
     }
 
+    if (action === 'z' && gameState === 'DIALOG') {
+      advanceInteraction();
+      return;
+    }
+
     if (
       action === 'x' &&
       (gameState === 'DIALOG' || gameState === 'BOOK')
@@ -582,7 +654,10 @@ introContainer.addEventListener('touchstart', (event) => {
 }, { passive: false });
 
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) resetJoystick();
+  if (document.hidden) {
+    resetMovementInput();
+    resetJoystick();
+  }
 });
 
 window.addEventListener('blur', resetJoystick);
@@ -724,13 +799,40 @@ function movePlayer(dx, dy) {
   const stepX = dx / steps;
   const stepY = dy / steps;
 
-  for (let step = 0; step < steps; step += 1) {
-    // Ejes separados: conservar el deslizamiento por paredes.
-    if (stepX !== 0 && canOccupy(player.x + stepX, player.y)) {
-      player.x += stepX;
+  const moveAxis = (axis, amount) => {
+    if (amount === 0) return;
+    const origin = player[axis];
+    const fits = fraction => canOccupy(
+      axis === 'x' ? origin + amount * fraction : player.x,
+      axis === 'y' ? origin + amount * fraction : player.y
+    );
+    if (fits(1)) {
+      player[axis] += amount;
+      return;
     }
-    if (stepY !== 0 && canOccupy(player.x, player.y + stepY)) {
+    // Llegar al borde exacto evita la franja de hasta 1 px que dejaba
+    // descartar un subpaso entero al acercarse a un mueble o una pared.
+    let low = 0;
+    let high = 1;
+    for (let iteration = 0; iteration < 10; iteration += 1) {
+      const middle = (low + high) / 2;
+      if (fits(middle)) low = middle;
+      else high = middle;
+    }
+    player[axis] = origin + amount * low;
+  };
+
+  for (let step = 0; step < steps; step += 1) {
+    // Probar primero la diagonal evita enganchar los pies en los escalones.
+    if (canOccupy(player.x + stepX, player.y + stepY)) {
+      player.x += stepX;
       player.y += stepY;
+    } else if (Math.abs(stepX) >= Math.abs(stepY)) {
+      moveAxis('x', stepX);
+      moveAxis('y', stepY);
+    } else {
+      moveAxis('y', stepY);
+      moveAxis('x', stepX);
     }
   }
 
@@ -807,21 +909,37 @@ function clearSpawnFromExitTriggers() {
 // ============================================================
 function showDialog(text) {
   gameState = 'DIALOG';
-  dialogText.textContent = text;
-  dialogBox.classList.remove('hidden');
+  resetMovementInput();
+  resetJoystick();
+  HouseExperience.openDialog(text);
+  HouseExperience.sound(460, 0.05, 0.012);
+}
+
+function advanceInteraction() {
+  if (gameState === 'DIALOG' && HouseExperience.advanceDialog()) closeInteraction();
+}
+
+function setAudioRoom(roomId) {
+  HouseExperience.setRoom(roomId);
 }
 
 function changeRoom(exit) {
+  if (roomTransition.phase !== 'idle' || !rooms[exit.target]) return;
+  roomTransition.exit = exit;
+  roomTransition.phase = 'out';
+  roomTransition.elapsed = 0;
+  roomTransition.opacity = 0;
+  gameState = 'TRANSITION';
+  player.isMoving = false;
+  player.frameX = 0;
+  animationElapsed = 0;
+}
+
+function applyRoomChange(exit) {
   currentRoom = exit.target;
 
-  // Ambas pistas siguen reproduciéndose; aquí sólo se intercambian volúmenes.
-  if (currentRoom === 'basementHallway') {
-    bgm.volume = 0;
-    bgmDown.volume = 0.5;
-  } else {
-    bgm.volume = 1;
-    bgmDown.volume = 0;
-  }
+  // Crossfade smoothly; neither track restarts when a doorway is crossed.
+  setAudioRoom(currentRoom);
 
   // 1) Coloca los pies en el punto de entrada definido para ese cuarto.
   placePlayerAtFeet(exit.spawn[0], exit.spawn[1]);
@@ -831,25 +949,49 @@ function changeRoom(exit) {
   clearSpawnFromExitTriggers();
 
   // 3) Mantiene la orientación correcta al cruzar la puerta.
-  if (exit.facing) {
-    player.direction = exit.facing;
-
-    if (exit.facing === 'down') player.frameY = 0;
-    if (exit.facing === 'up') player.frameY = 1;
-    if (exit.facing === 'left') player.frameY = 2;
-    if (exit.facing === 'right') player.frameY = 3;
-  }
+  if (exit.facing) facePlayer(exit.facing);
 
   player.frameX = 0;
   player.isMoving = false;
   animationElapsed = 0;
   transitionGraceFrames = TRANSITION_GRACE_FRAMES;
   roomNameLabel.textContent = rooms[currentRoom].label;
-  updateCamera();
+  updateCamera(true);
+}
+
+function updateRoomTransition(deltaSeconds) {
+  if (roomTransition.phase === 'idle') return;
+  roomTransition.elapsed += deltaSeconds;
+  if (roomTransition.phase === 'out' && roomTransition.elapsed >= ROOM_FADE_OUT_SECONDS) {
+    roomTransition.elapsed -= ROOM_FADE_OUT_SECONDS;
+    roomTransition.phase = 'in';
+    applyRoomChange(roomTransition.exit);
+  }
+  if (roomTransition.phase === 'in' && roomTransition.elapsed >= ROOM_FADE_IN_SECONDS) {
+    roomTransition.phase = 'idle';
+    roomTransition.exit = null;
+    roomTransition.elapsed = 0;
+    roomTransition.opacity = 0;
+    gameState = 'PLAYING';
+    return;
+  }
+  const duration = roomTransition.phase === 'out' ? ROOM_FADE_OUT_SECONDS : ROOM_FADE_IN_SECONDS;
+  const progress = Math.min(1, roomTransition.elapsed / duration);
+  const eased = progress * progress * (3 - 2 * progress);
+  roomTransition.opacity = roomTransition.phase === 'out' ? eased : 1 - eased;
+}
+
+function drawRoomTransition() {
+  if (roomTransition.opacity <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = roomTransition.opacity;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.restore();
 }
 
 function checkRoomExit() {
-  if (transitionGraceFrames > 0) return;
+  if (transitionGraceFrames > 0) return false;
 
   const hitbox = getPlayerHitbox();
   const room = rooms[currentRoom];
@@ -862,7 +1004,9 @@ function checkRoomExit() {
     return rectsOverlap(hitbox, candidate);
   });
 
-  if (exit) changeRoom(exit);
+  if (!exit) return false;
+  changeRoom(exit);
+  return true;
 }
 
 // ============================================================
@@ -890,8 +1034,7 @@ function interactionProbe() {
   };
 }
 
-function checkInteraction() {
-  if (gameState !== 'PLAYING') return;
+function findInteraction() {
   const probe = interactionProbe();
   const feet = getPlayerHitbox();
   const centerX = feet.x + feet.width / 2;
@@ -900,13 +1043,21 @@ function checkInteraction() {
     centerX - Math.max(item.x, Math.min(centerX, item.x + item.width)),
     centerY - Math.max(item.y, Math.min(centerY, item.y + item.height))
   );
-  const object = rooms[currentRoom].interactives.filter(item => rectsOverlap(probe, item))
+  return rooms[currentRoom].interactives.filter(item => rectsOverlap(probe, item))
     .sort((a, b) => distanceToObject(a) - distanceToObject(b))[0];
+}
+
+function checkInteraction() {
+  if (gameState !== 'PLAYING') return;
+  const object = findInteraction();
   if (!object) return;
 
   if (object.action === 'book') {
     gameState = 'BOOK';
+    resetMovementInput();
+    resetJoystick();
     interactiveBook.classList.remove('hidden');
+    document.getElementById('btn-close-book').focus({ preventScroll: true });
     return;
   }
 
@@ -914,67 +1065,73 @@ function checkInteraction() {
 }
 
 function closeInteraction() {
+  if (gameState !== 'DIALOG' && gameState !== 'BOOK') return;
   dialogBox.classList.add('hidden');
   interactiveBook.classList.add('hidden');
+  resetMovementInput();
+  resetJoystick();
   gameState = 'PLAYING';
+  canvas.focus({ preventScroll: true });
 }
 
 // ============================================================
 // CÁMARA
 // ============================================================
-function updateCamera() {
+function updateCamera(snap = false) {
   const room = rooms[currentRoom];
   const roomW = room.nativeWidth * ROOM_SCALE;
   const roomH = room.nativeHeight * ROOM_SCALE;
   const playerCenterX = player.x + player.width / 2;
   const playerCenterY = player.y + player.height / 2;
 
-  if (roomW <= VIEW_W) {
-    camera.x = -(VIEW_W - roomW) / 2;
-  } else {
-    camera.x = Math.max(0, Math.min(roomW - VIEW_W, playerCenterX - VIEW_W / 2));
-  }
-
-  if (roomH <= VIEW_H) {
-    camera.y = -(VIEW_H - roomH) / 2;
-  } else {
-    camera.y = Math.max(0, Math.min(roomH - VIEW_H, playerCenterY - VIEW_H / 2));
-  }
+  const reset = snap || cameraTracking.room !== currentRoom;
+  const followAxis = (axis, roomSize, viewSize, playerCenter) => {
+    if (roomSize <= viewSize) return -(viewSize - roomSize) / 2;
+    let origin = cameraTracking[axis];
+    if (reset) origin = playerCenter - viewSize / 2;
+    else {
+      const offset = playerCenter - origin - viewSize / 2;
+      if (offset > CAMERA_DEADZONE[axis]) origin += offset - CAMERA_DEADZONE[axis];
+      if (offset < -CAMERA_DEADZONE[axis]) origin += offset + CAMERA_DEADZONE[axis];
+    }
+    return Math.max(0, Math.min(roomSize - viewSize, origin));
+  };
+  cameraTracking.x = followAxis('x', roomW, VIEW_W, playerCenterX);
+  cameraTracking.y = followAxis('y', roomH, VIEW_H, playerCenterY);
+  cameraTracking.room = currentRoom;
+  // Una sola cámara redondeada para fondo, sprite, reflejo y primer plano.
+  // La posición física mantiene decimales: el pixel art nunca se desenfoca.
+  camera.x = Math.round(cameraTracking.x);
+  camera.y = Math.round(cameraTracking.y);
 }
 
 // ============================================================
 // GAME LOOP
 // ============================================================
 function startGame() {
-  if (gameState !== 'INTRO') return;
-
-  bgm.volume = 1;
-  bgmDown.volume = 0;
-
-  // Las dos llamadas ocurren en el mismo gesto de Espacio/touchstart,
-  // sin esperar promesas ni reiniciar pistas al cambiar de habitación.
-  for (const track of [bgm, bgmDown]) {
-    try {
-      const playback = track.play();
-      if (playback && typeof playback.catch === 'function') {
-        playback.catch(error => console.warn('No se pudo iniciar el BGM:', track.src, error));
-      }
-    } catch (error) {
-      console.warn('No se pudo iniciar el BGM:', track.src, error);
-    }
-  }
+  if (gameState !== 'INTRO' || !HouseExperience.canStart()) return;
+  HouseExperience.startAudio();
   introContainer.style.display = 'none';
   gameContainer.style.display = 'grid';
   gameState = 'PLAYING';
   currentRoom = 'entrance';
+  resetMovementInput();
   placePlayerAtFeet(160, 206);
   roomNameLabel.textContent = rooms[currentRoom].label;
-  updateCamera();
+  setAudioRoom(currentRoom);
+  updateCamera(true);
+  canvas.focus({ preventScroll: true });
   lastFrameTime = null;
   requestAnimationFrame(gameLoop);
 }
 
 function update(deltaSeconds = 1 / NOMINAL_FPS) {
+  if (typeof HouseExperience !== 'undefined') HouseExperience.tick(deltaSeconds);
+
+  if (gameState === 'TRANSITION') {
+    updateRoomTransition(deltaSeconds);
+    return;
+  }
   if (gameState !== 'PLAYING') {
     player.isMoving = false;
     player.frameX = 0;
@@ -985,76 +1142,69 @@ function update(deltaSeconds = 1 / NOMINAL_FPS) {
 
   const frameFactor = deltaSeconds * NOMINAL_FPS;
   transitionGraceFrames = Math.max(0, transitionGraceFrames - frameFactor);
+  let inputX = 0;
+  let inputY = 0;
+  const usingJoystick = joystickData.active;
 
-  let dx = 0;
-  let dy = 0;
-  let usingJoystick = false;
-
-  if (joystickData.active) {
-    dx = joystickData.x * player.speed;
-    dy = joystickData.y * player.speed;
-    usingJoystick = true;
+  if (usingJoystick) {
+    inputX = joystickData.x;
+    inputY = joystickData.y;
   } else {
-    if (keys.ArrowUp) dy -= player.speed;
-    if (keys.ArrowDown) dy += player.speed;
-    if (keys.ArrowLeft) dx -= player.speed;
-    if (keys.ArrowRight) dx += player.speed;
-
-    if (dx !== 0 && dy !== 0) {
-      dx *= Math.SQRT1_2;
-      dy *= Math.SQRT1_2;
+    inputX = Number(keys.ArrowRight) - Number(keys.ArrowLeft);
+    inputY = Number(keys.ArrowDown) - Number(keys.ArrowUp);
+    const length = Math.hypot(inputX, inputY);
+    if (length > 1) {
+      inputX /= length;
+      inputY /= length;
     }
   }
 
-  // speed conserva sus unidades a 60 FPS; la velocidad real es 171 px/s.
-  dx *= frameFactor;
-  dy *= frameFactor;
-  player.isMoving = Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01;
-
-  if (!player.isMoving) {
+  if (Math.hypot(inputX, inputY) < 0.0001) {
+    player.isMoving = false;
     player.frameX = 0;
     animationElapsed = 0;
     updateCamera();
     return;
   }
 
+  const previousDirection = player.direction;
+  let direction;
   if (usingJoystick) {
-    if (Math.abs(joystickData.y) > Math.abs(joystickData.x)) {
-      if (joystickData.y < 0) {
-        player.direction = 'up';
-        player.frameY = 1;
-      } else {
-        player.direction = 'down';
-        player.frameY = 0;
-      }
-    } else if (joystickData.x < 0) {
-      player.direction = 'left';
-      player.frameY = 2;
-    } else {
-      player.direction = 'right';
-      player.frameY = 3;
-    }
-  } else if (dy < 0) {
-    player.direction = 'up';
-    player.frameY = 1;
-  } else if (dy > 0) {
-    player.direction = 'down';
-    player.frameY = 0;
-  } else if (dx < 0) {
-    player.direction = 'left';
-    player.frameY = 2;
-  } else if (dx > 0) {
-    player.direction = 'right';
-    player.frameY = 3;
+    const horizontal = inputX < 0 ? 'left' : 'right';
+    const vertical = inputY < 0 ? 'up' : 'down';
+    if (Math.abs(inputX) > Math.abs(inputY) * 1.15) direction = horizontal;
+    else if (Math.abs(inputY) > Math.abs(inputX) * 1.15) direction = vertical;
+    // Histéresis en la diagonal: un pulgar tembloroso no cambia la fila sin parar.
+    else if (player.direction === horizontal || player.direction === vertical) direction = player.direction;
+    else direction = horizontal;
+  } else {
+    const wanted = {
+      ArrowUp: inputY < 0, ArrowDown: inputY > 0,
+      ArrowLeft: inputX < 0, ArrowRight: inputX > 0
+    };
+    const latest = [...directionPressOrder].reverse().find(key => wanted[key]);
+    const names = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+    direction = latest ? names[latest]
+      : inputY < 0 ? 'up' : inputY > 0 ? 'down' : inputX < 0 ? 'left' : 'right';
   }
+  facePlayer(direction);
 
-  // El joystick es analógico, pero seguimos usando movePlayer para conservar
-  // todas las colisiones y el deslizamiento por paredes del motor existente.
-  player.isMoving = movePlayer(dx, dy);
-  checkRoomExit();
+  const wasMoving = player.isMoving;
+  const previousX = player.x;
+  const previousY = player.y;
+  // 3 px a 60 Hz / escala 2 = 90 píxeles nativos por segundo.
+  // Respuesta inmediata al pulsar y soltar; la suavidad nunca añade inercia.
+  player.isMoving = movePlayer(inputX * player.speed * frameFactor, inputY * player.speed * frameFactor);
+  if (checkRoomExit()) return;
 
   if (player.isMoving) {
-    animationElapsed += frameFactor;
+    if (!wasMoving || previousDirection !== player.direction) {
+      player.frameX = 1;
+      animationElapsed = 0;
+    }
+    // La cadencia sigue los pasos reales, también al ir despacio con el joystick
+    // o deslizarse por una pared. Empujar un mueble no produce pasos en el sitio.
+    animationElapsed += Math.hypot(player.x - previousX, player.y - previousY) / player.speed;
     while (animationElapsed >= STAGGER_FRAMES) {
       player.frameX = (player.frameX + 1) % 4;
       animationElapsed -= STAGGER_FRAMES;
@@ -1063,10 +1213,8 @@ function update(deltaSeconds = 1 / NOMINAL_FPS) {
     player.frameX = 0;
     animationElapsed = 0;
   }
-
   updateCamera();
 }
-
 function worldToScreen(rect) {
   return {
     x: rect.x - camera.x,
@@ -1083,12 +1231,16 @@ function draw() {
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
   drawRoom();
+  const ambienceOptions = { scale: ROOM_SCALE, reducedMotion: HouseExperience.reducedMotion };
+  HouseAmbience.draw(ctx, currentRoom, camera, HouseExperience.elapsedSeconds, ambienceOptions);
   if (currentRoom === 'hallway') drawMirrorReflection();
   drawPlayer();
+  HouseAmbience.drawForeground(ctx, currentRoom, camera, getPlayerHitbox(), ambienceOptions);
   if (rooms[currentRoom].drawForeground) rooms[currentRoom].drawForeground(ctx, camera);
   drawLighting();
 
   if (debugCollisions) drawDebug();
+  drawRoomTransition();
 }
 
 function drawRoom() {
@@ -1191,6 +1343,9 @@ function carveRadialLight(ctx, x, y, radius) {
 }
 
 function drawLighting() {
+  // The house uses its original colors and stationary candle / fire light.
+  // A player-centered torch belongs only to the custom basement.
+  if (currentRoom !== 'basementHallway') return;
   lightingCtx.save();
   lightingCtx.setTransform(1, 0, 0, 1, 0, 0);
   lightingCtx.globalAlpha = 1;
@@ -1266,3 +1421,5 @@ function gameLoop(timestamp) {
   draw();
   requestAnimationFrame(gameLoop);
 }
+
+HouseExperience.boot([playerSprite, ...Object.values(roomImages)], [bgm, bgmDown]);

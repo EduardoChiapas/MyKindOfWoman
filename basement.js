@@ -114,13 +114,13 @@ const BasementMaze = (() => {
 
     // Hitboxes invisibles próximas al remate de cada callejón. Son datos
     // editables, no sólidos ni decoración; no modifican el trazado del mapa.
-    { id: 'forgotten-1', ...rect(650, 275, 12, 24), text: '* [Espacio para objeto olvidado 1]' },
-    { id: 'forgotten-2', ...rect(913, 275, 12, 24), text: '* [Espacio para objeto olvidado 2]' },
-    { id: 'forgotten-3', ...rect(1010, 300, 35, 8), text: '* [Espacio para objeto olvidado 3]' },
-    { id: 'forgotten-4', ...rect(813, 580, 12, 36), text: '* [Espacio para objeto olvidado 4]' },
-    { id: 'forgotten-5', ...rect(945, 625, 25, 8), text: '* [Espacio para objeto olvidado 5]' },
-    { id: 'forgotten-6', ...rect(300, 853, 12, 36), text: '* [Espacio para objeto olvidado 6]' },
-    { id: 'forgotten-7', ...rect(805, 900, 35, 8), text: '* [Espacio para objeto olvidado 7]' }
+    { id: 'forgotten-1', ...rect(650, 275, 12, 24), text: '* Una bufanda pequeña, doblada con cuidado.\n* Aún conserva un tenue olor a canela.' },
+    { id: 'forgotten-2', ...rect(913, 275, 12, 24), text: '* Un dibujo de una casa con ventanas amarillas.\n* En una esquina dice: «Para cuando quieras volver».' },
+    { id: 'forgotten-3', ...rect(1010, 300, 35, 8), text: '* Un botón amarillo descansa entre dos piedras.\n* Parece un sol que cabe en el bolsillo.' },
+    { id: 'forgotten-4', ...rect(813, 580, 12, 36), text: '* Hay una carta sin sobre.\n* Solo dice: «Guardé una porción para ti».' },
+    { id: 'forgotten-5', ...rect(945, 625, 25, 8), text: '* Una canica azul refleja la luz de la lámpara.\n* Por un instante, parece contener todo un cielo.' },
+    { id: 'forgotten-6', ...rect(300, 853, 12, 36), text: '* Una cinta roja marca la página de un cuento.\n* El final espera pacientemente a su lectora.' },
+    { id: 'forgotten-7', ...rect(805, 900, 35, 8), text: '* Una tarjeta lleva el nombre de Damaris.\n* Debajo, con letra cuidadosa: «Aquí siempre habrá un lugar para ti».' }
   ];
 
   const lamps = [

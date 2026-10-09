@@ -1,41 +1,54 @@
-# Casa de Toriel — escalera en U y sótano morado
+# Para Damaris · Un lugar al que volver
 
-Descomprime todo el ZIP y abre toriel_house_project/index.html. No requiere instalación, compilación ni servicios externos. También funciona en un servidor estático.
+Una versión pulida de tu proyecto de la casa de Toriel. Extrae **todo el ZIP** y abre **index.html** en Chrome, Edge o Firefox. No requiere instalación, compilación, conexión ni cuentas. La música comienza al entrar en la casa. También funciona con cualquier servidor estático.
+
+## Qué se ha mejorado
+
+- Vista de 640 × 480, con los fondos nativos a escala 2 y píxeles nítidos.
+- Caminar a velocidad constante, diagonales normalizadas, parada inmediata y animación ligada a la distancia recorrida. Se aceptan flechas y WASD.
+- Colisiones de los pies con subpasos y ajuste preciso contra paredes: no se atraviesan barandales ni muebles. Cámara estable con una pequeña zona de seguimiento.
+- Fundidos cortos al cruzar puertas, con colocación segura y protección contra volver inmediatamente por la misma salida.
+- Fuego animado, sillón, mesa, florero y tarta extraídos de la hoja de sprites que ya incluía el proyecto. Profundidad correcta al caminar detrás de los muebles y luces discretas en velas y lámparas.
+- Textos más acogedores; las siete descripciones provisionales del sótano se han completado. Se conservan el espejo, el libro y la dedicatoria a Damaris.
+- Texto progresivo, páginas de hasta tres líneas, pequeño sonido de lectura, botón de continuación y anuncio accesible por página.
+- Música con entrada y cambios de volumen suaves entre casa y sótano; crepitar tenue cerca de la chimenea; control de silencio.
+- Ayuda con pausa, pantalla completa, controles táctiles y modo de efectos tranquilos. La preferencia de silencio y efectos se recuerda si el navegador permite almacenamiento local.
+- Todos los recursos necesarios son locales; ya no se depende de Google Fonts.
 
 ## Controles
 
-- Espacio o toque en «Para Damaris»: iniciar el juego y el BGM.
-- Flechas o joystick móvil: caminar. Zona muerta del joystick: 15 %.
-- Z / Enter: examinar el objeto frente al personaje.
-- X / Esc: cerrar diálogo o libro.
-- F2: mostrar colisiones, salidas y hitboxes interactivas.
+| Acción | Teclas |
+| --- | --- |
+| Entrar | Espacio, Enter, Z o botón de inicio |
+| Caminar | Flechas / WASD / joystick táctil |
+| Examinar | Z / Enter |
+| Completar texto y avanzar | Z / Enter / Espacio / botón del diálogo |
+| Cerrar diálogo o libro | X / Esc |
+| Ayuda y pausa | H |
+| Audio | M |
+| Pantalla completa | F |
+| Ver colisiones para depuración | F2 |
 
-## Correcciones integradas
+Puedes tomarte todo el tiempo que quieras; no hay temporizador. Al perder el foco se liberan los controles y, al ocultar la pestaña, el audio se pausa. El modo «Efectos tranquilos» detiene las pequeñas variaciones de fuego y luz y presenta el texto completo.
 
-La Entrada utiliza exactamente tres sólidos de barandal, con un grosor de dos píxeles nativos. La boca de acceso por el lado derecho queda libre. El suelo de los muebles se excluye de walkable en lugar de añadir otros sólidos.
+## Fidelidad y personalización
 
-STAIR_WALKABLE describe una U invertida: descansillo izquierdo, peldaños superiores y rama derecha hasta una llegada profunda pequeña. La superficie central negra queda fuera de walkable. El trigger R(199, 96, 16, 9) ocupa sólo negro puro y se activa cuando el centro de los pies entra en él. La llegada mide 16 píxeles nativos de ancho frente a los 10 de la hitbox. Para bajar, acércate por el lado derecho, camina hacia los peldaños superiores y avanza hacia el fondo. El retorno del sótano aparece en el descansillo izquierdo, con una ruta libre de regreso a la casa.
+Se ha acercado la presentación y el tacto al RPG original conservando tu proyecto. **No es una réplica exacta de Undertale**: se mantiene el sprite de Frisk que traía el ZIP, el laberinto personalizado del sótano, los textos para Damaris y las pistas de audio proporcionadas. No se han sustituido por recursos descargados ni por supuestos assets oficiales.
 
-El laberinto conserva sus cruces, circuito, desviaciones, callejones, puerta final y dimensiones de 3000 × 2500 unidades de mundo. Su renderizador usa suelo morado #5a456b y variantes próximas, con muros #2d2236. La penumbra es rgba(20, 15, 35, 0.6). La casa conserva rgba(15, 15, 30, 0.2). El halo del jugador mantiene radio 440 y las 14 lámparas conservan sus luces.
+## Archivos
 
-El espejo utiliza una máscara con clip. Dentro se pinta primero rgba(180, 190, 200, 0.6) y después el clon del jugador con alpha 0.5 y posición player.y - 30. Se intercambian las filas UP/DOWN sin invertir el canvas. El marco y el texto original se conservan.
+- `script.js`: habitaciones, colisiones, caminar, cámara, espejo y transiciones.
+- `ambience.js`: muebles, fuego y luces locales; comparte sus datos de colisión con el motor.
+- `experience.js`: diálogos, sonido, ayuda, preferencias y carga inicial.
+- `lore.js`: objetos de la casa; coordenadas nativas del fondo.
+- `basement.js`: geometría, renderizado y objetos del laberinto.
+- `index.html` / `style.css`: interfaz adaptable sin dependencias externas.
+- `assets/props/`: nuevos recortes transparentes de la hoja incluida. La hoja original permanece intacta.
 
-Hay siete hitboxes invisibles nuevas en los remates de los callejones: forgotten-1 a forgotten-7. Sus textos «* [Espacio para objeto olvidado N]» pueden editarse en el arreglo interactives de basement.js. No añaden colisiones. Se conservan las otras interacciones de la casa y el sótano: 55 en total.
+## Validación realizada
 
-El MP3 completo está incluido en assets/audio/undertale.mp3. Se inicia en el gesto de Espacio o toque de la introducción y continúa en bucle durante cambios de habitación y diálogos.
+Verificación automatizada de las siete habitaciones, doce puntos de llegada, doce transiciones completas y 57 objetos examinables. El recorrido busca posiciones válidas con las colisiones reales a pasos de dos píxeles de mundo en la casa y diez en el sótano. Se comprueban también movimiento a 30, 60 y 144 Hz, diagonales, paredes finas, parada, pérdida de foco, paginación, pausa, cambio gradual de música y silencio.
 
-## Archivos y coordenadas
+Revisión visual en navegador de inicio, entrada, sala con muebles, diálogo y ayuda; sin errores de consola en esas comprobaciones. Los scripts de prueba y el servidor de desarrollo no forman parte del juego entregado.
 
-- script.js: movimiento, colisiones, datos de Entrada, espejo, iluminación y BGM.
-- basement.js: geometría, paleta, renderizado e interacciones del laberinto.
-- lore.js: interacciones de la casa.
-- index.html / style.css: interfaz y controles.
-- assets/: imágenes y audio completos.
-
-R() convierte píxeles nativos a mundo con escala 2. La hitbox completa de los pies mide 20 × 12 unidades y usa offsets (14, 53). La cobertura se comprueba contra la unión completa de walkable y los movimientos se subdividen para evitar atravesar obstáculos finos. La cámara sigue ambos ejes del mapa.
-
-## Verificación
-
-Pasaron 24 suites de lógica, incluyendo 949 posiciones de descenso, siete columnas de acceso hasta el trigger, ida y regreso, hueco central, obstáculos, todos los spawns, los 885 cuadrados conectados del laberinto, sus empalmes, las 55 interacciones, joystick y animación. La comprobación sobre el PNG confirma que el trigger ocupa 144 píxeles negros y que el interior negro central no se incluye en los peldaños.
-
-En navegador se confirmó el descenso al sótano, el reflejo de pie sobre el cristal gris celeste y la arquitectura morada visible. La capa de luz conserva el mapa y restaura source-over. El BGM inicia tras Espacio y continúa en los cambios de habitación. No hubo errores de consola. Los controles privados de prueba no forman parte del proyecto entregado.
+Los fondos, el personaje y las pistas proceden del ZIP suministrado. Los elementos de Undertale pertenecen a sus respectivos autores; la dedicatoria y las ampliaciones son parte de este proyecto personal.

@@ -15,20 +15,41 @@
   const images = {
     table: asset('living_table.png'),
     chair: asset('reading_chair.png'),
-    pie: asset('pie.png'),
+    diningLeft: asset('dining_chair_left.png'),
+    diningBack: asset('dining_chair_back.png'),
+    diningRight: asset('dining_chair_right.png'),
     fire: asset('fire.png')
   };
 
+  // Back-to-front order. Native sizes and placement match the room reference;
+  // the three dining chairs use their own original orientations and sizes.
+  // Physics reads each solid directly through propsForRoom(), keeping the
+  // painted furniture and the feet collision rectangles in one source.
   const livingProps = Object.freeze([
     Object.freeze({
-      id: 'living_table', image: 'table', x: 76, y: 107, width: 92, height: 50,
-      depthY: 155,
-      solid: Object.freeze({ x: 76, y: 125, width: 92, height: 30 })
+      id: 'living_chair', image: 'chair', x: 108, y: 51, width: 47, height: 50,
+      depthY: 100,
+      solid: Object.freeze({ x: 112, y: 79, width: 39, height: 21 })
     }),
     Object.freeze({
-      id: 'living_chair', image: 'chair', x: 214, y: 111, width: 47, height: 50,
-      depthY: 160,
-      solid: Object.freeze({ x: 218, y: 139, width: 39, height: 21 })
+      id: 'living_dining_back', image: 'diningBack', x: 99, y: 121, width: 25, height: 23,
+      depthY: 144,
+      solid: Object.freeze({ x: 100, y: 137, width: 23, height: 7 })
+    }),
+    Object.freeze({
+      id: 'living_dining_left', image: 'diningLeft', x: 51, y: 151, width: 15, height: 25,
+      depthY: 176,
+      solid: Object.freeze({ x: 51, y: 165, width: 15, height: 11 })
+    }),
+    Object.freeze({
+      id: 'living_dining_right', image: 'diningRight', x: 156, y: 144, width: 17, height: 34,
+      depthY: 178,
+      solid: Object.freeze({ x: 156, y: 164, width: 17, height: 14 })
+    }),
+    Object.freeze({
+      id: 'living_table', image: 'table', x: 65, y: 145, width: 92, height: 50,
+      depthY: 193,
+      solid: Object.freeze({ x: 65, y: 163, width: 92, height: 30 })
     })
   ]);
 
@@ -95,11 +116,6 @@
     const y = prop.y * scale - Math.round(camera.y);
     if (!visible(ctx, x, y, prop.width * scale, prop.height * scale)) return;
     ctx.drawImage(image, x, y, prop.width * scale, prop.height * scale);
-    if (prop.id === 'living_table' && images.pie.complete && images.pie.naturalWidth) {
-      // A small pie on the clear side of the original table sprite.
-      ctx.drawImage(images.pie, 84 * scale - Math.round(camera.x),
-        114 * scale - Math.round(camera.y), 25 * scale, 19 * scale);
-    }
   }
 
   function drawLights(ctx, roomId, camera, seconds, scale, reducedMotion) {

@@ -42,12 +42,24 @@ const HOUSE_LORE = {
       text: '* Los paraguas están juntos en su sitio.\n* Uno es bastante más pequeño que los demás.'
     },
     {
-      id: 'living_table', x: 76, y: 107, width: 92, height: 50,
-      text: '* Una tarta descansa junto al florero.\n* El aroma a canela llega antes que tú.\n* Parece que alguien ya contaba con tu visita.'
+      id: 'living_table', x: 65, y: 145, width: 92, height: 50,
+      text: '* Una mesa de madera con un florero en el centro.\n* Las flores están cuidadas y la madera, limpia.\n* Hay sitio para compartir una comida sin prisa.'
     },
     {
-      id: 'living_chair', x: 214, y: 111, width: 47, height: 50,
+      id: 'living_chair', x: 108, y: 51, width: 47, height: 50,
       text: '* Un sillón junto a la chimenea.\n* El respaldo está gastado de una forma muy cómoda.\n* Es fácil imaginar un cuento que dure toda la tarde.'
+    },
+    {
+      id: 'living_dining_back', x: 99, y: 121, width: 25, height: 23,
+      text: '* Una silla de madera al otro lado de la mesa.\n* Desde aquí se ve toda la sala.'
+    },
+    {
+      id: 'living_dining_left', x: 51, y: 151, width: 15, height: 25,
+      text: '* Una silla pequeña, bien acercada a la mesa.\n* El asiento está liso de tanto usarlo.'
+    },
+    {
+      id: 'living_dining_right', x: 156, y: 144, width: 17, height: 34,
+      text: '* Una silla espera junto a la mesa.\n* Parece un buen lugar para escuchar mientras alguien prepara el té.'
     }
   ],
 

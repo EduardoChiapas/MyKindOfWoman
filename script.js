@@ -454,6 +454,12 @@ function facePlayer(direction) {
 
 window.addEventListener('keydown', (event) => {
   if (event.target && (event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))) return;
+  // Native buttons own Enter/Space. Let their click handler activate once;
+  // otherwise a focused audio/help/book button could also examine the room.
+  if (event.target && event.target.tagName === 'BUTTON' && ['Enter', 'Space'].includes(event.code)) {
+    if (event.repeat) event.preventDefault();
+    return;
+  }
   const movementKey = MOVEMENT_KEYS[event.code];
   if (movementKey || ['Space', 'KeyZ', 'KeyX', 'Enter'].includes(event.code)) event.preventDefault();
 
@@ -491,7 +497,8 @@ window.addEventListener('keydown', (event) => {
     return;
   }
 
-  if ((gameState === 'DIALOG' || gameState === 'BOOK') && (event.code === 'KeyX' || event.code === 'Escape')) {
+  if ((gameState === 'DIALOG' || gameState === 'BOOK') && ['KeyX', 'Escape', 'ShiftLeft', 'ShiftRight'].includes(event.code)) {
+    event.preventDefault();
     closeInteraction();
   }
 });
@@ -608,10 +615,8 @@ if (joystickBase) {
 
 function bindActionButton(button, action) {
   if (!button) return;
-
-  button.addEventListener('touchstart', (event) => {
-    event.preventDefault();
-
+  let lastTouchActivation = -Infinity;
+  const activate = () => {
     if (action === 'z' && gameState === 'PLAYING') {
       checkInteraction();
       return;
@@ -628,7 +633,20 @@ function bindActionButton(button, action) {
     ) {
       closeInteraction();
     }
+  };
+
+  button.addEventListener('touchstart', (event) => {
+    event.preventDefault();
+    lastTouchActivation = performance.now();
+    activate();
   }, { passive: false });
+
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    // Touch already activated on press; keyboard clicks (detail 0) stay valid.
+    if (event.detail !== 0 && performance.now() - lastTouchActivation < 500) return;
+    activate();
+  });
 
   button.addEventListener('touchmove', (event) => {
     event.preventDefault();
@@ -708,14 +726,19 @@ async function exitFullscreen() {
 
 function bindFullscreenButton(button, handler) {
   if (!button) return;
+  let lastTouchActivation = -Infinity;
 
   button.addEventListener('touchstart', (event) => {
     event.preventDefault();
+    lastTouchActivation = performance.now();
+    HouseExperience.play('toggle', { ui: true });
     handler();
   }, { passive: false });
 
   button.addEventListener('click', (event) => {
     event.preventDefault();
+    if (event.detail !== 0 && performance.now() - lastTouchActivation < 500) return;
+    HouseExperience.play('toggle', { ui: true });
     handler();
   });
 }
@@ -912,11 +935,10 @@ function showDialog(text) {
   resetMovementInput();
   resetJoystick();
   HouseExperience.openDialog(text);
-  HouseExperience.sound(460, 0.05, 0.012);
 }
 
 function advanceInteraction() {
-  if (gameState === 'DIALOG' && HouseExperience.advanceDialog()) closeInteraction();
+  if (gameState === 'DIALOG' && HouseExperience.advanceDialog()) closeInteraction('confirm');
 }
 
 function setAudioRoom(roomId) {
@@ -1057,6 +1079,7 @@ function checkInteraction() {
     resetMovementInput();
     resetJoystick();
     interactiveBook.classList.remove('hidden');
+    HouseExperience.play('book');
     document.getElementById('btn-close-book').focus({ preventScroll: true });
     return;
   }
@@ -1064,8 +1087,9 @@ function checkInteraction() {
   showDialog(object.text);
 }
 
-function closeInteraction() {
+function closeInteraction(reason = 'cancel') {
   if (gameState !== 'DIALOG' && gameState !== 'BOOK') return;
+  HouseExperience.closeDialog(reason);
   dialogBox.classList.add('hidden');
   interactiveBook.classList.add('hidden');
   resetMovementInput();

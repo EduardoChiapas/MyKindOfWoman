@@ -5,18 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#100e15">
   <title>Para Damaris · Un lugar al que volver</title>
+  <script src="font.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main id="app">
     <section id="video-intro-container" aria-label="Introducción">
       <div class="intro-card">
-        <span class="pixel-heart" aria-hidden="true">♥</span>
+        <span class="pixel-heart" aria-hidden="true"></span>
         <p class="eyebrow">UN PEQUEÑO RINCÓN DEL SUBSUELO</p>
         <h1>Para Damaris</h1>
         <p class="intro-subtitle">Un lugar al que volver.</p>
         <div class="home-window" aria-hidden="true"><img src="assets/rooms/home_preview.png" alt=""></div>
-        <button id="btn-start" type="button">Entrar en casa <span aria-hidden="true">→</span></button>
+        <button id="btn-start" type="button">Entrar en casa <span aria-hidden="true">&gt;</span></button>
         <p id="loading-status" role="status">Espacio / Enter para comenzar</p>
         <p class="intro-controls">Flechas o WASD para caminar · Z para examinar</p>
       </div>
@@ -30,11 +31,11 @@
           <p id="dialog-text" aria-hidden="true"></p>
           <span id="dialog-accessible" class="sr-only" aria-live="polite"></span>
           <span id="dialog-progress" aria-hidden="true"></span>
-          <button id="dialog-next" class="dialog-hint" type="button" aria-label="Continuar diálogo">Z / Enter ▾</button>
+          <button id="dialog-next" class="dialog-hint" type="button" aria-label="Continuar diálogo">Z / Enter v</button>
         </div>
         <div id="interactive-book" class="hidden" role="dialog" aria-label="El libro para Damaris" aria-modal="true">
           <div class="book-content">
-            <span class="book-mark" aria-hidden="true">✦</span>
+            <span class="book-mark" aria-hidden="true">*</span>
             <p class="eyebrow">ENTRE ESTAS PÁGINAS</p>
             <h2>El libro para Damaris</h2>
             <p>Algunas páginas están en blanco.<br>Otras conservan una flor seca.</p>
@@ -62,11 +63,11 @@
         <div id="pause-notice" class="hidden" role="status">En pausa · vuelve cuando quieras</div>
       </div>
       <div id="game-tools" aria-label="Opciones">
-        <button id="btn-audio" type="button" aria-label="Silenciar audio" title="Audio · M">♪ <span>Audio</span></button>
+        <button id="btn-audio" type="button" aria-label="Silenciar audio" title="Audio · M">[ON] <span>Audio</span></button>
         <button id="btn-help" type="button" aria-label="Abrir ayuda y pausar" title="Ayuda · H">? <span>Ayuda</span></button>
         <div id="fullscreen-controls">
-          <button type="button" id="btn-fullscreen" aria-label="Entrar en pantalla completa" title="Pantalla completa · F">⛶</button>
-          <button type="button" id="btn-exit-fullscreen" class="hidden" aria-label="Salir de pantalla completa" title="Salir de pantalla completa · F">↙</button>
+          <button type="button" id="btn-fullscreen" aria-label="Entrar en pantalla completa" title="Pantalla completa · F">[ ]</button>
+          <button type="button" id="btn-exit-fullscreen" class="hidden" aria-label="Salir de pantalla completa" title="Salir de pantalla completa · F">X</button>
         </div>
       </div>
       <div id="mobile-controls" aria-label="Controles táctiles">
@@ -81,6 +82,8 @@
   <script src="basement.js"></script>
   <script src="lore.js"></script>
   <script src="ambience.js"></script>
+  <script src="sfx-data.js"></script>
+  <script src="undertale-audio.js"></script>
   <script src="experience.js"></script>
   <script src="script.js"></script>
 </body>

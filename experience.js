@@ -21,29 +21,24 @@
   let fireGain = null;
   let helpPreviousState = null;
   let hiddenPaused = false;
-  let lastTick = 0;
+  let lastMenuTarget = null;
+  let lastMenuTime = -Infinity;
   const dialogue = { pages: [], index: 0, shown: 0, time: 0 };
 
   function syncAudioButton() {
     const button = byId('btn-audio');
-    button.innerHTML = (muted ? '×' : '♪') + ' <span>Audio</span>';
+    button.innerHTML = (muted ? '[OFF]' : '[ON]') + ' <span>Audio</span>';
     button.setAttribute('aria-label', muted ? 'Activar audio' : 'Silenciar audio');
     button.setAttribute('aria-pressed', String(!muted));
   }
 
-  function sound(frequency = 420, duration = 0.025, volume = 0.008) {
-    if (!soundContext || soundContext.state !== 'running' || muted || document.hidden) return;
-    const oscillator = soundContext.createOscillator();
-    const gain = soundContext.createGain();
-    oscillator.type = 'triangle';
-    oscillator.frequency.value = frequency;
-    const now = soundContext.currentTime;
-    gain.gain.setValueAtTime(volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    oscillator.connect(gain).connect(soundContext.destination);
-    oscillator.start(now);
-    oscillator.stop(now + duration + 0.01);
-    oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+  function play(kind, options) {
+    if (!started || !global.UndertaleAudio) return false;
+    return global.UndertaleAudio.play(kind, options);
+  }
+
+  function stopSound(kind) {
+    if (global.UndertaleAudio) global.UndertaleAudio.stop(kind);
   }
 
   function initializeSound() {
@@ -51,6 +46,11 @@
       const AudioContextClass = global.AudioContext || global.webkitAudioContext;
       if (!AudioContextClass) return;
       soundContext = new AudioContextClass();
+      const samplesReady = global.UndertaleAudio ? global.UndertaleAudio.prepare(soundContext) : Promise.resolve();
+      if (global.UndertaleAudio) {
+        global.UndertaleAudio.setMuted(muted);
+        global.UndertaleAudio.setPaused(document.hidden || gameState === 'PAUSED');
+      }
       // A quiet filtered texture near the fireplace, with no downloaded SFX.
       const buffer = soundContext.createBuffer(1, soundContext.sampleRate * 2, soundContext.sampleRate);
       const data = buffer.getChannelData(0);
@@ -69,7 +69,7 @@
       fire.loop = true;
       fire.connect(filter).connect(fireGain).connect(soundContext.destination);
       fire.start();
-      soundContext.resume().catch(() => {});
+      Promise.all([samplesReady, soundContext.resume()]).then(() => play('confirm')).catch(() => {});
     } catch { soundContext = null; fireGain = null; }
   }
 
@@ -91,20 +91,53 @@
   }
 
   function setRoom(roomId) {
+    stopSound('text');
     room = roomId;
     roomSeconds = 0;
     byId('hud').classList.add('visible');
+    play('room');
   }
 
-  function wrapText(text, width = 44) {
+  function wrapText(text) {
+    // Measure the loaded font inside the visible box. A character count cannot
+    // predict the available line width when the stage changes size.
+    let fits = line => Array.from(line).length <= 32;
+    if (typeof global.getComputedStyle === 'function') {
+      const box = byId('dialog-box');
+      const textNode = byId('dialog-text');
+      const style = global.getComputedStyle(textNode);
+      const boxStyle = global.getComputedStyle(box);
+      const measurement = document.createElement('canvas').getContext('2d');
+      const numeric = value => Number.parseFloat(value) || 0;
+      const padding = numeric(boxStyle.paddingLeft) + numeric(boxStyle.paddingRight);
+      const border = numeric(boxStyle.borderLeftWidth) + numeric(boxStyle.borderRightWidth);
+      const stageWidth = byId('game-stage').getBoundingClientRect().width;
+      const available = textNode.clientWidth || (box.clientWidth ? box.clientWidth - padding
+        : stageWidth * 0.92 - padding - border);
+      if (measurement && available > 0) {
+        measurement.font = `${style.fontWeight || '400'} ${style.fontSize || '32px'} ${style.fontFamily || 'Undertale, monospace'}`;
+        const spacing = numeric(style.letterSpacing);
+        fits = line => measurement.measureText(line).width + Math.max(0, Array.from(line).length - 1) * spacing <= available - 1;
+      }
+    }
     const lines = [];
     for (const paragraph of String(text).split('\n')) {
       let line = '';
       for (const word of paragraph.split(/\s+/).filter(Boolean)) {
-        if (line && line.length + word.length + 1 > width) {
+        if (line && !fits(line + ' ' + word)) {
           lines.push(line);
           line = '  ' + word;
         } else line += (line ? ' ' : '') + word;
+        // Preserve continuation indentation even for an unusually long token.
+        while (!fits(line)) {
+          const prefix = line.startsWith('  ') ? '  ' : '';
+          const remaining = Array.from(line.slice(prefix.length));
+          let count = 1;
+          while (count < remaining.length && fits(prefix + remaining.slice(0, count + 1).join(''))) count += 1;
+          lines.push(prefix + remaining.slice(0, count).join(''));
+          line = '  ' + remaining.slice(count).join('');
+          if (!remaining.slice(count).length) { line = ''; break; }
+        }
       }
       if (line) lines.push(line);
     }
@@ -120,42 +153,54 @@
       ? (dialogue.index + 1) + ' / ' + dialogue.pages.length : '';
     const complete = dialogue.shown >= page.length;
     byId('dialog-next').textContent = complete
-      ? (dialogue.index === dialogue.pages.length - 1 ? 'Z / Enter · Cerrar ▾' : 'Z / Enter · Seguir ▾')
-      : 'Z / Enter · Leer';
+      ? (dialogue.index === dialogue.pages.length - 1 ? 'Z / Enter - Cerrar v' : 'Z / Enter - Seguir v')
+      : 'Z / Enter - Leer';
   }
 
   function beginPage() {
-    dialogue.shown = reducedMotion ? dialogue.pages[dialogue.index].length : 1;
+    stopSound('text');
+    const page = dialogue.pages[dialogue.index] || '';
+    dialogue.shown = reducedMotion ? page.length : page.startsWith('*') ? 1 : 0;
     dialogue.time = 0;
     byId('dialog-accessible').textContent = dialogue.pages[dialogue.index];
     renderDialogue();
   }
 
   function openDialog(text) {
+    byId('dialog-box').classList.remove('hidden');
     dialogue.pages = wrapText(text);
     dialogue.index = 0;
     const screenY = player.y - camera.y;
     // Keep the character visible while examining low furniture.
     byId('dialog-box').classList.toggle('top', screenY > VIEW_H * 0.53);
-    byId('dialog-box').classList.remove('hidden');
     byId('interaction-hint').classList.add('hidden');
     beginPage();
+    play('confirm');
   }
 
   function advanceDialog() {
     const page = dialogue.pages[dialogue.index] || '';
     if (dialogue.shown < page.length) {
+      stopSound('text');
       dialogue.shown = page.length;
+      dialogue.time = 0;
       renderDialogue();
+      play('confirm');
       return false;
     }
     if (dialogue.index + 1 < dialogue.pages.length) {
       dialogue.index += 1;
       beginPage();
-      sound(500, 0.045, 0.014);
+      play('page');
       return false;
     }
     return true;
+  }
+
+  function closeDialog(reason = 'cancel') {
+    stopSound('text');
+    dialogue.time = 0;
+    play(reason);
   }
 
   function toggleHelp() {
@@ -164,23 +209,28 @@
       gameState = helpPreviousState;
       helpPreviousState = null;
       byId('help-panel').classList.add('hidden');
+      if (global.UndertaleAudio) global.UndertaleAudio.setPaused(false);
+      play('cancel');
       resetMovementInput();
       canvas.focus({ preventScroll: true });
       return;
     }
     helpPreviousState = gameState;
     gameState = 'PAUSED';
+    if (global.UndertaleAudio) global.UndertaleAudio.setPaused(true);
     resetMovementInput();
     resetJoystick();
     byId('help-panel').classList.remove('hidden');
     byId('interaction-hint').classList.add('hidden');
     byId('btn-close-help').focus({ preventScroll: true });
+    play('confirm', { ui: true });
   }
 
   function tick(deltaSeconds) {
     if (!started) return;
     const dt = Math.min(0.05, Math.max(0, deltaSeconds));
     if (document.hidden) return;
+    if (global.UndertaleAudio) global.UndertaleAudio.setPaused(gameState === 'PAUSED');
     if (gameState !== 'PAUSED') elapsed += dt;
     roomSeconds += dt;
     byId('hud').classList.toggle('visible', roomSeconds < 2.8 && gameState === 'PLAYING');
@@ -199,22 +249,25 @@
     }
     if (gameState === 'DIALOG') {
       const page = dialogue.pages[dialogue.index] || '';
+      const carriedTime = dialogue.time;
       dialogue.time += dt;
       let count = 0;
+      let consumedTime = 0;
       while (dialogue.shown < page.length && count < 20) {
         const previous = page[dialogue.shown - 1];
         const delay = /[.!?]/.test(previous) ? 0.15 : /[,;:]/.test(previous) ? 0.08 : 0.025;
         if (dialogue.time < delay) break;
         dialogue.time -= delay;
+        consumedTime += delay;
         dialogue.shown += 1;
         count += 1;
+        const letter = page[dialogue.shown - 1];
+        if (/[\p{L}\p{N}]/u.test(letter)) {
+          play('text', { delay: Math.max(0, consumedTime - carriedTime) });
+        }
       }
       if (count) {
         renderDialogue();
-        if (elapsed - lastTick > 0.065 && /[\p{L}\p{N}]/u.test(page[dialogue.shown - 1])) {
-          sound(340 + (dialogue.shown % 4) * 22);
-          lastTick = elapsed;
-        }
       }
     }
     const canExamine = gameState === 'PLAYING' && !player.isMoving && Boolean(findInteraction());
@@ -227,32 +280,62 @@
     const startButton = byId('btn-start');
     const status = byId('loading-status');
     startButton.disabled = true;
-    status.textContent = 'Preparando tu rincón de casa…';
-    Promise.all(images.map(image => new Promise((resolve, reject) => {
+    status.textContent = 'Preparando tu rincón de casa...';
+    const imagesReady = images.map(image => new Promise((resolve, reject) => {
       if (image.complete) { image.naturalWidth ? resolve() : reject(); return; }
       image.addEventListener('load', resolve, { once: true });
       image.addEventListener('error', reject, { once: true });
-    }))).then(() => {
+    }));
+    const fontsReady = (global.UndertaleFontReady || (document.fonts
+      ? Promise.resolve(typeof document.fonts.load === 'function' ? document.fonts.load('32px "Undertale"') : undefined)
+        .then(() => document.fonts.ready)
+      : Promise.resolve())).catch(error => {
+          console.warn('No se pudo cargar la fuente Undertale:', error);
+          const failure = new Error('FONT_LOAD_FAILED');
+          failure.fontLoadFailed = true;
+          throw failure;
+        });
+    Promise.all([...imagesReady, fontsReady]).then(() => {
       ready = true;
       startButton.disabled = false;
       status.textContent = 'Espacio / Enter para comenzar';
-    }).catch(() => { status.textContent = 'Faltan imágenes. Extrae todo el ZIP y vuelve a abrir index.html.'; });
+    }).catch(error => {
+      status.textContent = error && error.fontLoadFailed
+        ? 'No se pudo cargar la fuente. Extrae todo el ZIP y vuelve a abrir index.html.'
+        : 'Faltan imágenes. Extrae todo el ZIP y vuelve a abrir index.html.';
+    });
     startButton.addEventListener('click', () => startGame());
     byId('dialog-next').addEventListener('click', () => advanceInteraction());
     byId('btn-close-book').addEventListener('click', () => closeInteraction());
     byId('btn-help').addEventListener('click', toggleHelp);
     byId('btn-close-help').addEventListener('click', toggleHelp);
     byId('btn-audio').addEventListener('click', toggleMute);
+    for (const button of document.querySelectorAll('button')) {
+      const menuMove = () => {
+        const now = performance.now() / 1000;
+        if (lastMenuTarget === button && now - lastMenuTime < 0.1) return;
+        lastMenuTarget = button;
+        lastMenuTime = now;
+        play('move', { ui: true });
+      };
+      button.addEventListener('pointerenter', menuMove);
+      button.addEventListener('focus', menuMove);
+    }
     byId('reduced-motion').checked = reducedMotion;
     byId('reduced-motion').addEventListener('change', event => {
       reducedMotion = event.target.checked;
       storage.set('quiet', reducedMotion);
+      play('toggle', { ui: true });
     });
     syncAudioButton();
     global.addEventListener('keydown', event => {
       if (event.repeat || !started) return;
       if (event.code === 'KeyM') { event.preventDefault(); toggleMute(); }
-      if (event.code === 'KeyF') { event.preventDefault(); isFullscreenActive() ? exitFullscreen() : enterFullscreen(); }
+      if (event.code === 'KeyF') {
+        event.preventDefault();
+        play('toggle', { ui: true });
+        isFullscreenActive() ? exitFullscreen() : enterFullscreen();
+      }
       if (event.code === 'KeyH' || (event.code === 'Escape' && helpPreviousState !== null)) {
         event.preventDefault(); toggleHelp();
       }
@@ -261,10 +344,13 @@
       if (!started) return;
       if (document.hidden) {
         hiddenPaused = true;
+        stopSound();
+        if (global.UndertaleAudio) global.UndertaleAudio.setPaused(true);
         tracks.forEach(track => track.pause());
         if (soundContext) soundContext.suspend().catch(() => {});
       } else if (hiddenPaused) {
         hiddenPaused = false;
+        if (global.UndertaleAudio) global.UndertaleAudio.setPaused(gameState === 'PAUSED');
         playTracks();
         if (soundContext) soundContext.resume().catch(() => {});
       }
@@ -275,17 +361,20 @@
     muted = !muted;
     storage.set('muted', muted);
     syncAudioButton();
+    if (global.UndertaleAudio) global.UndertaleAudio.setMuted(muted);
     if (muted) {
       tracks.forEach(track => { track.volume = 0; });
       if (fireGain && soundContext) fireGain.gain.setTargetAtTime(0, soundContext.currentTime, 0.03);
     } else {
       playTracks();
       if (soundContext) soundContext.resume().catch(() => {});
+      play('toggle', { ui: true });
     }
   }
 
   global.HouseExperience = Object.freeze({
-    boot, tick, startAudio, setRoom, openDialog, advanceDialog, sound,
+    boot, tick, startAudio, setRoom, openDialog, advanceDialog, closeDialog, wrapText, play,
+    sound: play,
     canStart: () => ready,
     get elapsedSeconds() { return elapsed; },
     get reducedMotion() { return reducedMotion; }

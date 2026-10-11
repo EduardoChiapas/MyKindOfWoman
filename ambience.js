@@ -53,6 +53,8 @@
     })
   ]);
 
+  const propsForRoom = roomId => roomId === 'livingRoom' ? livingProps : empty;
+
   const candle = (x, y, phase) => Object.freeze({
     x, y, phase, radius: 23, strength: 0.10, candle: true
   });
@@ -110,8 +112,9 @@
   }
 
   function drawProp(ctx, prop, camera, scale) {
-    const image = images[prop.image];
-    if (!image.complete || !image.naturalWidth) return;
+    const source = images[prop.image];
+    if (!source.complete || !source.naturalWidth) return;
+    const image = source;
     const x = prop.x * scale - Math.round(camera.x);
     const y = prop.y * scale - Math.round(camera.y);
     if (!visible(ctx, x, y, prop.width * scale, prop.height * scale)) return;
@@ -175,19 +178,19 @@
     drawLights(ctx, roomId, camera, seconds, scale, !!options.reducedMotion);
     if (roomId === 'livingRoom') {
       drawFire(ctx, camera, seconds, scale, !!options.reducedMotion);
-      for (const prop of livingProps) drawProp(ctx, prop, camera, scale);
     }
+    for (const prop of propsForRoom(roomId)) drawProp(ctx, prop, camera, scale);
     ctx.restore();
   }
 
   function drawForeground(ctx, roomId, camera, playerFeet, options = {}) {
-    if (options.enabled === false || roomId !== 'livingRoom' || !playerFeet) return;
+    if (options.enabled === false || !playerFeet) return;
     const scale = scaleFor(options);
     const feetBottom = playerFeet.y + playerFeet.height;
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.globalAlpha = 1;
-    for (const prop of livingProps) {
+    for (const prop of propsForRoom(roomId)) {
       if (feetBottom <= prop.depthY * scale) drawProp(ctx, prop, camera, scale);
     }
     ctx.restore();
@@ -195,7 +198,7 @@
 
   global.HouseAmbience = Object.freeze({
     draw, drawForeground,
-    propsForRoom: roomId => roomId === 'livingRoom' ? livingProps : empty,
+    propsForRoom,
     lightsForRoom: roomId => lights[roomId] || empty
   });
 })(window);

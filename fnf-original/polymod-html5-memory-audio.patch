@@ -1,0 +1,36 @@
+diff --git a/polymod/backends/LimeBackend.hx b/polymod/backends/LimeBackend.hx
+index 43372b6..792b793 100644
+--- a/polymod/backends/LimeBackend.hx
++++ b/polymod/backends/LimeBackend.hx
+@@ -784,6 +784,23 @@ class LimeModLibrary extends LimeAssetLibrary
+     var symbol = new IdAndLibrary(id, this);
+     if (p.check(symbol.modId))
+     {
++      #if (js && html5)
++      // Browser mods live in memory; keep Lime's original asynchronous Howler loader.
++      var filePath = p.file(symbol.modId);
++      try
++      {
++        var audioBytes = p.fileSystem.getFileBytes(filePath);
++        if (audioBytes == null) return cast Future.withError('Missing web mod audio bytes: $filePath');
++        var codec:String = @:privateAccess AudioBuffer.__getCodec(audioBytes);
++        if (codec == null) return cast Future.withError('Unsupported web mod audio data: $filePath');
++        var uri = 'data:' + codec + ';base64,' + lime._internal.format.Base64.encode(audioBytes);
++        return AudioBuffer.loadFromFile(uri);
++      }
++      catch (error:Dynamic)
++      {
++        return cast Future.withError('Could not read web mod audio $filePath: $error');
++      }
++      #else
+       if (pathGroups.exists(p.file(symbol.modId)))
+       {
+         return AudioBuffer.loadFromFiles(pathGroups.get(p.file(symbol.modId)));
+@@ -792,6 +809,7 @@ class LimeModLibrary extends LimeAssetLibrary
+       {
+         return AudioBuffer.loadFromFile(getPath(p.file(symbol.modId)));
+       }
++      #end
+     }
+     else if (hasFallback)
+     {

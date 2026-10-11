@@ -1,0 +1,37 @@
+diff --git a/polymod/backends/LimeBackend.hx b/polymod/backends/LimeBackend.hx
+index 748d8f2..43372b6 100644
+--- a/polymod/backends/LimeBackend.hx
++++ b/polymod/backends/LimeBackend.hx
+@@ -731,8 +731,31 @@ class LimeModLibrary extends LimeAssetLibrary
+       // because URLs don't work with MemoryFileSystem.
+ 
+       var filePath = p.file(symbol.modId);
+-      var imageFuture = LimeAsyncHandler.loadBytesFromFileSystem(filePath, p.fileSystem).then((bytes:Bytes) -> {
++      #if (js && html5)
++      // Browser mod bytes already reside in MemoryFileSystem; only image decoding is asynchronous.
++      var bytesFuture:Future<Bytes>;
++      try
++      {
++        var imageBytes = p.fileSystem.getFileBytes(filePath);
++        if (imageBytes == null) return cast Future.withError('Missing web mod image bytes: $filePath');
++        bytesFuture = Future.withValue(imageBytes);
++      }
++      catch (error:Dynamic)
++      {
++        return cast Future.withError('Could not read web mod image $filePath: $error');
++      }
++      #else
++      var bytesFuture = LimeAsyncHandler.loadBytesFromFileSystem(filePath, p.fileSystem);
++      #end
++      var imageFuture = bytesFuture.then((bytes:Bytes) -> {
++        #if (js && html5)
++        return Image.loadFromBytes(bytes).then((image:Image) -> {
++          if (image == null) return cast Future.withError('Invalid web mod image data: $filePath');
++          return Future.withValue(image);
++        });
++        #else
+         return Image.loadFromBytes(bytes);
++        #end
+       });
+ 
+       #if html5

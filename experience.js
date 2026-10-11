@@ -13,6 +13,7 @@
   let muted = storage.get('muted') === 'true';
   let ready = false;
   let started = false;
+  let externalScreen = false;
   let tracks = [];
   let room = 'entrance';
   let roomSeconds = 0;
@@ -33,7 +34,7 @@
   }
 
   function play(kind, options) {
-    if (!started || !global.UndertaleAudio) return false;
+    if (!started || externalScreen || !global.UndertaleAudio) return false;
     return global.UndertaleAudio.play(kind, options);
   }
 
@@ -74,6 +75,7 @@
   }
 
   function playTracks() {
+    if (externalScreen) return;
     for (const track of tracks) {
       try {
         const promise = track.play();
@@ -88,6 +90,19 @@
     initializeSound();
     for (const track of tracks) track.volume = 0;
     playTracks();
+  }
+
+  function setExternalScreen(active) {
+    externalScreen = Boolean(active);
+    if (global.UndertaleAudio) global.UndertaleAudio.setPaused(externalScreen || document.hidden);
+    if (externalScreen) {
+      stopSound();
+      tracks.forEach(track => { track.pause(); track.volume = 0; });
+      if (fireGain && soundContext) fireGain.gain.setTargetAtTime(0, soundContext.currentTime, .02);
+    } else if (started && !document.hidden) {
+      playTracks();
+      if (soundContext) soundContext.resume().catch(() => {});
+    }
   }
 
   function setRoom(roomId) {
@@ -227,7 +242,7 @@
   }
 
   function tick(deltaSeconds) {
-    if (!started) return;
+    if (!started || externalScreen) return;
     const dt = Math.min(0.05, Math.max(0, deltaSeconds));
     if (document.hidden) return;
     if (global.UndertaleAudio) global.UndertaleAudio.setPaused(gameState === 'PAUSED');
@@ -329,7 +344,7 @@
     });
     syncAudioButton();
     global.addEventListener('keydown', event => {
-      if (event.repeat || !started) return;
+      if (event.repeat || !started || externalScreen) return;
       if (event.code === 'KeyM') { event.preventDefault(); toggleMute(); }
       if (event.code === 'KeyF') {
         event.preventDefault();
@@ -350,7 +365,7 @@
         if (soundContext) soundContext.suspend().catch(() => {});
       } else if (hiddenPaused) {
         hiddenPaused = false;
-        if (global.UndertaleAudio) global.UndertaleAudio.setPaused(gameState === 'PAUSED');
+        if (global.UndertaleAudio) global.UndertaleAudio.setPaused(externalScreen || gameState === 'PAUSED');
         playTracks();
         if (soundContext) soundContext.resume().catch(() => {});
       }
@@ -373,7 +388,7 @@
   }
 
   global.HouseExperience = Object.freeze({
-    boot, tick, startAudio, setRoom, openDialog, advanceDialog, closeDialog, wrapText, play,
+    boot, tick, startAudio, setRoom, setExternalScreen, openDialog, advanceDialog, closeDialog, wrapText, play,
     sound: play,
     canStart: () => ready,
     get elapsedSeconds() { return elapsed; },

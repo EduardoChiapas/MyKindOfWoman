@@ -159,7 +159,7 @@ const HOUSE_LORE = {
       text: '* Un armario alto, muy bien cuidado.\n* Las flores de encima se renuevan antes de que puedan marchitarse.'
     },
     {
-      id: 'toriel_bed', x: 151, y: 59, width: 64, height: 73,
+      id: 'toriel_bed', x: 20, y: 89, width: 64, height: 73,
       text: '* La cama está perfectamente hecha.\n* La colcha es suave y los cuadros están derechos.\n* Todo tiene el cuidado de las cosas queridas.'
     },
     {
@@ -171,8 +171,12 @@ const HOUSE_LORE = {
       text: '* El asiento conserva una ligera hendidura.\n* Aquí se han leído muchos cuentos en voz baja.'
     },
     {
+      id: 'toriel_pc', x: 133, y: 53, width: 54, height: 65, action: 'pc',
+      text: '* La PC está encendida.\n* Una tercera llave espera entre las canciones.'
+    },
+    {
       id: 'toriel_desk', x: 180, y: 141, width: 33, height: 59,
-      text: '* Papeles, libros y una taza junto a la lámpara.\n* Una lista termina con: «Comprar otra porción».\n* No hay ningún nombre después.'
+      text: '* El escritorio de lectura conserva sus libros y su lámpara.\n* Los cuentos todavía tienen su lugar.'
     }
   ],
 

@@ -1,0 +1,349 @@
+diff --git a/project.hxp b/project.hxp
+index 3742bca..3674919 100644
+--- a/project.hxp
++++ b/project.hxp
+@@ -152,7 +152,7 @@ class Project extends HXProject
+   /**
+    * Asset path globs to exclude on web platforms.
+    */
+-  static final EXCLUDE_ASSETS_WEB:Array<String> = ["*.ogg"];
++  static final EXCLUDE_ASSETS_WEB:Array<String> = ["*.mp3"];
+ 
+   /**
+    * Asset path globs to exclude on native platforms.
+@@ -176,7 +176,7 @@ class Project extends HXProject
+   /**
+    * The songs whose audio files should be embedded inside the executable.
+    */
+-  static final EMBED_SONGS_AUDIO:Array<String> = ["spaghetti"];
++  static final EMBED_SONGS_AUDIO:Array<String> = [];
+ 
+   //
+   // BUILD FLAGS
+diff --git a/source/Main.hx b/source/Main.hx
+index 8114a42..820977c 100644
+--- a/source/Main.hx
++++ b/source/Main.hx
+@@ -24,6 +24,7 @@ import openfl.net.NetStream;
+ import funkin.util.WindowUtil;
+ 
+ using funkin.util.AnsiUtil;
++using StringTools;
+ 
+ /**
+  * The main class which initializes HaxeFlixel and starts the game in its initial state.
+@@ -68,10 +69,110 @@ class Main extends Sprite
+     // You can remove this line if you want to read debug messages.
+     openfl.utils._internal.Log.level = openfl.utils._internal.Log.LogLevel.INFO;
+ 
++    #if html5
++    // Browser builds mount the bundled mod in memory before loading any game data.
++    loadBundledMod();
++    #else
++    initializeModdedGame();
++    #end
++  }
++
++  #if html5
++  function loadBundledMod():Void
++  {
++    var request = new lime.net.HTTPRequest<haxe.io.Bytes>();
++    request.timeout = 120000;
++    request.load('mods/ftbb.zip').onComplete((bytes) ->
++    {
++      try
++      {
++        funkin.modding.PolymodHandler.mountWebZip(bytes);
++        loadWebLibraries(['shared', 'songs', 'week1']);
++      }
++      catch (error:Dynamic)
++      {
++        trace('Failed to initialize the bundled mod: $error');
++        var message = 'Failed to initialize FEAT. BAD BUNNY:\n$error';
++        postWebHostMessage({type: 'fnf-original:error', message: message});
++        WindowUtil.showError('Mod Load Error', message);
++      }
++    }).onError((error) ->
++    {
++      trace('Failed to load mods/ftbb.zip: $error');
++      var message = 'Could not load mods/ftbb.zip.\n$error';
++      postWebHostMessage({type: 'fnf-original:error', message: message});
++      WindowUtil.showError('Mod Load Error', message);
++    });
++  }
++
++  function loadWebLibraries(names:Array<String>):Void
++  {
++    if (names.length == 0)
++    {
++      initializeModdedGame();
++      return;
++    }
++    var name:String = names.shift();
++    lime.utils.Assets.loadLibrary(name).onComplete((_) -> loadWebLibraries(names)).onError((error) ->
++    {
++      postWebHostMessage({type: 'fnf-original:error', message: 'Could not preload original asset library $name: $error'});
++    });
++  }
++
++  function preloadWebModImages():Void
++  {
++    // Polymod includes unknown extensions in typed lists (for example subtitle SRTs).
++    // Only browser image formats need asynchronous decoding before the original game starts.
++    var images = polymod.Polymod.listModFiles(polymod.backends.PolymodAssets.PolymodAssetType.IMAGE).filter((path) ->
++    {
++      var extension = haxe.io.Path.extension(path).toLowerCase();
++      return ['png', 'jpg', 'jpeg', 'gif', 'webp'].indexOf(extension) >= 0;
++    });
++    var remaining:Int = images.length;
++    if (remaining == 0)
++    {
++      attachGameToStage();
++      return;
++    }
++    var failed:Bool = false;
++    for (path in images)
++    {
++      var library = path.startsWith('shared/') ? 'shared:' : '';
++      lime.utils.Assets.loadImage(library + 'assets/' + path).onComplete((image) ->
++      {
++        if (failed) return;
++        if (image == null)
++        {
++          failed = true;
++          postWebHostMessage({type: 'fnf-original:error', message: 'Could not decode original mod image $path'});
++          return;
++        }
++        if (--remaining == 0) attachGameToStage();
++      }).onError((error) ->
++      {
++        if (failed) return;
++        failed = true;
++        postWebHostMessage({type: 'fnf-original:error', message: 'Could not preload original mod image $path: $error'});
++      });
++    }
++  }
++  #end
++
++  function initializeModdedGame():Void
++  {
+     // Load mods to override assets.
+     // TODO: Replace with loadEnabledMods() once the user can configure the mod list.
+     funkin.modding.PolymodHandler.loadAllMods();
+ 
++    #if html5
++    preloadWebModImages();
++    #else
++    attachGameToStage();
++    #end
++  }
++
++  function attachGameToStage():Void
++  {
+     if (stage != null)
+     {
+       init();
+@@ -82,6 +183,32 @@ class Main extends Sprite
+     }
+   }
+ 
++  #if html5
++  /**
++   * Send lifecycle messages only to the embedding page on this game's origin.
++   */
++  public static function postWebHostMessage(message:Dynamic):Void
++  {
++    var window = js.Browser.window;
++    if (window.parent != window) window.parent.postMessage(message, window.location.origin);
++  }
++
++  function initializeWebHostBridge():Void
++  {
++    js.Browser.window.addEventListener('message', (event:js.html.MessageEvent) ->
++    {
++      if (event.origin != js.Browser.window.location.origin || event.source != js.Browser.window.parent) return;
++      var message:Dynamic = event.data;
++      if (message == null || message.type != 'fnf-original:volume' || !Std.isOfType(message.volume, Float)) return;
++
++      var volume:Float = message.volume;
++      if (!Math.isFinite(volume)) return;
++      FlxG.sound.volume = Math.max(0.0, Math.min(1.0, volume));
++    });
++    postWebHostMessage({type: 'fnf-original:ready'});
++  }
++  #end
++
+   function init(?event:Event):Void
+   {
+     if (hasEventListener(Event.ADDED_TO_STAGE))
+@@ -206,6 +333,10 @@ class Main extends Sprite
+     #else
+     trace('hxcpp_debug_server is disabled! This build does not support debugging.');
+     #end
++
++    #if html5
++    initializeWebHostBridge();
++    #end
+   }
+ 
+   #if FEATURE_HAXEUI
+diff --git a/source/funkin/modding/PolymodHandler.hx b/source/funkin/modding/PolymodHandler.hx
+index 20b0ea7..f04b5cc 100644
+--- a/source/funkin/modding/PolymodHandler.hx
++++ b/source/funkin/modding/PolymodHandler.hx
+@@ -82,6 +82,25 @@ class PolymodHandler
+   // Use SysZipFileSystem on native and MemoryZipFilesystem on web.
+   static var modFileSystem:Null<ZipFileSystem> = null;
+ 
++  #if html5
++  /**
++   * Mount the bundled browser mod before scanning or loading game registries.
++   * The ZIP contains the mod's files directly, including _polymod_meta.json.
++   */
++  public static function mountWebZip(bytes:haxe.io.Bytes):Void
++  {
++    if (bytes == null || bytes.length == 0) throw 'The bundled mod ZIP is empty.';
++
++    var fileSystem = buildFileSystem();
++    fileSystem.addZipFile('ftbb.zip', bytes);
++    if (!fileSystem.exists('$MOD_FOLDER/ftbb/_polymod_meta.json'))
++    {
++      throw 'The bundled mod ZIP must contain _polymod_meta.json at its root.';
++    }
++    modFileSystem = fileSystem;
++  }
++  #end
++
+   /**
+    * If the mods folder doesn't exist, create it.
+    */
+@@ -179,7 +198,9 @@ class PolymodHandler
+ 
+       // Parse hxc files and register the scripted classes in them.
+       useScriptedClasses: true,
+-      loadScriptsAsync: #if html5 true #else false #end,
++      // Core scripts are preloaded, and the bundled mod scripts are already in RAM.
++      // Register them before InitState reads the stage, character and song registries.
++      loadScriptsAsync: false,
+     });
+ 
+     if (loadedModList == null)
+diff --git a/source/funkin/play/PlayState.hx b/source/funkin/play/PlayState.hx
+index 225608c..c4c3b02 100644
+--- a/source/funkin/play/PlayState.hx
++++ b/source/funkin/play/PlayState.hx
+@@ -403,6 +403,12 @@ class PlayState extends MusicBeatSubState
+    */
+   public var isPlayerDying:Bool = false;
+ 
++  #if html5
++  // An endSong call from a debug shortcut, abort or retry is not a completed song.
++  var webNaturalSongComplete:Bool = false;
++  var webWinSent:Bool = false;
++  #end
++
+   /**
+    * In Minimal Mode, the stage and characters are not loaded and a standard background is used.
+    */
+@@ -2635,6 +2641,11 @@ class PlayState extends MusicBeatSubState
+   {
+     startingSong = false;
+ 
++    #if html5
++    webNaturalSongComplete = false;
++    webWinSent = false;
++    #end
++
+     #if mobile
+     if (hitbox != null) hitbox.visible = true;
+     #end
+@@ -2652,7 +2663,13 @@ class PlayState extends MusicBeatSubState
+ 
+     FlxG.sound.music.onComplete = function()
+     {
+-      if (mayPauseGame) endSong(skipEndingTransition);
++      if (mayPauseGame)
++      {
++        #if html5
++        webNaturalSongComplete = true;
++        #end
++        endSong(skipEndingTransition);
++      }
+     };
+ 
+     FlxG.sound.music.pause();
+@@ -3549,6 +3566,28 @@ class PlayState extends MusicBeatSubState
+     }
+     #end
+ 
++    #if html5
++    if (webNaturalSongComplete && !webWinSent && !criticalFailure && !needsReset && !isPlayerDying
++      && health > Constants.HEALTH_MIN && !isPracticeMode && !isBotPlayMode && !isChartingMode
++      && startTimestamp == 0.0 && currentSong != null && currentSong.validScore)
++    {
++      webWinSent = true;
++      Main.postWebHostMessage({
++        type: 'fnf-original:win',
++        songId: currentSong.id,
++        stats: {
++          score: Std.int(songScore),
++          misses: Highscore.tallies.missed,
++          maxCombo: Highscore.tallies.maxCombo,
++          totalNotesHit: Highscore.tallies.totalNotesHit,
++          totalNotes: Highscore.tallies.totalNotes,
++          difficulty: currentDifficulty,
++          variation: currentVariation,
++        },
++      });
++    }
++    #end
++
+     #if FEATURE_MOBILE_ADVERTISEMENTS
+     if (AdMobUtil.PLAYING_COUNTER < AdMobUtil.MAX_BEFORE_AD) AdMobUtil.PLAYING_COUNTER++;
+     #end
+@@ -3786,6 +3825,13 @@ class PlayState extends MusicBeatSubState
+      */
+   function zoomIntoResultsScreen(isNewHighscore:Bool, ?prevScoreData:SaveScoreData):Void
+   {
++    #if html5
++    if (!isSubState)
++    {
++      moveToResultsScreen(isNewHighscore, prevScoreData);
++      return;
++    }
++    #end
+     trace('WENT TO RESULTS SCREEN!');
+ 
+     // Stop camera zooming on beat.
+@@ -3863,6 +3909,18 @@ class PlayState extends MusicBeatSubState
+      */
+   function moveToResultsScreen(isNewHighscore:Bool, ?prevScoreData:SaveScoreData):Void
+   {
++    #if html5
++    if (!isSubState)
++    {
++      // Keep the original Story Mode playlist. At its normal result boundary,
++      // return to the original week menu without the percentage animation.
++      persistentUpdate = false;
++      FlxG.sound.music?.stop();
++      vocals?.stop();
++      FlxG.switchState(() -> new funkin.ui.story.StoryMenuState(null));
++      return;
++    }
++    #end
+     var currentChart:SongDifficulty = currentChart ?? {
+       trace('ERROR: Cannot move to results screen with a null chart.');
+       return;
+diff --git a/source/funkin/util/Constants.hx b/source/funkin/util/Constants.hx
+index 853fc04..85bc859 100644
+--- a/source/funkin/util/Constants.hx
++++ b/source/funkin/util/Constants.hx
+@@ -615,7 +615,7 @@ class Constants
+   /**
+    * The file extension used when loading audio files.
+    */
+-  public static final EXT_SOUND:String = #if web 'mp3' #else 'ogg' #end;
++  public static final EXT_SOUND:String = 'ogg';
+ 
+   /**
+    * The file extension used when loading video files.

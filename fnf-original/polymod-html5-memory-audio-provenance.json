@@ -1,0 +1,16 @@
+{
+  "project": "Polymod",
+  "upstream": "https://github.com/larsiusprime/polymod",
+  "revision": "acfdc2e26722f20339a2bc0cc8cd7dd5fe0c6b5e",
+  "path": "polymod/backends/LimeBackend.hx",
+  "target": "JavaScript HTML5 mod audio only",
+  "applyAfter": "polymod-html5-memory-images.patch",
+  "reason": "The original async mod audio loader resolves a memory-only ZIP path as a physical asset ID again, yielding null or an unavailable HTTP path. Encode the unchanged original bytes with Lime’s own codec detector and Base64 encoder, then use its unchanged asynchronous AudioBuffer.loadFromFile/Howler API with a data URI.",
+  "beforeSha256": "7309489896200fb951336746e8011203192d945a14b1bdb4369ecbf2e36bf3b9",
+  "afterSha256": "0801f5158846b4fdfc91889b73431ddeb497d594e1fb3395bced09399150c684",
+  "nativeBranchChanged": false,
+  "gameplayChanged": false,
+  "modAssetsChanged": false,
+  "compiledByThisAgent": false,
+  "validation": "Static native-branch/source assertions plus existing Haxe-generated Lime codec/Base64 roundtrip checks for all nine original OGGs. Browser playback is validated by the parent task."
+}

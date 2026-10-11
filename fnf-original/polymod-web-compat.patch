@@ -1,0 +1,25 @@
+--- a/polymod/util/Util.hx
++++ b/polymod/util/Util.hx
+@@ -525,1 +525,6 @@
+-    return str.lastIndexOf(value, startIndex);
++    #if js
++    // JavaScript treats an explicit null position as zero, unlike an omitted argument.
++    return startIndex == null ? str.lastIndexOf(value) : str.lastIndexOf(value, startIndex);
++    #else
++    return str.lastIndexOf(value, startIndex);
++    #end
+@@ -653,1 +658,5 @@
+-    return str.substr(pos, len);
++    #if js
++    return len == null ? str.substr(pos) : str.substr(pos, len);
++    #else
++    return str.substr(pos, len);
++    #end
+@@ -662,1 +671,6 @@
+-    return str.substring(startIndex, endIndex);
++    #if js
++    // JavaScript treats an explicit null end as zero, rather than the string length.
++    return endIndex == null ? str.substring(startIndex) : str.substring(startIndex, endIndex);
++    #else
++    return str.substring(startIndex, endIndex);
++    #end

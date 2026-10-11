@@ -1,27 +1,5 @@
-diff --git a/project.hxp b/project.hxp
-index 3742bca..3674919 100644
---- a/project.hxp
-+++ b/project.hxp
-@@ -152,7 +152,7 @@ class Project extends HXProject
-   /**
-    * Asset path globs to exclude on web platforms.
-    */
--  static final EXCLUDE_ASSETS_WEB:Array<String> = ["*.ogg"];
-+  static final EXCLUDE_ASSETS_WEB:Array<String> = ["*.mp3"];
- 
-   /**
-    * Asset path globs to exclude on native platforms.
-@@ -176,7 +176,7 @@ class Project extends HXProject
-   /**
-    * The songs whose audio files should be embedded inside the executable.
-    */
--  static final EMBED_SONGS_AUDIO:Array<String> = ["spaghetti"];
-+  static final EMBED_SONGS_AUDIO:Array<String> = [];
- 
-   //
-   // BUILD FLAGS
 diff --git a/source/Main.hx b/source/Main.hx
-index 8114a42..820977c 100644
+index 8114a42..8ddc628 100644
 --- a/source/Main.hx
 +++ b/source/Main.hx
 @@ -24,6 +24,7 @@ import openfl.net.NetStream;
@@ -32,7 +10,7 @@ index 8114a42..820977c 100644
  
  /**
   * The main class which initializes HaxeFlixel and starts the game in its initial state.
-@@ -68,10 +69,110 @@ class Main extends Sprite
+@@ -68,10 +69,141 @@ class Main extends Sprite
      // You can remove this line if you want to read debug messages.
      openfl.utils._internal.Log.level = openfl.utils._internal.Log.LogLevel.INFO;
  
@@ -47,26 +25,37 @@ index 8114a42..820977c 100644
 +  #if html5
 +  function loadBundledMod():Void
 +  {
++    loadWebModBundle(['ftbb', 'dateweek']);
++  }
++
++  function loadWebModBundle(modIds:Array<String>):Void
++  {
++    if (modIds.length == 0)
++    {
++      loadWebLibraries(['shared', 'songs', 'week1']);
++      return;
++    }
++    var modId:String = modIds.shift();
 +    var request = new lime.net.HTTPRequest<haxe.io.Bytes>();
 +    request.timeout = 120000;
-+    request.load('mods/ftbb.zip').onComplete((bytes) ->
++    request.load('mods/$modId.zip').onComplete((bytes) ->
 +    {
 +      try
 +      {
-+        funkin.modding.PolymodHandler.mountWebZip(bytes);
-+        loadWebLibraries(['shared', 'songs', 'week1']);
++        funkin.modding.PolymodHandler.mountWebZip(bytes, modId);
++        loadWebModBundle(modIds);
 +      }
 +      catch (error:Dynamic)
 +      {
 +        trace('Failed to initialize the bundled mod: $error');
-+        var message = 'Failed to initialize FEAT. BAD BUNNY:\n$error';
++        var message = 'Failed to initialize $modId:\n$error';
 +        postWebHostMessage({type: 'fnf-original:error', message: message});
 +        WindowUtil.showError('Mod Load Error', message);
 +      }
 +    }).onError((error) ->
 +    {
-+      trace('Failed to load mods/ftbb.zip: $error');
-+      var message = 'Could not load mods/ftbb.zip.\n$error';
++      trace('Failed to load mods/$modId.zip: $error');
++      var message = 'Could not load mods/$modId.zip.\n$error';
 +      postWebHostMessage({type: 'fnf-original:error', message: message});
 +      WindowUtil.showError('Mod Load Error', message);
 +    });
@@ -98,7 +87,7 @@ index 8114a42..820977c 100644
 +    var remaining:Int = images.length;
 +    if (remaining == 0)
 +    {
-+      attachGameToStage();
++      preloadWebDateAudio();
 +      return;
 +    }
 +    var failed:Bool = false;
@@ -114,12 +103,32 @@ index 8114a42..820977c 100644
 +          postWebHostMessage({type: 'fnf-original:error', message: 'Could not decode original mod image $path'});
 +          return;
 +        }
-+        if (--remaining == 0) attachGameToStage();
++        if (--remaining == 0) preloadWebDateAudio();
 +      }).onError((error) ->
 +      {
 +        if (failed) return;
 +        failed = true;
 +        postWebHostMessage({type: 'fnf-original:error', message: 'Could not preload original mod image $path: $error'});
++      });
++    }
++  }
++
++  function preloadWebDateAudio():Void
++  {
++    // Prepare the original death audio through OpenFL's normal async loader.
++    var paths:Array<String> = [funkin.Paths.music('gameplay/gameover/gameOver-dateweek'), funkin.Paths.music('gameplay/gameover/gameOverEnd-dateweek'),
++      funkin.Paths.sound('dateweek-explosion')];
++    var remaining = paths.length;
++    var failed = false;
++    for (path in paths)
++    {
++      var future = path.indexOf('/music/') >= 0 ? openfl.utils.Assets.loadMusic(path) : openfl.utils.Assets.loadSound(path);
++      future.onComplete(sound -> {
++        if (!failed && --remaining == 0) attachGameToStage();
++      }).onError(error -> {
++        if (failed) return;
++        failed = true;
++        postWebHostMessage({type:'fnf-original:error', message:'Could not decode original Date Week audio: ' + path + ': ' + error});
 +      });
 +    }
 +  }
@@ -143,7 +152,7 @@ index 8114a42..820977c 100644
      if (stage != null)
      {
        init();
-@@ -82,6 +183,32 @@ class Main extends Sprite
+@@ -82,6 +214,32 @@ class Main extends Sprite
      }
    }
  
@@ -176,7 +185,7 @@ index 8114a42..820977c 100644
    function init(?event:Event):Void
    {
      if (hasEventListener(Event.ADDED_TO_STAGE))
-@@ -206,6 +333,10 @@ class Main extends Sprite
+@@ -206,6 +364,10 @@ class Main extends Sprite
      #else
      trace('hxcpp_debug_server is disabled! This build does not support debugging.');
      #end
@@ -187,8 +196,42 @@ index 8114a42..820977c 100644
    }
  
    #if FEATURE_HAXEUI
+diff --git a/source/funkin/data/stage/StageRegistry.hx b/source/funkin/data/stage/StageRegistry.hx
+index 3fd913a..a6871da 100644
+--- a/source/funkin/data/stage/StageRegistry.hx
++++ b/source/funkin/data/stage/StageRegistry.hx
+@@ -21,6 +21,13 @@ class StageRegistry extends BaseRegistry<Stage, StageData, StageEntryParams> imp
+   {
+     super('STAGE', 'stages', STAGE_DATA_VERSION_RULE);
+   }
++
++  override function createEntry(id:String):Null<Stage>
++  {
++    if (id == 'date-whitroll' || id == 'date-perfume' || id == 'date-heartbass')
++      return new funkin.mods.dateweek.DateStage(id);
++    return super.createEntry(id);
++  }
+ }
+ 
+ typedef StageEntryParams =
+diff --git a/source/funkin/data/story/level/LevelRegistry.hx b/source/funkin/data/story/level/LevelRegistry.hx
+index 3d69609..9e3bff7 100644
+--- a/source/funkin/data/story/level/LevelRegistry.hx
++++ b/source/funkin/data/story/level/LevelRegistry.hx
+@@ -53,6 +53,11 @@ class LevelRegistry extends BaseRegistry<Level, LevelData, LevelEntryParams> imp
+   {
+     var result:Array<String> = listEntryIds();
+     result.sort(SortUtil.defaultsThenAlphabetically.bind(listBaseGameEntryIds()));
++    // Requested story catalog order, retaining any future additional levels.
++    var first = ['tutorial', 'dateweek', 'ftbb'];
++    var ordered = first.filter(id -> result.contains(id));
++    for (id in result) if (!first.contains(id)) ordered.push(id);
++    result = ordered;
+     return result;
+   }
+ }
 diff --git a/source/funkin/modding/PolymodHandler.hx b/source/funkin/modding/PolymodHandler.hx
-index 20b0ea7..f04b5cc 100644
+index 20b0ea7..250e2dc 100644
 --- a/source/funkin/modding/PolymodHandler.hx
 +++ b/source/funkin/modding/PolymodHandler.hx
 @@ -82,6 +82,25 @@ class PolymodHandler
@@ -200,13 +243,13 @@ index 20b0ea7..f04b5cc 100644
 +   * Mount the bundled browser mod before scanning or loading game registries.
 +   * The ZIP contains the mod's files directly, including _polymod_meta.json.
 +   */
-+  public static function mountWebZip(bytes:haxe.io.Bytes):Void
++  public static function mountWebZip(bytes:haxe.io.Bytes, modId:String = 'ftbb'):Void
 +  {
 +    if (bytes == null || bytes.length == 0) throw 'The bundled mod ZIP is empty.';
 +
-+    var fileSystem = buildFileSystem();
-+    fileSystem.addZipFile('ftbb.zip', bytes);
-+    if (!fileSystem.exists('$MOD_FOLDER/ftbb/_polymod_meta.json'))
++    var fileSystem = modFileSystem ?? buildFileSystem();
++    fileSystem.addZipFile('$modId.zip', bytes);
++    if (!fileSystem.exists('$MOD_FOLDER/$modId/_polymod_meta.json'))
 +    {
 +      throw 'The bundled mod ZIP must contain _polymod_meta.json at its root.';
 +    }
@@ -229,7 +272,7 @@ index 20b0ea7..f04b5cc 100644
  
      if (loadedModList == null)
 diff --git a/source/funkin/play/PlayState.hx b/source/funkin/play/PlayState.hx
-index 225608c..c4c3b02 100644
+index 225608c..7ffb1d3 100644
 --- a/source/funkin/play/PlayState.hx
 +++ b/source/funkin/play/PlayState.hx
 @@ -403,6 +403,12 @@ class PlayState extends MusicBeatSubState
@@ -245,7 +288,22 @@ index 225608c..c4c3b02 100644
    /**
     * In Minimal Mode, the stage and characters are not loaded and a standard background is used.
     */
-@@ -2635,6 +2641,11 @@ class PlayState extends MusicBeatSubState
+@@ -1460,10 +1466,12 @@ class PlayState extends MusicBeatSubState
+     isGameOverState = true;
+     shouldSubstatePause = true;
+     // Transition to the game over substate.
+-    var gameOverSubState = new GameOverSubState({
++    var gameOverParams:funkin.play.GameOverSubState.GameOverParams = {
+       isChartingMode: isChartingMode,
+       transparent: persistentDraw
+-    });
++    };
++    var gameOverSubState:GameOverSubState = currentSong.id.startsWith('date-')
++      ? new funkin.mods.dateweek.DateGameOver(gameOverParams) : new GameOverSubState(gameOverParams);
+     FlxTransitionableState.skipNextTransIn = true;
+     FlxTransitionableState.skipNextTransOut = true;
+     openSubState(gameOverSubState);
+@@ -2635,6 +2643,11 @@ class PlayState extends MusicBeatSubState
    {
      startingSong = false;
  
@@ -257,7 +315,7 @@ index 225608c..c4c3b02 100644
      #if mobile
      if (hitbox != null) hitbox.visible = true;
      #end
-@@ -2652,7 +2663,13 @@ class PlayState extends MusicBeatSubState
+@@ -2652,7 +2665,13 @@ class PlayState extends MusicBeatSubState
  
      FlxG.sound.music.onComplete = function()
      {
@@ -272,7 +330,7 @@ index 225608c..c4c3b02 100644
      };
  
      FlxG.sound.music.pause();
-@@ -3549,6 +3566,28 @@ class PlayState extends MusicBeatSubState
+@@ -3549,6 +3568,28 @@ class PlayState extends MusicBeatSubState
      }
      #end
  
@@ -301,7 +359,7 @@ index 225608c..c4c3b02 100644
      #if FEATURE_MOBILE_ADVERTISEMENTS
      if (AdMobUtil.PLAYING_COUNTER < AdMobUtil.MAX_BEFORE_AD) AdMobUtil.PLAYING_COUNTER++;
      #end
-@@ -3786,6 +3825,13 @@ class PlayState extends MusicBeatSubState
+@@ -3786,6 +3827,13 @@ class PlayState extends MusicBeatSubState
       */
    function zoomIntoResultsScreen(isNewHighscore:Bool, ?prevScoreData:SaveScoreData):Void
    {
@@ -315,7 +373,7 @@ index 225608c..c4c3b02 100644
      trace('WENT TO RESULTS SCREEN!');
  
      // Stop camera zooming on beat.
-@@ -3863,6 +3909,18 @@ class PlayState extends MusicBeatSubState
+@@ -3863,6 +3911,18 @@ class PlayState extends MusicBeatSubState
       */
    function moveToResultsScreen(isNewHighscore:Bool, ?prevScoreData:SaveScoreData):Void
    {
@@ -334,6 +392,58 @@ index 225608c..c4c3b02 100644
      var currentChart:SongDifficulty = currentChart ?? {
        trace('ERROR: Cannot move to results screen with a null chart.');
        return;
+diff --git a/source/funkin/play/character/BaseCharacter.hx b/source/funkin/play/character/BaseCharacter.hx
+index 1e9f869..04efd33 100644
+--- a/source/funkin/play/character/BaseCharacter.hx
++++ b/source/funkin/play/character/BaseCharacter.hx
+@@ -478,6 +478,8 @@ class BaseCharacter extends Bopper
+ 
+   override function dance(force:Bool = false):Void
+   {
++    // CW_Date keeps the final Heartbass dance pose instead of returning to the chair.
++    if (isDateDanceActive()) return;
+     // Prevent default dancing behavior.
+     if (isDead) return;
+ 
+@@ -605,6 +607,7 @@ class BaseCharacter extends Bopper
+   override public function onNoteMiss(event:NoteScriptEvent)
+   {
+     super.onNoteMiss(event);
++    if (isDateDanceActive()) return;
+ 
+     // If another script cancelled the event, don't do anything.
+     if (event.eventCanceled) return;
+@@ -628,6 +631,7 @@ class BaseCharacter extends Bopper
+   override public function onNoteHoldDrop(event:HoldNoteScriptEvent)
+   {
+     super.onNoteHoldDrop(event);
++    if (isDateDanceActive()) return;
+ 
+     // If another script cancelled the event, don't do anything.
+     if (event.eventCanceled) return;
+@@ -686,6 +690,7 @@ class BaseCharacter extends Bopper
+   override public function onNoteGhostMiss(event:GhostMissNoteScriptEvent):Void
+   {
+     super.onNoteGhostMiss(event);
++    if (isDateDanceActive()) return;
+ 
+     if (event.eventCanceled || !event.playAnim)
+     {
+@@ -711,6 +716,14 @@ class BaseCharacter extends Bopper
+    * @param miss If true, play the miss animation instead of the sing animation.
+    * @param suffix A suffix to append to the animation name, like `alt`.
+    */
++  function isDateDanceActive():Bool
++  {
++    if (characterId != 'date-whitty' && characterId != 'date-carol') return false;
++    var stage = PlayState.instance?.currentStage;
++    return Std.isOfType(stage, funkin.mods.dateweek.DateStage)
++      && (cast stage:funkin.mods.dateweek.DateStage).dancing;
++  }
++
+   public function playSingAnimation(dir:NoteDirection, miss:Bool = false, ?suffix:String = ''):Void
+   {
+     var anim:String = 'sing${dir.nameUpper}${miss ? 'miss' : ''}${suffix != '' ? '-${suffix}' : ''}';
 diff --git a/source/funkin/util/Constants.hx b/source/funkin/util/Constants.hx
 index 853fc04..85bc859 100644
 --- a/source/funkin/util/Constants.hx
@@ -347,3 +457,769 @@ index 853fc04..85bc859 100644
  
    /**
     * The file extension used when loading video files.
+--- /dev/null
++++ b/source/funkin/mods/dateweek/DateAltNoteKind.hx
+@@ -0,0 +1,3 @@
++package funkin.mods.dateweek;
++import funkin.play.notes.notekind.NoteKind;
++class DateAltNoteKind extends NoteKind { public function new(){super("date-alt","Original Date Week alt",null,[],false,"alt");}}
+--- /dev/null
++++ b/source/funkin/mods/dateweek/DateDanceNoteKind.hx
+@@ -0,0 +1,3 @@
++package funkin.mods.dateweek;
++import funkin.play.notes.notekind.NoteKind;
++class DateDanceNoteKind extends NoteKind { public function new(){super("date-dance","Original Date Week dance",null,[],false,"dance");}}
+--- /dev/null
++++ b/source/funkin/mods/dateweek/DateEnding.hx
+@@ -0,0 +1,43 @@
++package funkin.mods.dateweek;
++import funkin.ui.MusicBeatState;
++import funkin.Paths;
++import flixel.*;
++/**
++ * ...
++ * @author bbpanzu
++ */
++class DateEnding extends MusicBeatState
++{
++
++	public function new() 
++	{
++		super();
++		bgColor = 0xFF4D1B30;
++	}
++	
++	override function create() 
++	{
++		super.create();
++		
++		
++		FlxG.sound.playMusic(Paths.music("dateweek-ending"));
++		
++		var bg:FlxSprite = new FlxSprite().loadGraphic(Paths.image("dateweek/ending"));
++		add(bg);
++		
++	}
++	
++	
++	override function update(elapsed:Float) 
++	{
++		super.update(elapsed);
++		
++		if (controls.ACCEPT){
++			FlxG.switchState(() -> new funkin.ui.story.StoryMenuState(null));
++		}
++		
++	}
++	
++	
++	
++}--- /dev/null
++++ b/source/funkin/mods/dateweek/DateGameOver.hx
+@@ -0,0 +1,28 @@
++package funkin.mods.dateweek;
++import funkin.play.GameOverSubState;
++import funkin.play.GameOverSubState.GameOverParams;
++import funkin.Paths;
++import flixel.FlxSprite;
++import flixel.FlxG;
++import flixel.util.FlxColor;
++// Original author's BOOM frames, explosion sound and camera effect.
++class DateGameOver extends GameOverSubState {
++  var boom:FlxSprite;
++  var exploded:Bool=false;
++  var shake:Float=0.03;
++  public function new(params:GameOverParams){super(params);}
++  override public function create():Void{
++    super.create();
++    boom=new FlxSprite();boom.frames=Paths.getSparrowAtlas("dateweek/boom");
++    boom.scrollFactor.set();boom.animation.addByPrefix("boom","Symbol 79",24,false);
++    boom.antialiasing=true;boom.visible=false;add(boom);
++  }
++  override function update(elapsed:Float):Void{
++    super.update(elapsed);
++    if(!exploded&&boyfriend!=null&&boyfriend.getCurrentAnimation().startsWith('deathLoop')){
++      exploded=true;gameOverMusic?.stop();boom.visible=true;boom.animation.play("boom");
++      FlxG.sound.play(Paths.sound("dateweek-explosion"));FlxG.camera.fade(FlxColor.WHITE,2,true);
++    }
++    if(!isEnding&&shake>0){FlxG.camera.shake(shake,3);shake-=0.048*elapsed;}
++  }
++}
+--- /dev/null
++++ b/source/funkin/mods/dateweek/DateStage.hx
+@@ -0,0 +1,537 @@
++package funkin.mods.dateweek;
++// Adapted from bbpanzu/CW_Date, pinned commit in date-week-provenance.json.
++// Original scene coordinates, animation frames, beat events and character cameos.
++import flixel.FlxG;
++import flixel.FlxSprite;
++import flixel.group.FlxSpriteGroup;
++import flixel.tweens.FlxTween;
++import flixel.tweens.FlxEase;
++import flixel.util.FlxColor;
++import flixel.graphics.frames.FlxAtlasFrames;
++import animate.FlxAnimateFrames;
++import funkin.Paths;
++import funkin.Conductor;
++import funkin.play.PlayState;
++import funkin.play.PlayStatePlaylist;
++import funkin.play.stage.Stage;
++import funkin.play.GameOverSubState;
++import funkin.modding.events.ScriptEvent;
++
++class DateStage extends Stage {
++  var dateSong:String;
++  var defaultCamZoom:Float=1;
++  var layer:Int=0;
++  var film:FlxSprite;
++  var title:FlxSprite;
++  var characters_walking:FlxSprite;
++  var characters_walking2:FlxSprite;
++  var sky_heartbass:FlxSprite;
++  var farris_wheel:FlxSprite;
++  var farris_seat:FlxSpriteGroup;
++  var plane:FlxSprite;
++  var backboppers:FlxSprite;
++  var frontboppers:FlxSprite;
++  var table:FlxSprite;
++  var updictionary:FlxSprite;
++  var heartsThings:FlxSpriteGroup;
++  public var dancing(default,null):Bool=false;
++  var bfy:Float=-5.75;
++  var gfy:Float=-5;
++  var curBeat:Int=0;
++  var moveNOWWW:Bool=true;
++  var stopSTOPITSTOPITNOW:Int=270;
++  var charswhohavewalked:Array<String>=[];
++  var charswhohavewalked2:Array<String>=[];
++  var introEnds:Float=0;
++  var introFinished:Bool=false;
++  var playerTurn:Bool=false;
++  var storyDifficulty(get,never):Int;
++  var isStoryMode(get,never):Bool;
++  function get_storyDifficulty():Int{return PlayState.instance.currentDifficulty=='easy'?0:PlayState.instance.currentDifficulty=='hard'?2:1;}
++  function get_isStoryMode():Bool{return PlayStatePlaylist.isStoryMode;}
++  var chars:Array<String>=["daliaayanna", "sarvruv", "koukapi","selsunday","macybob","tabifunsize","solnik","garcanchor","susyukichi","eddsworld","silly","jadssmokey","cvalkolsan","violetruria","bobbosip","jojo","dionnekaya"];
++  var chars2:Array<String>=["hexabigail","mikutricky", "nenedarnell" ,"pompomstatic","lnosans","unified","starlight","weedbud","natecre","kermojordo"];
++  public function new(id:String){super(id);dateSong=id.substr(5);}
++  function addDate(sprite:FlxSprite):FlxSprite{sprite.zIndex=layer++;return add(sprite);}
++  function dateAtlas(path:String):FlxAtlasFrames{
++    if(path=='dateweek/characters_walking'){
++      return cast FlxAnimateFrames.combineAtlas([Paths.getSparrowAtlas("dateweek/characters_walking-0"),Paths.getSparrowAtlas("dateweek/characters_walking-1")]);
++    }
++    return Paths.getSparrowAtlas(path);
++  }
++  override public function onCreate(event:ScriptEvent):Void{
++    super.onCreate(event);
++    layer=0;dancing=false;introFinished=false;moveNOWWW=true;
++    heartsThings=new FlxSpriteGroup();farris_seat=new FlxSpriteGroup();
++    updictionary=new FlxSprite(1380,171);film=new FlxSprite();title=new FlxSprite();
++
++					
++					defaultCamZoom = 1;
++					
++						switch (dateSong){
++							case  "perfume":
++							defaultCamZoom = 1;
++								
++								var citycolor:FlxSprite = new FlxSprite( -125, -150.75);
++								citycolor.loadGraphic(Paths.image("dateweek/citycolor"));
++								citycolor.scrollFactor.set(0,0.9);
++								citycolor.active = false;
++								
++								
++								var cityfarbg:FlxSprite = new FlxSprite(525, 132.3);
++								cityfarbg.loadGraphic(Paths.image("dateweek/cityfarbg"));
++								cityfarbg.scrollFactor.set(0.2,0.4);
++								cityfarbg.active = false;
++								cityfarbg.antialiasing = true;
++								
++								
++								var citybg:FlxSprite = new FlxSprite( -182.8, -77.75);
++								citybg.loadGraphic(Paths.image("dateweek/citybg"));
++								citybg.scrollFactor.set(0.4,0.4);
++								citybg.active = false;
++								citybg.antialiasing = true;
++								
++								
++								characters_walking2 = new FlxSprite( 22.15, 60.05);
++								characters_walking2.frames = dateAtlas("dateweek/characters_walking2");
++								characters_walking2.scrollFactor.set(0.85,0.85);
++								characters_walking2.active = true;
++								characters_walking2.antialiasing = true;
++								
++								for(i in 0...chars2.length){
++									characters_walking2.animation.addByIndices(chars2[i], "characters_walking_bg", [0+i*12, 1+i*12, 2+i*12, 3+i*12, 4+i*12, 5+i*12, 6+i*12, 7+i*12, 8+i*12, 9+i*12, 10+i*12, 11+i*12], "", 24, true);
++								}
++								
++								
++								characters_walking2.animation.play(chars2[FlxG.random.int(0,chars2.length-1)]);
++								initBGChars();
++								
++								var blackshit:FlxSprite = new FlxSprite(0, -1174.35).makeGraphic(1280,400,FlxColor.BLACK);
++								blackshit.active = false;
++								blackshit.scrollFactor.set(0,1);
++								
++								var wallbg:FlxSprite = new FlxSprite(-208.05,-774.35).loadGraphic(Paths.image("dateweek/wallbg"));
++								wallbg.active = false;
++								wallbg.antialiasing = true;
++								addDate(citycolor);
++								addDate(cityfarbg);
++								addDate(citybg);
++								if(true)addDate(characters_walking2);
++								if(true)addDate(characters_walking);
++								addDate(heartsThings);
++								addDate(wallbg);
++							
++							case "whitroll":
++								defaultCamZoom = 1;
++								var sky_bg:FlxSprite = new FlxSprite(-21,-236);
++								sky_bg.loadGraphic(Paths.image("dateweek/sky_bg"));
++								sky_bg.scrollFactor.set(0.1,0.1);
++								sky_bg.active = false;
++								
++								var skyscrapers:FlxSprite = new FlxSprite(-122,68);
++								skyscrapers.loadGraphic(Paths.image("dateweek/skyscrapers"));
++								skyscrapers.scrollFactor.set(0.3,0.3);
++								skyscrapers.active = false;
++								
++								var balc:FlxSprite = new FlxSprite(-248,305);
++								balc.loadGraphic(Paths.image("dateweek/balc"));
++								balc.scrollFactor.set(0.9,0.9);
++								balc.active = false;
++								
++								addDate(sky_bg);
++								addDate(skyscrapers);
++								addDate(heartsThings);
++								addDate(balc);
++							
++							case "heartbass":
++								defaultCamZoom = 1.4;
++								updictionary.frames = dateAtlas("dateweek/updicksucker");
++								updictionary.animation.addByPrefix("updiploma", "updimitri", 24, false);
++								updictionary.scrollFactor.set(0.8, 0.8);
++								updictionary.antialiasing = true;
++								sky_heartbass = new FlxSprite(-12,-10);
++								sky_heartbass.frames = dateAtlas("dateweek/sky_heartbass");
++								sky_heartbass.animation.addByPrefix("boom", "sky_heartbass", 24, false );
++								sky_heartbass.animation.play("boom");
++								sky_heartbass.antialiasing = true;
++								sky_heartbass.scrollFactor.set(0.1,0.1);
++								
++								var bg_hb:FlxSprite = new FlxSprite(-185.5,220);
++								bg_hb.loadGraphic(Paths.image("dateweek/bg_hb"));
++								bg_hb.scrollFactor.set(0.2, 0.2);
++								bg_hb.active = false;
++								bg_hb.antialiasing = true;
++								
++								plane = new FlxSprite(1600,96.3);
++								plane.loadGraphic(Paths.image("dateweek/plane"));
++								plane.scrollFactor.set(0.2, 0.2);
++								plane.active = false;
++								plane.antialiasing = true;
++								
++								var midg:FlxSprite = new FlxSprite(-20.5,120.1);
++								midg.loadGraphic(Paths.image("dateweek/midg"));
++								midg.scrollFactor.set(0.5,0.5);
++								midg.active = false;
++								midg.antialiasing = true;
++								
++								farris_wheel = new FlxSprite(6.75,-66.4);
++								farris_wheel.frames = dateAtlas("dateweek/farris_wheel");
++								farris_wheel.animation.addByIndices("thing1", "farris_wheel",[0],"", 0, false );
++								farris_wheel.animation.addByIndices("thing2", "farris_wheel",[1],"", 0, false );
++								farris_wheel.animation.addByIndices("thing3", "farris_wheel",[2],"", 0, false );
++								farris_wheel.animation.addByIndices("thing4", "farris_wheel",[3],"", 0, false );
++								farris_wheel.animation.play("thing1");
++								farris_wheel.antialiasing = true;
++								farris_wheel.scrollFactor.set(0.6, 0.6);
++								
++									farris_seat.scrollFactor.set(0.6, 0.6);
++								for (i in 0...24){
++									var fs = new FlxSprite(225.85,371.1);
++									fs.loadGraphic(Paths.image("dateweek/farris_seat"));
++									fs.active = false;
++									fs.antialiasing = true;
++									farris_seat.add(fs);
++								}
++								var fair_gate:FlxSprite = new FlxSprite(-335.3,-444.8);
++								fair_gate.loadGraphic(Paths.image("dateweek/fair_gate"));
++								fair_gate.scrollFactor.set(0.95, 0.95);
++								fair_gate.antialiasing = true;
++								
++								var chairs:FlxSprite = new FlxSprite(286.25, 351.15);
++								var l = "";
++								if (storyDifficulty == 0) l = " copy";
++								chairs.loadGraphic(Paths.image("dateweek/chairs"+l));
++								chairs.antialiasing = true;
++								
++								backboppers = new FlxSprite( 41.45, -169.45);
++								backboppers.loadGraphic(Paths.image("dateweek/backboppers"));
++								backboppers.scrollFactor.set(0.9, 0.9);
++								backboppers.antialiasing = true;
++								
++								frontboppers = new FlxSprite( -54.65, -59.55);
++								frontboppers.loadGraphic(Paths.image("dateweek/frontboppers"));
++								frontboppers.scrollFactor.set(0.93, 0.93);
++								frontboppers.antialiasing = true;
++								
++								
++								table = new FlxSprite(409,475.25);
++								table.loadGraphic(Paths.image("dateweek/table"));
++								table.active = false;
++								table.visible = false;
++								table.antialiasing = true;
++								
++								
++								initBGChars();
++								
++								
++								
++								addDate(sky_heartbass);
++								addDate(bg_hb);
++								addDate(midg);
++								addDate(plane);
++								addDate(farris_wheel);
++								addDate(farris_seat);
++								addDate(updictionary);
++								
++								if(true)addDate(characters_walking);
++								characters_walking.y = -10;
++								
++								
++								addDate(backboppers);
++								addDate(frontboppers);
++								
++								addDate(heartsThings);
++								addDate(fair_gate);
++								addDate(chairs);
++								addDate(table);
++								
++								
++								backboppers.y = frontboppers.y = 624;
++								backboppers.visible = false;
++								frontboppers.y = frontboppers.y = 624;
++								frontboppers.visible = false;
++							
++						}
++						
++								film.frames = dateAtlas("dateweek/film");
++								film.animation.addByPrefix("idle", "film", 24);
++								film.antialiasing = true;
++								film.screenCenter();
++								film.animation.play("idle");
++								film.scrollFactor.set();
++								title.frames = dateAtlas("dateweek/title");
++								title.animation.addByIndices("whitroll", "title", [0,1],"", 12);
++								title.animation.addByIndices("perfume", "title", [2,3],"", 12);
++								title.animation.addByIndices("heartbass", "title", [4,5],"", 12);
++								title.antialiasing = true;
++								title.screenCenter();
++								title.animation.play(dateSong);
++								title.scrollFactor.set();
++								if (!isStoryMode){
++									film.alpha = 0;
++									title.alpha = 0;
++								}
++								addDate(film);
++								addDate(title);
++				
++    layer=501;
++var shade:FlxSprite = new FlxSprite(-451.05,-560.15).loadGraphic(Paths.image("dateweek/shade"));
++					shade.scrollFactor.set();
++					shade.active = false;
++					shade.blend = "multiply";
++					
++					
++					var light:FlxSprite = new FlxSprite(155.05,-282.9).loadGraphic(Paths.image("dateweek/light"));
++					light.active = false;
++					light.antialiasing = true;
++					light.blend = "add";
++					light.alpha = 0.53;
++					
++					
++					var deco:FlxSprite = new FlxSprite(-176.95,-28).loadGraphic(Paths.image("dateweek/deco"));
++					deco.scrollFactor.set(1.5,1.5);
++					deco.active = false;
++					deco.antialiasing = true;
++					
++					addDate(shade);
++					addDate(light);
++					addDate(deco);
++    // The film/title were screen overlays in the author's original PlayState.
++    remove(film);remove(title);
++    film.zIndex=10000;title.zIndex=10001;
++    film.cameras=[PlayState.instance.camHUD];title.cameras=film.cameras;
++    PlayState.instance.add(film);PlayState.instance.add(title);
++    refresh();
++  }
++  public function initBGChars():Void{
++		
++								characters_walking = new FlxSprite( 820, -60);
++								characters_walking.frames = dateAtlas("dateweek/characters_walking");
++								characters_walking.scrollFactor.set(0.9,0.9);
++								characters_walking.active = true;
++								characters_walking.antialiasing = true;
++								
++								
++								for(i in 0...chars.length){
++									characters_walking.animation.addByIndices(chars[i], "characters_walking", [0+i*12, 1+i*12, 2+i*12, 3+i*12, 4+i*12, 5+i*12, 6+i*12, 7+i*12, 8+i*12, 9+i*12, 10+i*12, 11+i*12], "", 24, true);
++								}
++								characters_walking.animation.addByIndices("dionnekaya", "characters_walking", [192,193,194,195,196,197,198,199,200,201,202,203], "", 24, true);
++								
++								characters_walking.animation.play(chars[FlxG.random.int(0, chars.length-1)]);
++								
++	}
++  override public function onCountdownStart(event:CountdownScriptEvent):Void{
++    event.cancel();
++    var state=PlayState.instance;
++    var bf=getBoyfriend();var dad=getDad();
++    bf.setPosition(409,-5.75);bf.originalPosition.set(bf.x,bf.y);bf.resetCameraFocusPoint();
++    dad.setPosition(84.05,-5);dad.originalPosition.set(dad.x,dad.y);dad.resetCameraFocusPoint();
++    // Reuse the author's animated health icons and original explosion frames.
++    var icons=[state.iconP1,state.iconP2];
++    for(i in 0...icons.length){
++      var icon=icons[i];var first=i==0?5:0;
++      icon.frames=Paths.getSparrowAtlas('dateweek/cw_icon');icon.flipX=false;
++      icon.animation.addByIndices('idle','cw_icon',[first],'',0,false);
++      var boomFrames=[first+1,first+2,first+3,first+4];
++      for(j in 0...37)boomFrames.push(first+4);
++      icon.animation.addByIndices('winning','cw_icon',boomFrames,'',12,false);
++      icon.animation.addByIndices('losing','cw_icon',boomFrames,'',12,false);
++      icon.animation.play('idle',true);icon.snapToTargetSize();
++    }
++    GameOverSubState.musicSuffix='-dateweek';
++    defaultCamZoom=dateSong=='heartbass'?1.4:1;state.currentCameraZoom=defaultCamZoom;
++    film.alpha=title.alpha=isStoryMode?1:0;
++    introEnds=isStoryMode?Conductor.instance.beatLengthMs*5-500:0;
++    introFinished=!isStoryMode;
++    state.isInCutscene=false;state.isInCountdown=true;state.camHUD.visible=true;
++    Conductor.instance.update(state.startTimestamp-(isStoryMode?500:0));
++    if(isStoryMode){state.cameraFollowPoint.setPosition(dad.getMidpoint().x+100,-900);state.camGame.focusOn(state.cameraFollowPoint.getPosition());}
++    else{state.cameraFollowPoint.setPosition(dad.cameraFocusPoint.x,dad.cameraFocusPoint.y);state.camGame.focusOn(state.cameraFollowPoint.getPosition());}
++  }
++  override public function onStepHit(event:SongTimeScriptEvent):Void{
++    curBeat=event.beat;
++    if(curBeat<0)return;
++switch(dateSong){
++				case "perfume":
++					
++					
++					if (curBeat > 135){
++						getBoyfriend().idleSuffix = "-alt";
++						if(true)heartsThings.add(new HeartThingy(FlxG.random.int(0, 1280),500,FlxG.random.float(0.8, 1.2)));
++					}
++				case "whitroll":
++						
++					if (curBeat > 135){
++						getBoyfriend().idleSuffix = "-alt";
++						if(true)heartsThings.add(new HeartThingy(FlxG.random.int(0, 1280),700,FlxG.random.float(1.3, 1.5)));
++					}
++				case "heartbass":
++					if (curBeat > 200 && curBeat < 205 || curBeat > 232 && curBeat < 235 || curBeat > 360 && curBeat < 420 ){
++						
++						if (!dancing)getBoyfriend().idleSuffix = "-alt";
++						if(true && curBeat < 360)heartsThings.add(new HeartThingy(FlxG.random.int(0, 1280),650,FlxG.random.float(1.8,2.4)));
++					}
++					
++			}
++  }
++  override public function onSongEvent(event:funkin.modding.events.ScriptEvent.SongEventScriptEvent):Void{
++    if(event.eventData.eventKind=='FocusCamera')playerTurn=event.eventData.getInt('char')==0;
++  }
++  override public function onBeatHit(event:SongTimeScriptEvent):Void{
++    curBeat=event.beat;
++    if(curBeat<0)return;
++if (dateSong == "heartbass"){
++			if(true)sky_heartbass.animation.play("boom", true);
++			if(true)farris_wheel.animation.play("thing" + FlxG.random.int(1, 4));
++			if (curBeat == 302){
++				if (true){
++					updictionary.x = 1280;
++					updictionary.animation.play("updiploma");
++					FlxTween.tween(updictionary, {x: -80}, 12); 
++					
++					FlxTween.tween(this, {defaultCamZoom:1}, 6);
++				}
++			}
++		}
++if (dateSong == 'heartbass')
++		{
++			if(curBeat >= 9 && curBeat < 437 && true){
++				
++				PlayState.instance.camGame.zoom += 0.03;
++				PlayState.instance.camHUD.zoom += 0.05;
++			}
++			
++			dancing = curBeat >= 360;
++				
++			if (curBeat == 359){
++				frontboppers.visible = true;
++				backboppers.visible = true;
++				if (true) defaultCamZoom += 0.2;
++				if(true)FlxTween.tween(backboppers, {y:-149.45}, 0.3, {ease:FlxEase.quartIn});
++				if(true)FlxTween.tween(frontboppers, {y:-39.55}, 0.3, {ease:FlxEase.quartIn});
++			}
++			if (dancing){
++				
++				table.visible = true;
++				if (true){
++				getBoyfriend().y += 20;
++				getDad().y += 20;
++				backboppers.y += 30;
++				frontboppers.y += 30;
++				
++					defaultCamZoom = 0.9;
++					FlxTween.tween(getBoyfriend(), {y:bfy}, (Conductor.instance.stepLengthMs * 3 / 1000), {ease:FlxEase.circInOut});
++					FlxTween.tween(getDad(), {y:gfy}, (Conductor.instance.stepLengthMs * 3 / 1000), {ease:FlxEase.circInOut});
++					FlxTween.tween(backboppers, {y:-149.45}, (Conductor.instance.stepLengthMs * 3 / 1000), {ease:FlxEase.circOut});
++					FlxTween.tween(frontboppers, {y: -39.55}, (Conductor.instance.stepLengthMs * 3 / 1000), {ease:FlxEase.quartInOut});
++					heartsThings.add(new HeartThingy(FlxG.random.int(0, 1280), 650, FlxG.random.float(1.8, 2.4)));
++				}
++			}else{
++				bfy = getBoyfriend().y;
++				gfy = getDad().y;
++			}
++			
++		}
++		
++    if(dancing){getBoyfriend().danceEvery=0;getDad().danceEvery=0;}
++    PlayState.instance.currentCameraZoom=defaultCamZoom;
++  }
++  override public function onUpdate(event:UpdateScriptEvent):Void{
++    curBeat=Std.int(Conductor.instance.currentBeat);
++    if(getBoyfriend()==null||getDad()==null)return;
++if ((dateSong == "perfume" || dateSong == "heartbass") && true && characters_walking.animation != null && characters_walking.animation.curAnim != null){
++					
++					if (characters_walking.animation.curAnim.name == "selsunday" || characters_walking.animation.curAnim.name == "jojo" ){
++						if(moveNOWWW)characters_walking.x += 8 * event.elapsed * 60;
++						if (characters_walking.x > 1434.4){
++							if (characters_walking.animation.curAnim.name == characters_walking.animation.curAnim.name && charswhohavewalked.contains(characters_walking.animation.curAnim.name)){
++								characters_walking.animation.play(chars[FlxG.random.int(0, chars.length - 1)]);
++								if (curBeat > stopSTOPITSTOPITNOW) moveNOWWW = false;
++							
++								}else{
++									charswhohavewalked.push(characters_walking.animation.curAnim.name);
++								}
++						}
++					}else if(chars.lastIndexOf(characters_walking.animation.curAnim.name) % 2 == 0){
++						if(moveNOWWW)characters_walking.x -= 2 * event.elapsed * 60;
++						if (characters_walking.x < -900){
++							if (characters_walking.animation.curAnim.name == characters_walking.animation.curAnim.name  && charswhohavewalked.contains(characters_walking.animation.curAnim.name)){
++								characters_walking.animation.play(chars[FlxG.random.int(0, chars.length - 1)]);
++								if (curBeat > stopSTOPITSTOPITNOW) moveNOWWW = false;
++							
++								}else{
++									if(!charswhohavewalked.contains(characters_walking.animation.curAnim.name))charswhohavewalked.push(characters_walking.animation.curAnim.name);
++								}
++						}
++					}else {
++						if(moveNOWWW)characters_walking.x += 2 * event.elapsed * 60;
++						if (characters_walking.x > 1434.4){
++							if (characters_walking.animation.curAnim.name == characters_walking.animation.curAnim.name  && charswhohavewalked.contains(characters_walking.animation.curAnim.name)){
++								characters_walking.animation.play(chars[FlxG.random.int(0, chars.length-1)]);
++								if (curBeat > stopSTOPITSTOPITNOW) moveNOWWW = false;
++								
++								}else{
++									if(!charswhohavewalked.contains(characters_walking.animation.curAnim.name))charswhohavewalked.push(characters_walking.animation.curAnim.name);
++								}
++						}
++					}
++					
++					
++					if(dateSong == "perfume"){
++						if(chars2.lastIndexOf(characters_walking2.animation.curAnim.name) % 2 == 0){
++							characters_walking2.x -= 2.1 * event.elapsed * 60;
++							if (characters_walking2.x < -1000 && characters_walking2.animation != null && characters_walking2.animation.curAnim != null){
++								if (characters_walking2.animation.curAnim.name == characters_walking2.animation.curAnim.name && charswhohavewalked2.contains(characters_walking2.animation.curAnim.name)){
++									characters_walking2.animation.play(chars2[FlxG.random.int(0, chars2.length-1)]);
++									
++								}else{
++									if(!charswhohavewalked2.contains(characters_walking2.animation.curAnim.name))charswhohavewalked2.push(characters_walking2.animation.curAnim.name);
++								}
++							}
++						}else{
++							characters_walking2.x += 2.1 * event.elapsed * 60;
++							if (characters_walking2.x > 1634.4 && characters_walking2.animation != null && characters_walking2.animation.curAnim != null){
++								if (characters_walking2.animation.curAnim.name == characters_walking2.animation.curAnim.name && charswhohavewalked2.contains(characters_walking2.animation.curAnim.name)){
++									
++									characters_walking2.animation.play(chars2[FlxG.random.int(0, chars2.length-1)]);
++									
++								}else{
++									if(!charswhohavewalked2.contains(characters_walking2.animation.curAnim.name))charswhohavewalked2.push(characters_walking2.animation.curAnim.name);
++								}
++							}
++						}
++					}
++				}
++				
++				if (charswhohavewalked.length >= chars.length) charswhohavewalked = [];
++				if (charswhohavewalked2.length >= chars2.length) charswhohavewalked2 = [];
++				if (dateSong == "heartbass" && farris_wheel != null){
++					if(true)farris_wheel.angle += 15 * event.elapsed;
++					plane.x -= 60 * event.elapsed;
++					for (i in 0...24){
++						var fss = farris_seat.members[i];
++						var _angle = (farris_wheel.angle + (i/24)*360) * (Math.PI/180); 
++						var rotatedX = Math.cos(_angle) * (350 - 227) - Math.sin(_angle) * (350-153.85) + 227;
++						var rotatedY = Math.sin(_angle) * (350 - 227) + Math.cos(_angle) * (350 - 153.85) + 153.85;
++					
++						fss.setPosition(rotatedX-15, rotatedY);
++					}
++					if (plane.x < -610) plane.x = 1800;
++				}
++    PlayState.instance.currentCameraZoom=defaultCamZoom;
++    if(!introFinished&&Conductor.instance.songPosition>=introEnds){
++      introFinished=true;film.animation.stop();film.active=false;title.active=false;
++      var duration=Conductor.instance.beatLengthMs/1000;
++      FlxTween.tween(film,{alpha:0},duration,{ease:FlxEase.cubeInOut});
++      FlxTween.tween(title,{alpha:0},duration,{ease:FlxEase.cubeInOut});
++    }
++    if(!introFinished){PlayState.instance.cameraFollowPoint.y=-900;}
++    else if(dancing){PlayState.instance.cameraFollowPoint.y=getBoyfriend().getMidpoint().y-200;}
++    else if(dateSong!='heartbass'&&!dancing&&playerTurn){PlayState.instance.cameraFollowPoint.x=640;}
++  }
++  override public function onDestroy(event:ScriptEvent):Void{
++    FlxTween.cancelTweensOf(this);FlxTween.cancelTweensOf(film);FlxTween.cancelTweensOf(title);
++    PlayState.instance?.remove(film);PlayState.instance?.remove(title);
++    film?.destroy();title?.destroy();super.onDestroy(event);
++  }
++}
+--- /dev/null
++++ b/source/funkin/mods/dateweek/DateTrueEnding.hx
+@@ -0,0 +1,86 @@
++package funkin.mods.dateweek;
++import funkin.ui.MusicBeatState;
++import funkin.Paths;
++import flixel.text.FlxText.FlxTextFormat;
++import flixel.text.FlxText.FlxTextFormatMarkerPair;
++import flixel.text.FlxText.FlxTextBorderStyle;
++import flixel.group.FlxSpriteGroup;
++import flixel.*;
++
++import flixel.text.FlxText;
++import flixel.tweens.FlxEase;
++import flixel.tweens.FlxTween;
++import flixel.util.FlxAxes;
++import flixel.util.FlxTimer;
++import openfl.Assets;
++/**
++ * ...
++ * @author bbpanzu
++ */
++class DateTrueEnding extends MusicBeatState
++{
++	
++	
++
++	public function new() 
++	{
++		super();
++	}
++	
++	
++	override function create() 
++	{
++		
++		
++		
++		super.create();
++		bgColor = 0xFF4D1B30;
++		var mural:FlxSpriteGroup = new FlxSpriteGroup();
++		
++		for(i in 0...5){var page=new FlxSprite(0,i*2048).loadGraphic(Paths.image("dateweek/mural-"+i));mural.add(page);}
++		mural.antialiasing = true;
++		add(mural);
++		
++		var cred:FlxText = new FlxText(0,720,640,"",16);
++		cred.setBorderStyle(FlxTextBorderStyle.OUTLINE, 0xFF000000, 2);
++		cred.alignment = "center";
++		cred.scrollFactor.set(1,1.5);
++		//cred.text = Assets.getText(Paths.txt("dateweek-credits"));
++		var daCreds:String = Assets.getText(Paths.txt("dateweek-credits"));
++		
++		
++		var title:FlxTextFormat = new FlxTextFormat(0xFFFF6699, true, false);
++		
++		
++		var header:FlxTextFormat = new FlxTextFormat(0xFFFFDD00, true,false);
++		
++		var footnote:FlxTextFormat = new FlxTextFormat(0xFFFFCCDD, false,false,0);
++		
++		cred.applyMarkup(
++			daCreds,
++			[new FlxTextFormatMarkerPair(title, "@"),
++			new FlxTextFormatMarkerPair(header, "^"),
++			new FlxTextFormatMarkerPair(footnote, "#")
++			
++			
++			
++			]
++		);
++		cred.screenCenter(FlxAxes.X);
++		add(cred);
++		
++		mural.scale.y = mural.scale.x = 1280 / mural.width;
++		mural.updateHitbox();
++		FlxG.sound.playMusic(Paths.music("dateweek-anthem"),1,false);
++		FlxTween.tween(FlxG.camera.scroll, {y: (mural.height - 720)}, (FlxG.sound.music.length / 1000) - 9, {ease:FlxEase.linear,onComplete:GTFO});
++	}
++	
++	
++	public function GTFO(e:FlxTween):Void{
++			
++		FlxG.switchState(() -> new funkin.ui.story.StoryMenuState(null));
++		
++	};
++	
++}
++
+--- /dev/null
++++ b/source/funkin/mods/dateweek/HeartThingy.hx
+@@ -0,0 +1,46 @@
++package funkin.mods.dateweek;
++import funkin.Paths;
++import flixel.*;
++
++/**
++ * ...
++ * @author bbpanzu
++ */
++class HeartThingy extends FlxSprite 
++{
++	public var fadedelay:Int = 0;
++	public var framee:Float = 0;
++	public var speed:Float = 0;
++	public function new(X,Y,SPEED:Float=1) 
++	{
++		super(X,Y);
++		speed = SPEED;
++		fadedelay = FlxG.random.int(240, 360);
++		frames = Paths.getSparrowAtlas("dateweek/heartthingy");
++		animation.addByPrefix("bump", "heartthing", 24, true);
++		scrollFactor.set(0.8,0.8);
++		antialiasing = true;
++		active = true;
++		alpha = 0.9;
++		
++	}
++	
++	override public function update(elapsed:Float):Void 
++	{
++		
++		y-= speed * elapsed * 60;
++		framee += elapsed * 60;
++		
++		if (framee > fadedelay){
++			alpha -= 0.6 * elapsed;
++		}
++		
++		if(animation.curAnim==null)animation.play("bump"); 
++		if (alpha > 0){
++			super.update(elapsed);
++		}else{
++			kill();
++		}
++	}
++	
++}

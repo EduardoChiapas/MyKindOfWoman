@@ -2,7 +2,7 @@
 
 La habitación abre un escritorio con monitor, torre y ventiladores RGB. El icono de FNF abre el motor oficial **Friday Night Funkin’ 0.8.6**, compilado para HTML5, con sus menús y gameplay originales. La web aloja esa compilación en un iframe; el ejecutable de Windows no se ejecuta en el navegador y no se usa un emulador.
 
-El mod suministrado es **feat. Bad Bunny 1.0.0**, de **gamerbross**, con sus tres canciones: **Celoso, Palmas y Amarre**. El catálogo se limita al **Tutorial** y a la **semana de Bad Bunny** con esas tres canciones, conservando los menús originales. El juego original controla la selección de canciones, las notas, animaciones, estados y menús.
+El orden del catálogo es **Tutorial → The Date Week → feat. Bad Bunny**. The Date Week contiene **Whitroll → Perfume → Heartbass**, con Easy, Normal y Hard. Bad Bunny conserva **Celoso → Palmas → Amarre**. El juego original controla la selección, las notas y los menús. The Date Week se adapta desde el código original de Kade Engine a este motor HTML5: se reutilizan sus imágenes, flechas, audio, charts y cameos, sin redibujar el arte.
 
 ## Abrirlo
 
@@ -17,9 +17,9 @@ La compilación original necesita un servidor HTTP/HTTPS. Abrir `index.html` por
 
 Al examinar la mesa aparece la vista cercana de la computadora. El escritorio incluye notas con guardado local, calculadora, catálogo del mod y ajustes de volumen/brillo.
 
-Pulsa **FNF · Jugar** para abrir el juego original a tamaño de la ventana. Se solicita también pantalla completa al navegador. En la pantalla de título, usa **Enter** para continuar. En **Story Mode** puedes elegir Tutorial o la semana de Bad Bunny; en **Freeplay** puedes elegir una canción individual. Las tarjetas de **Canciones** también abren el juego con sus menús; no saltan a un chart ni sustituyen la selección original. El propio juego conserva sus controles y opciones.
+Pulsa **FNF · Jugar** para abrir el juego original a tamaño de la ventana. Se solicita también pantalla completa al navegador. En la pantalla de título, usa **Enter** para continuar. En **Story Mode** puedes elegir Tutorial, The Date Week o Bad Bunny; en **Freeplay** puedes elegir una canción individual. Las tarjetas de **Canciones** también abren el juego con sus menús; no saltan a un chart ni sustituyen la selección original. El propio juego conserva sus controles y opciones.
 
-Al terminar **Tutorial** o una canción elegida en **Freeplay**, FNF sigue abierto y vuelve al **menú original de semanas**, sin mostrar la animación del porcentaje de resultados. En **Story Mode**, la semana de Bad Bunny mantiene la secuencia **Celoso → Palmas → Amarre** y vuelve al menú de semanas al completarla. Tutorial no cuenta entre las tres canciones completadas del mod. Las victorias del mod se guardan; la entrega de la **tercera llave** queda pendiente para más adelante.
+Al terminar **Tutorial** o una canción elegida en **Freeplay**, FNF sigue abierto y vuelve al **menú original de semanas**, sin mostrar la animación del porcentaje de resultados. En **Story Mode**, cada Week mantiene su secuencia. The Date Week vuelve directamente al menú al terminar Heartbass, sin mostrar su escena final ni los créditos; Bad Bunny vuelve al menú al completar Amarre. La entrega de la **tercera llave** queda pendiente para más adelante.
 
 El botón exterior **Volver al escritorio** permite salir manualmente del juego en cualquier momento. Esa salida elimina el iframe para detener el audio y el motor; ganar conserva la sesión de FNF abierta.
 

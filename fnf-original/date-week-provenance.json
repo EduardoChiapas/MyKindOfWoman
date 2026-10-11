@@ -1,0 +1,445 @@
+{
+  "sourceZipSha256": "e6fc8f74497cac27abf6481f212ff373646fc2466a7fbf0a928386dfcb1e6129",
+  "authorSource": "https://github.com/bbpanzu/CW_Date",
+  "authorCommit": "dce96bf37fa7421ee9eb6d65a0f279a87046e869",
+  "songs": {
+    "whitroll": {
+      "easy": {
+        "notes": 380,
+        "originalNotes": 380,
+        "scrollSpeed": 0.7,
+        "timestampsAndHoldsPreserved": true,
+        "timestampsDirectionsAndHoldsVerified": true
+      },
+      "normal": {
+        "notes": 386,
+        "originalNotes": 386,
+        "scrollSpeed": 1,
+        "timestampsAndHoldsPreserved": true,
+        "timestampsDirectionsAndHoldsVerified": true
+      },
+      "hard": {
+        "notes": 386,
+        "originalNotes": 386,
+        "scrollSpeed": 1.3,
+        "timestampsAndHoldsPreserved": true,
+        "timestampsDirectionsAndHoldsVerified": true
+      }
+    },
+    "perfume": {
+      "easy": {
+        "notes": 354,
+        "originalNotes": 354,
+        "scrollSpeed": 1,
+        "timestampsAndHoldsPreserved": true,
+        "timestampsDirectionsAndHoldsVerified": true
+      },
+      "normal": {
+        "notes": 423,
+        "originalNotes": 423,
+        "scrollSpeed": 1.4,
+        "timestampsAndHoldsPreserved": true,
+        "timestampsDirectionsAndHoldsVerified": true
+      },
+      "hard": {
+        "notes": 447,
+        "originalNotes": 447,
+        "scrollSpeed": 2,
+        "timestampsAndHoldsPreserved": true,
+        "timestampsDirectionsAndHoldsVerified": true
+      }
+    },
+    "heartbass": {
+      "easy": {
+        "notes": 676,
+        "originalNotes": 676,
+        "scrollSpeed": 1.4,
+        "timestampsAndHoldsPreserved": true,
+        "timestampsDirectionsAndHoldsVerified": true
+      },
+      "normal": {
+        "notes": 781,
+        "originalNotes": 781,
+        "scrollSpeed": 2,
+        "timestampsAndHoldsPreserved": true,
+        "timestampsDirectionsAndHoldsVerified": true
+      },
+      "hard": {
+        "notes": 797,
+        "originalNotes": 797,
+        "scrollSpeed": 3,
+        "timestampsAndHoldsPreserved": true,
+        "timestampsDirectionsAndHoldsVerified": true
+      }
+    }
+  },
+  "copied": {
+    "shared/images/dateweek/backboppers.png": {
+      "source": "assets/shared/images/date/backboppers.png",
+      "sha256": "37eb7c15258252092a543d60fb1dd3fc073532e0c9ce523a4bdc88bdc1bf7734"
+    },
+    "shared/images/dateweek/balc.png": {
+      "source": "assets/shared/images/date/balc.png",
+      "sha256": "a2dc696cc49eeb8bfb1ff04ee679022d676d4b9008bf4f8d9785d384dc4e55b8"
+    },
+    "shared/images/dateweek/bg_hb.png": {
+      "source": "assets/shared/images/date/bg_hb.png",
+      "sha256": "b755455261469c8ffe2c34045be7dbc29a792a5351f549870ddbbaa0c074f728"
+    },
+    "shared/images/dateweek/boom.png": {
+      "source": "assets/shared/images/date/boom.png",
+      "sha256": "576bbe6fdc4235bd52109c0882d273e6a0fdfea509bbadfa458038d6e80860dd"
+    },
+    "shared/images/dateweek/boom.xml": {
+      "source": "assets/shared/images/date/boom.xml",
+      "sha256": "cc172e1baf241c40ea43a568e1062555705634995f02aa38f071f91d5998714a"
+    },
+    "shared/images/dateweek/chairs copy.png": {
+      "source": "assets/shared/images/date/chairs copy.png",
+      "sha256": "30d913d204cd480cb905698b84f9110b046f1c281bebebfbe95d2470d289ab47"
+    },
+    "shared/images/dateweek/chairs.png": {
+      "source": "assets/shared/images/date/chairs.png",
+      "sha256": "a669f5ab81482ae12548d67f913c442a7838f742cb4840458327fc264d4bf598"
+    },
+    "shared/images/dateweek/characters_walking2.png": {
+      "source": "assets/shared/images/date/characters_walking2.png",
+      "sha256": "15111cfba734f64ffc28ca0fd99c4b802ef91335d2fcffca11ce7507dff1078c"
+    },
+    "shared/images/dateweek/characters_walking2.xml": {
+      "source": "assets/shared/images/date/characters_walking2.xml",
+      "sha256": "39d577f43e38f557bb75aef199a700ccd900b4d2e48b1490abe58b7df3cee543"
+    },
+    "shared/images/dateweek/citybg.png": {
+      "source": "assets/shared/images/date/citybg.png",
+      "sha256": "1fff201a4205533f7d1ce9567b662df7eb2bd1e98afc5f71be6ad5061d959b8f"
+    },
+    "shared/images/dateweek/citycolor.png": {
+      "source": "assets/shared/images/date/citycolor.png",
+      "sha256": "9f62d17abe7444d5bb69654280b7b57eb6e3d5bc51650b8feb1d6fd7277f7211"
+    },
+    "shared/images/dateweek/cityfarbg.png": {
+      "source": "assets/shared/images/date/cityfarbg.png",
+      "sha256": "7c6782869d9eb616ebb2f7e995321f62ba116f5e686629e15b18095c287f4141"
+    },
+    "shared/images/dateweek/deco.png": {
+      "source": "assets/shared/images/date/deco.png",
+      "sha256": "a57417ac810731fe88936ba1fc85874cb72a23d37ae75d17b567d13667784e34"
+    },
+    "shared/images/dateweek/ending.png": {
+      "source": "assets/shared/images/date/ending.png",
+      "sha256": "6306449e19c2ca83ec2ec0c0f295af318c0b18b06d3aa8c4a3dfd3b519dc816a"
+    },
+    "shared/images/dateweek/fair_gate.png": {
+      "source": "assets/shared/images/date/fair_gate.png",
+      "sha256": "e90b8e498df8bfd62af8872f804a06d589d23bc7ffd646dbdfce5f8708c70fee"
+    },
+    "shared/images/dateweek/farris_seat.png": {
+      "source": "assets/shared/images/date/farris_seat.png",
+      "sha256": "129c2e0dda359482c38335a71f85c6d9c9da9cfa0c538088099b9d4174774bdc"
+    },
+    "shared/images/dateweek/farris_wheel.png": {
+      "source": "assets/shared/images/date/farris_wheel.png",
+      "sha256": "ca81c6897dfafa00f21ddf27e84b57c2e4d522f7fdeccd7d203d459a61e984be"
+    },
+    "shared/images/dateweek/farris_wheel.xml": {
+      "source": "assets/shared/images/date/farris_wheel.xml",
+      "sha256": "3fe7638bdf41c10e587b6efc000c1689aab7e5fa27e4145b52f63ce313543767"
+    },
+    "shared/images/dateweek/film.png": {
+      "source": "assets/shared/images/date/film.png",
+      "sha256": "303ec257750cd01147bdf75844199846e44d0c8216ef0ca3fc9bc3af25d26aa6"
+    },
+    "shared/images/dateweek/film.xml": {
+      "source": "assets/shared/images/date/film.xml",
+      "sha256": "8ff90f986f4785b53109b01cfd734ea071d26cf5700f6642566a560ae3c70692"
+    },
+    "shared/images/dateweek/frontboppers.png": {
+      "source": "assets/shared/images/date/frontboppers.png",
+      "sha256": "d749893159366cff94dbd10946ab7054b4e3a56b2622d2bd2094de06db1a6353"
+    },
+    "shared/images/dateweek/heartthingy.png": {
+      "source": "assets/shared/images/date/heartthingy.png",
+      "sha256": "2701d2d20b04c5f67db5f7e86d12c0e60119414f6e19aad726b38dd2c532b5df"
+    },
+    "shared/images/dateweek/heartthingy.xml": {
+      "source": "assets/shared/images/date/heartthingy.xml",
+      "sha256": "e9b499047bc87c5634d01373ff811444855c4f3e5a873b88e4eab3d789861259"
+    },
+    "shared/images/dateweek/light.png": {
+      "source": "assets/shared/images/date/light.png",
+      "sha256": "4e58b254f3184d0f990a7ed8654c19282f9222cef0184d2c2fe2632dc19db43e"
+    },
+    "shared/images/dateweek/midg.png": {
+      "source": "assets/shared/images/date/midg.png",
+      "sha256": "b08d32b1610c78b0084a6599c9a2db359651aab73040abe641f00a9c34adc473"
+    },
+    "shared/images/dateweek/plane.png": {
+      "source": "assets/shared/images/date/plane.png",
+      "sha256": "b7087986db5eba8ce2dc36d3b6c3724f44c0e92afff818c5ff3262532bab28e4"
+    },
+    "shared/images/dateweek/shade.png": {
+      "source": "assets/shared/images/date/shade.png",
+      "sha256": "785d1e56fd10cbd30c946508e4ae6da34c9f8817625d1652e74bd152665c6b06"
+    },
+    "shared/images/dateweek/skyscrapers.png": {
+      "source": "assets/shared/images/date/skyscrapers.png",
+      "sha256": "81a8952ec416ee905a4f04231ee7fa7eeb33fa0fb0cdcc1a109f3a805485a6df"
+    },
+    "shared/images/dateweek/sky_bg.png": {
+      "source": "assets/shared/images/date/sky_bg.png",
+      "sha256": "177eff2bf89f34e23570e438c47419f6d8d9c1b24e4b4b639f6500407378b977"
+    },
+    "shared/images/dateweek/sky_heartbass.png": {
+      "source": "assets/shared/images/date/sky_heartbass.png",
+      "sha256": "1cdb96e635597c7fcc34bd7664657f19cb18b1b9a51d086b363163bbae0af848"
+    },
+    "shared/images/dateweek/sky_heartbass.xml": {
+      "source": "assets/shared/images/date/sky_heartbass.xml",
+      "sha256": "01c7b8694c8d74da82c4fb91c6e0fd74edca0a7a93714a8c51442106e2894a4d"
+    },
+    "shared/images/dateweek/table.png": {
+      "source": "assets/shared/images/date/table.png",
+      "sha256": "6c4f32d3669593b5030215392a98ba899251a735a017aef83d0ed84591b58669"
+    },
+    "shared/images/dateweek/title.png": {
+      "source": "assets/shared/images/date/title.png",
+      "sha256": "b9976d5523918e68d05eab0aae278831b50b9177e6029cea44dd446ec1ac50b9"
+    },
+    "shared/images/dateweek/title.xml": {
+      "source": "assets/shared/images/date/title.xml",
+      "sha256": "2b1c94f7c8191314bdc2368ac91d06810390e4d04d2174a134b382ff2d7647d0"
+    },
+    "shared/images/dateweek/updicksucker.png": {
+      "source": "assets/shared/images/date/updicksucker.png",
+      "sha256": "716b2e1b91c8905a0f754acc0f268712c4d646bf8ac0162d5a56eb8ff275817a"
+    },
+    "shared/images/dateweek/updicksucker.xml": {
+      "source": "assets/shared/images/date/updicksucker.xml",
+      "sha256": "958c409cf53420689b4589b4fb947c3e60784f3135a065cf6c7ab83cb9027786"
+    },
+    "shared/images/dateweek/wallbg.png": {
+      "source": "assets/shared/images/date/wallbg.png",
+      "sha256": "1d89c7a3f828e4c46c8e6ea6a4ace2294d9e40a73d0454e8f6e5b6d9956534ca"
+    },
+    "images/storymenu/props/date-port.png": {
+      "source": "assets/images/date/datePort.png",
+      "sha256": "dec1773931e203c754a22bfa1120d7db3aa304404cb97bdb248c8c7d8f7ddc25"
+    },
+    "images/storymenu/titles/dateweek.png": {
+      "source": "assets/images/storymenu/week0.png",
+      "sha256": "32836b17ea19b9dfde3f3f67d2b8625eca4b147689856984cfc4edf812930691"
+    },
+    "shared/images/dateweek/cw_icon.png": {
+      "source": "assets/images/date/cw_icon.png",
+      "sha256": "1799b69ac28ab184014a3411d0bd904ff95fbc5799acdf3322b2093d31aef60e"
+    },
+    "shared/images/dateweek/cw_icon.xml": {
+      "source": "assets/images/date/cw_icon.xml",
+      "sha256": "e0c2803b1bcb4ecb64bd1e57f386af345c3817f382be57e11ce47d2a14151cec"
+    },
+    "music/dateweek-ending.ogg": {
+      "source": "assets/shared/music/ending.ogg",
+      "sha256": "b1f1bdc4f666244d2e21883a9f6c0bda2329e2292a1c8ada7caee2a06c038199"
+    },
+    "music/dateweek-anthem.ogg": {
+      "source": "assets/shared/music/dateWeekAnthem.ogg",
+      "sha256": "f913b09d12d849fce6e5bf803d6d89a4e7d29c02fe8db27c75daa136b5629b4e"
+    },
+    "music/gameplay/gameover/gameOver-dateweek.ogg": {
+      "source": "assets/shared/music/gameOver.ogg",
+      "sha256": "0cb7c7c955aa1bfb6b78bda9e54b99de538946afd86ea310aabeb082f879e9b1"
+    },
+    "music/gameplay/gameover/gameOverEnd-dateweek.ogg": {
+      "source": "assets/shared/music/gameOverEnd.ogg",
+      "sha256": "db1cade9b30bf8d0db3cec4a5acd1a63be35e6948ba89ebcde83eed82e49e694"
+    },
+    "sounds/dateweek-explosion.ogg": {
+      "source": "assets/shared/sounds/explosion.ogg",
+      "sha256": "05443c67335a7a7323aac4cf21c3cc020d1e2b9deda965c128f77bd5d592d8e0"
+    },
+    "data/dateweek-credits.txt": {
+      "source": "assets/data/credits.txt",
+      "sha256": "98750d24a530cf710c649e06f7724e3c75e8ed47208efbbf8c1c20c4a52e36f6"
+    },
+    "songs/date-whitroll/Inst.ogg": {
+      "source": "assets/songs/whitroll/Inst.ogg",
+      "sha256": "fb65033667d42e986de9611c171898c8c4b5a90f214abdfd2a2a1d02d798ecd6"
+    },
+    "songs/date-whitroll/Voices.ogg": {
+      "source": "assets/songs/whitroll/Voices.ogg",
+      "sha256": "650b152f86903cc5f8496bfdc6c20783f6389b84f3049e45be24e90b4c0bfcb1"
+    },
+    "songs/date-perfume/Inst.ogg": {
+      "source": "assets/songs/perfume/Inst.ogg",
+      "sha256": "604e25146f9d8d24d88eb7408a67c1b047d33fc398c041037178332faf7d7f93"
+    },
+    "songs/date-perfume/Voices.ogg": {
+      "source": "assets/songs/perfume/Voices.ogg",
+      "sha256": "c057f116e0e7536f75e7f021cadbccdfb5e40709c082dc48fdd7529033fe79f9"
+    },
+    "songs/date-heartbass/Inst.ogg": {
+      "source": "assets/songs/heartbass/Inst.ogg",
+      "sha256": "bdfcac94218ad43ad23dc35aa52c9d424b3b336aaaf9b6d614587aab7c893843"
+    },
+    "songs/date-heartbass/Voices.ogg": {
+      "source": "assets/songs/heartbass/Voices.ogg",
+      "sha256": "d1d34d88cd51aea77d7206aab38618020c60d1963c1bae16b720058796d1b6ce"
+    },
+    "shared/images/dateweek/NOTE_assets.png": {
+      "source": "assets/shared/images/NOTE_assets.png",
+      "sha256": "28634fa71e28053f0bb72d8a0eaed004cc4fcce016001492df79ed51f44e8618"
+    },
+    "shared/images/dateweek/NOTE_assets.xml": {
+      "source": "assets/shared/images/NOTE_assets.xml",
+      "sha256": "2f34c7b88ea030c454de9e23d455c9a38fa1b1674db5d8b23e43fe26a0b1f03f"
+    },
+    "shared/images/dateweek/sick.png": {
+      "source": "assets/shared/images/sick.png",
+      "sha256": "fa7ad0fc13cdf457d370810009d852265c2fb3ac1362604508c2e557f6b8bea0"
+    },
+    "shared/images/dateweek/good.png": {
+      "source": "assets/shared/images/good.png",
+      "sha256": "4c737dce0ce54e08c600001e00cb6122fb8fb030c7110b5f207ec911f872af0e"
+    },
+    "shared/images/dateweek/bad.png": {
+      "source": "assets/shared/images/bad.png",
+      "sha256": "91ec75c3cd7f271f403810c42398fda561392462d8129bb7e07b13cff59a3efa"
+    },
+    "shared/images/dateweek/shit.png": {
+      "source": "assets/shared/images/shit.png",
+      "sha256": "e005fef61b7459b1e8f2c675f26b149a14406da7508438a152363c0dab66b201"
+    },
+    "shared/images/dateweek/num0.png": {
+      "source": "assets/images/num0.png",
+      "sha256": "4371907fd32a667c4c9096a8dccad9ff5c2c011c4184669b8945dd3b676a6a6d"
+    },
+    "shared/images/dateweek/num1.png": {
+      "source": "assets/images/num1.png",
+      "sha256": "bac3a0d578631e5386be03a203718cfb74f1053aaf9e88640c71f953970949bd"
+    },
+    "shared/images/dateweek/num2.png": {
+      "source": "assets/images/num2.png",
+      "sha256": "63f0bbd1663e3a6a56d91d0832b44c777c9b997dc18914ef01808993ad8da3df"
+    },
+    "shared/images/dateweek/num3.png": {
+      "source": "assets/images/num3.png",
+      "sha256": "6b24651f7de6c402abd45352a0be7758a06a7a93ccc6adc088ff1cde54db7ee6"
+    },
+    "shared/images/dateweek/num4.png": {
+      "source": "assets/images/num4.png",
+      "sha256": "0e4830a843ae0c290456bb3dcfe5b1898f5ff97be3a07c1d98ace6f3f5b61b1d"
+    },
+    "shared/images/dateweek/num5.png": {
+      "source": "assets/images/num5.png",
+      "sha256": "a0bcde60bb66aa143b8a5640623886fbcea483f010a1a220544e1894497f44d8"
+    },
+    "shared/images/dateweek/num6.png": {
+      "source": "assets/images/num6.png",
+      "sha256": "4bd27fbac81a4bac6330b12054c997710f9f24578e6355c6967ef30db0c6e5df"
+    },
+    "shared/images/dateweek/num7.png": {
+      "source": "assets/images/num7.png",
+      "sha256": "9b6f8ee05f1c656787337413eb3d92b286bc38ca4a87323e7d16753711446f1d"
+    },
+    "shared/images/dateweek/num8.png": {
+      "source": "assets/images/num8.png",
+      "sha256": "17f79f154e8445168c3530e5fa5817bf28f5a08953adf2d1909a8e48078e536a"
+    },
+    "shared/images/dateweek/num9.png": {
+      "source": "assets/images/num9.png",
+      "sha256": "c5d044fec7c23390560ccef66b6468bc869190e8cb4a742ab3b50b5033d36c73"
+    }
+  },
+  "atlases": {
+    "carol_assets": {
+      "originalSize": [
+        8192,
+        8192
+      ],
+      "frames": 168,
+      "uniqueFrames": 69,
+      "pages": 3,
+      "paths": [
+        "shared:dateweek/carol_assets-0",
+        "shared:dateweek/carol_assets-1",
+        "shared:dateweek/carol_assets-2"
+      ],
+      "pixelsPreserved": true
+    },
+    "whitty_assets": {
+      "originalSize": [
+        8192,
+        8192
+      ],
+      "frames": 522,
+      "uniqueFrames": 75,
+      "pages": 4,
+      "paths": [
+        "shared:dateweek/whitty_assets-0",
+        "shared:dateweek/whitty_assets-1",
+        "shared:dateweek/whitty_assets-2",
+        "shared:dateweek/whitty_assets-3"
+      ],
+      "pixelsPreserved": true
+    },
+    "characters_walking": {
+      "originalSize": [
+        8192,
+        4096
+      ],
+      "frames": 204,
+      "uniqueFrames": 90,
+      "pages": 2,
+      "paths": [
+        "shared:dateweek/characters_walking-0",
+        "shared:dateweek/characters_walking-1"
+      ],
+      "pixelsPreserved": true
+    }
+  },
+  "mural": {
+    "originalSize": [
+      1920,
+      9704
+    ],
+    "pages": 5,
+    "pixelsPreserved": true
+  },
+  "originalNoteStyle": {
+    "source": "assets/shared/images/NOTE_assets.png",
+    "newArtwork": false,
+    "holdPixels": "Original body/cap crops arranged for the native sustain renderer"
+  },
+  "runtimeFiles": 111,
+  "engine": "Friday Night Funkin 0.8.6 HTML5",
+  "sourceEngine": "Kade Engine 1.4.2",
+  "originalExecutableExecuted": false,
+  "emulation": false,
+  "newArtwork": false,
+  "weekOrder": [
+    "tutorial",
+    "dateweek",
+    "ftbb"
+  ],
+  "dateSongOrder": [
+    "date-whitroll",
+    "date-perfume",
+    "date-heartbass"
+  ],
+  "runtimeZipSha256": "d3d7294bcb0c9eeda569452e223f4498543b1fcc4fe6ee32888d74a8dfb42167",
+  "runtimeZipBytes": 46290931,
+  "engineSha256": "9032ef643e33eded14832276280d41a6430b582d31f6ed0f32a74d8354d7972b",
+  "sourcePort": "date-week-source/",
+  "limitations": "Engine compatibility port; Kade and FNF 0.8.6 have different native HUD/menu/scoring behavior. Original artwork/audio/chart timings are reused.",
+  "heartbassDance": {
+    "originalStartBeat": 360,
+    "originalBpm": 190,
+    "startMs": 113684.21052631579,
+    "nativeNoteSuffix": "dance",
+    "bothCharacters": true,
+    "originalDanceFrames": true,
+    "sittingIdleAndMissAnimationsSuppressedDuringDance": true
+  },
+  "endingPolicy": "User requested no ending/credits sequence: completing Heartbass returns directly to native StoryMenuState at every difficulty."
+}

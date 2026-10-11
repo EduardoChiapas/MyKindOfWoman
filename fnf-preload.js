@@ -42,9 +42,9 @@
     if (!registrationPromise) registrationPromise = (async () => {
       try {
         const registration = await navigator.serviceWorker.register(new URL('fnf-cache-worker.js', root), {scope:root.pathname, updateViaCache:'none'});
-        if (registration.active) return registration;
         const worker = registration.installing || registration.waiting;
-        if (!worker) return null;
+        // Await a pending update so the iframe uses the current engine and mods.
+        if (!worker) return registration.active ? registration : null;
         await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => reject(new Error('activation timeout')), 15000);
           const check = () => {

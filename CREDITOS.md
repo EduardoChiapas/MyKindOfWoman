@@ -8,7 +8,7 @@ Código fuente: [FunkinCrew/Funkin](https://github.com/FunkinCrew/Funkin). Los c
 
 El archivo `LICENSE.md` del motor declara **Apache License 2.0** para el código. El archivo `assets/LICENSE.md` declara por separado que el arte, audio, música, efectos y otros contenidos creativos son **propietarios**, con copyright de The Funkin’ Crew Inc., y que su distribución pública gratuita o de pago por terceros no está autorizada por esa licencia. Apache-2.0 del código no cambia esa declaración de los recursos. Los avisos originales completos se reproducen al final de este documento.
 
-La adaptación de plataforma y el puente HTML5 unen la compilación original con la web: apertura en iframe, volumen y guardado de victorias. La futura entrega de la llave queda pendiente. El catálogo se limita a Tutorial y la semana de Bad Bunny. Al llegar a la pantalla de resultados, la integración vuelve al menú original de semanas y omite la animación del porcentaje; Story Mode conserva la secuencia de las tres canciones del mod. FNF permanece abierto hasta salir manualmente al escritorio. No se atribuye la autoría del motor o del mod a esta integración.
+La adaptación de plataforma y el puente HTML5 unen la compilación original con la web: apertura en iframe, volumen y guardado de victorias. La futura entrega de la llave queda pendiente. El catálogo se ordena Tutorial, The Date Week y Bad Bunny. Se omite la animación del porcentaje; Story Mode conserva la secuencia de cada Week y vuelve directamente al menú al terminar, sin mostrar los finales ni los créditos de The Date Week, por petición del usuario. FNF permanece abierto hasta salir manualmente al escritorio. No se atribuye la autoría del motor o de los mods a esta integración.
 
 El código fuente utilizado corresponde a la revisión `ee9d492becfc1178b2c80487167d09a880f90146` (v0.8.6). `fnf-original/web-port.patch` registra la adaptación HTML5. Las tres correcciones de compatibilidad de Polymod conservadas en `fnf-original/polymod-web-compat.patch`, `fnf-original/polymod-html5-memory-images.patch` y `fnf-original/polymod-html5-memory-audio.patch` corrigen los argumentos opcionales de cadenas en JavaScript y la carga asíncrona de imágenes y audio desde el ZIP en memoria. El audio usa el detector de formato, el codificador Base64 y la carga asíncrona original de Lime/Howler; la rama nativa se conserva. La corrección `fnf-original/ftbb-html5-shader-time.patch` cambia el nombre del temporizador del script `FTBBStage.hx` de `iTime` a `ftbbTime`, evitando la colisión con la propiedad que OpenFL genera para el uniform del shader. El uniform GLSL sigue llamándose `iTime`; su código y todos los demás 67 archivos del mod conservan sus bytes originales. La corrección mantiene los tres efectos originales de agua, cielo y sol y no silencia las alertas del motor.
 
@@ -31,6 +31,12 @@ Metadata reproducida:
   "license": "Apache-2.0"
 }
 ```
+
+## The Date Week
+
+Mod suministrado en `the_date_week_a5a99.zip`, originalmente para Kade Engine 1.4.2. Canciones: Whitroll, Perfume y Heartbass. La adaptación utiliza el código publicado por el autor en [bbpanzu/CW_Date](https://github.com/bbpanzu/CW_Date), revisión `dce96bf37fa7421ee9eb6d65a0f279a87046e869`, y conserva sus créditos completos y licencia de código Apache 2.0.
+
+Se reutilizan los gráficos, flechas, voces, música, tiempos de notas, animaciones y cameos originales. Las hojas grandes de sprites se dividen en páginas preservando los píxeles y los nombres de cada frame. Los cambios de API y formato permiten ejecutar el mod dentro del motor FNF HTML5 existente; no ejecutan el programa Windows ni emulan Kade. Los menús, HUD y puntuación corresponden al motor FNF 0.8.6 anfitrión. `fnf-original/date-week-provenance.json` registra los recursos y verificaciones; `fnf-original/date-week-source/` conserva el código de compatibilidad. El código y los recursos de los finales quedan conservados para referencia, pero no se ejecutan al completar la Week.
 
 ## Icono original
 

@@ -6,7 +6,7 @@ function scan(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
   const name=path.join(dir,entry.name);
   if(entry.isDirectory())scan(name);
   else {const rel=path.relative(root,name).replaceAll('\\','/');
-    if(/^fnf-cache-/.test(rel)||/\.(md|patch|cjs)$/i.test(rel)||rel==='ftbb-html5-shader-time.json')continue;
+    if(/^fnf-cache-/.test(rel)||rel.startsWith('date-week-source/')||/\.(md|patch|cjs)$/i.test(rel)||rel==='ftbb-html5-shader-time.json'||rel==='date-week-provenance.json')continue;
     const bytes=fs.readFileSync(name);files[rel]=[hash(bytes),bytes.length];
   }
 }}
@@ -23,7 +23,7 @@ function assetPaths(name){
 }
 // Libraries actually used by the original preloader, menus and this catalog.
 // Do not warm videos or other week-specific libraries simply because they exist.
-const warm=[...new Set(['Funkin.js','mods/ftbb.zip','index.html','favicon.png',
+const warm=[...new Set(['Funkin.js','mods/ftbb.zip','mods/dateweek.zip','index.html','favicon.png',
   ...fs.readdirSync(path.join(root,'manifest')).map(name=>'manifest/'+name),
   ...assetPaths('default'),...assetPaths('shared'),...assetPaths('songs'),...assetPaths('tutorial')])];
 assert(warm.every(p=>files[p]));
@@ -33,5 +33,5 @@ const totalBytes=warm.reduce((sum,p)=>sum+files[p][1],0);
 const manifest={version,totalBytes,warm,files};
 fs.writeFileSync(path.join(root,'fnf-cache-manifest.js'),'self.FNF_CACHE_MANIFEST='+JSON.stringify(manifest)+';\n');
 fs.writeFileSync(path.join(root,'fnf-cache-manifest.json'),JSON.stringify({version,totalBytes,warm})+'\n');
-fs.writeFileSync(path.join(root,'fnf-cache-audit.json'),JSON.stringify({version,warmFiles:warm.length,totalBytes,engineSha256:files['Funkin.js'][0],modSha256:files['mods/ftbb.zip'][0],allFiles:Object.keys(files).length,excludedVideos:true},null,2));
+fs.writeFileSync(path.join(root,'fnf-cache-audit.json'),JSON.stringify({version,warmFiles:warm.length,totalBytes,engineSha256:files['Funkin.js'][0],modSha256:files['mods/ftbb.zip'][0],dateWeekSha256:files['mods/dateweek.zip'][0],allFiles:Object.keys(files).length,excludedVideos:true},null,2));
 console.log(JSON.stringify({warmFiles:warm.length,totalBytes,version}));

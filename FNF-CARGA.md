@@ -2,7 +2,7 @@
 
 Después de entrar en la casa, `fnf-preload.js` espera 2,5 segundos y prepara los archivos de FNF en segundo plano mientras caminas. Antes de entrar no registra el worker ni inicia descargas de FNF. Usa una descarga de fondo a la vez y pide prioridad baja de red. Un círculo de 22 px en la esquina inferior derecha indica el progreso; al completarse muestra una pequeña marca durante 2,5 segundos y desaparece. No intercepta clics ni toques. La PC conserva también el mensaje «Archivos descargados». La preparación no arranca el motor, reproduce audio ni cambia las canciones.
 
-Se descargan aproximadamente 207 MB correspondientes al motor, sus bibliotecas de arranque y menús, Tutorial y el ZIP del mod de Bad Bunny. Los videos y recursos exclusivos de otras semanas quedan fuera de la descarga anticipada. Al abrir FNF, la cola de fondo se pausa para dar prioridad al juego.
+Se descargan aproximadamente 253 MB correspondientes al motor, sus bibliotecas de arranque y menús, Tutorial y los ZIP de The Date Week y Bad Bunny. Los videos y recursos exclusivos de otras semanas quedan fuera de la descarga anticipada. Al abrir FNF, la cola de fondo se pausa para dar prioridad al juego.
 
 Un service worker limitado a `fnf-original/` guarda cada archivo con su revisión. Las siguientes visitas reutilizan los archivos guardados. Una revisión nueva vuelve a descargar solo los archivos que cambiaron; las revisiones anteriores se limpian del caché de FNF. La casa no pasa por ese service worker.
 

@@ -2,6 +2,7 @@
 (() => {
   'use strict';
   const ICONS = {
+    determination: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="3" y="3" width="42" height="42" rx="9" fill="#202d43"/><path d="M10 13h10v5h8v-5h10v15h-5v5h-5v5h-8v-5h-5v-5h-5Z" fill="#ff516a"/><path d="M12 15h6v3h-6Z" fill="#ffb2bd"/></svg>',
     fnf: '<img src="assets/props/funkin-icon.png" alt="" aria-hidden="true">',
     files: '<svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#ffb844" d="M5 15a5 5 0 0 1 5-5h17l6 7h21a5 5 0 0 1 5 5v28a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5Z"/><path fill="#ffdd78" d="M5 25h54v25a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5Z"/><path stroke="#fff1bb" stroke-width="3" d="M12 31h40"/></svg>',
     notes: '<svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#76d6ff" d="M12 5h39a4 4 0 0 1 4 4v47a4 4 0 0 1-4 4H12Z"/><path fill="#eafaff" d="M12 7h34v50H12Z"/><path stroke="#b9d7e6" stroke-width="2" d="M20 19h18M20 27h18M20 35h18M20 43h12"/><path stroke="#38a6d7" stroke-width="3" d="M8 13h8M8 22h8M8 31h8M8 40h8M8 49h8"/></svg>',
@@ -42,6 +43,8 @@
     @media(max-height:550px) and (min-width:701px){.setup{top:55%;width:min(80vw,960px,calc(190vh - 300px))}}
     @media(max-width:700px) and (orientation:landscape){.setup{top:54%;width:min(94vw,calc(175vh - 140px))}.keyboard,.mouse{display:none}.desk{bottom:-8%;height:28%}}
     @media(prefers-reduced-motion:reduce){.blades{animation-duration:8s}.fan:before{animation:none}.custom-cursor:after{animation:none;opacity:.4}.app-icon{transition:none}.toast{animation:none}}
+    .html-app{position:absolute;inset:0;z-index:60;background:#000;overflow:hidden;animation:html-app-in .22s ease-out}.html-app-stage{position:absolute;inset:0;overflow:hidden}.html-app iframe{position:absolute;left:50%;top:50%;border:0;background:#000;transform-origin:center}.html-app-return{position:absolute;top:7px;right:7px;z-index:2;padding:6px 9px;border:1px solid #d8eaff44;border-radius:5px;background:#152032db;color:#fff;font-size:clamp(7px,1vw,11px);cursor:pointer}.html-app-return:hover{background:#304664}.screen.html-active,.screen.html-active *{cursor:auto!important}.screen.html-active .custom-cursor{display:none}
+    @keyframes html-app-in{from{opacity:0;filter:brightness(.6)}to{opacity:1;filter:brightness(1)}}@media(prefers-reduced-motion:reduce){.html-app{animation:none}}
   `;
 
   class GamingDesktop extends HTMLElement {
@@ -61,7 +64,7 @@
       this._onPreload = () => this._updatePreload();
       this._onKey = e => {
         if (!this._open || this._gameActive) return;
-        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.close(); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this._htmlFrame ? this._closeHtmlApp() : this.close(); }
       };
     }
 
@@ -75,6 +78,7 @@
     }
 
     disconnectedCallback() {
+      this._closeHtmlApp(false);
       document.removeEventListener('keydown', this._onKey, true);
       window.removeEventListener('fnf:preload', this._onPreload);
       clearInterval(this._clockInterval);
@@ -106,12 +110,14 @@
 
     close() {
       if (this._gameActive) return;
+      this._closeHtmlApp(false);
       this._open = false;
       this.hidden = true;
       this._emit('pc:close');
     }
 
     showDesktop() {
+      this._closeHtmlApp(false);
       this.setGameVisible(false);
       this._setLoading(false);
       this._updateProgress();
@@ -160,9 +166,9 @@
     _icon(name) { return `<span class="icon-art">${ICONS[name] || ''}</span>`; }
 
     _render() {
-      const appNames = {fnf:'Friday Night Funkin’',files:'Canciones',notes:'Notas',calculator:'Calculadora',settings:'Configuración'};
+      const appNames = {fnf:'Friday Night Funkin’',determination:'Determination',files:'Canciones',notes:'Notas',calculator:'Calculadora',settings:'Configuración'};
       const icons = Object.entries(appNames).map(([id, name]) => `<button class="app-icon ${id}" data-app="${id}" title="${name}" aria-label="Abrir ${name}">${this._icon(id)}<span>${id === 'fnf' ? 'FNF · Jugar' : name}</span></button>`).join('');
-      const taskIcons = ['fnf','files','notes','settings'].map(id => `<button class="task-icon" data-app="${id}" title="${appNames[id]}" aria-label="Abrir ${appNames[id]}">${ICONS[id]}</button>`).join('');
+      const taskIcons = ['fnf','determination','files','notes','settings'].map(id => `<button class="task-icon" data-app="${id}" title="${appNames[id]}" aria-label="Abrir ${appNames[id]}">${ICONS[id]}</button>`).join('');
       this.shadowRoot.innerHTML = `<style>${style}</style>
         <div class="pov">
           <div class="ambient"></div><div class="desk"></div>
@@ -172,10 +178,11 @@
             <div class="desktop"><div class="wallpaper-shape"></div><div class="desktop-word"><strong>STAY DETERMINED.</strong><span>UN MUNDO DENTRO DE OTRO</span></div>
               <div class="icons">${icons}</div><div class="song-progress"><i class="dot"></i><span class="progress-label">Biblioteca de canciones</span></div>
               <div class="fnf-download" role="status" style="position:absolute;left:12px;bottom:48px;color:#c1d6ef;font-size:clamp(7px,1vw,11px);pointer-events:none" hidden></div><div class="window-layer"></div>
-              <div class="quick-panel" hidden><h3>Hola, Frisk.</h3><p>Tu escritorio está listo. Pulsa FNF para abrir el juego original y elegir una canción.</p><div class="quick-apps">${['fnf','files','notes','calculator','settings'].map(id => `<button data-app="${id}"><span class="small-icon">${ICONS[id]}</span>${id === 'fnf' ? 'Jugar FNF' : appNames[id]}</button>`).join('')}</div><div class="quick-power"><button data-power>${ICONS.power} Apagar · volver a la habitación</button></div></div>
+              <div class="quick-panel" hidden><h3>Hola, Frisk.</h3><p>Tu escritorio está listo. Pulsa una app para abrirla.</p><div class="quick-apps">${['fnf','determination','files','notes','calculator','settings'].map(id => `<button data-app="${id}"><span class="small-icon">${ICONS[id]}</span>${id === 'fnf' ? 'Jugar FNF' : appNames[id]}</button>`).join('')}</div><div class="quick-power"><button data-power>${ICONS.power} Apagar · volver a la habitación</button></div></div>
               <div class="taskbar"><div class="system-name"><b></b>DETERMINATION OS</div><button class="task-icon start" title="Inicio" aria-label="Abrir Inicio" aria-expanded="false">${ICONS.windows}</button>${taskIcons}<div class="tray"><span class="tray-volume" title="Volumen">♫</span><div class="tray-time"><div class="clock"></div><div class="date"></div></div></div></div>
               <div class="loading-banner" hidden><i class="loading-spinner"></i><span class="loading-label">Abriendo FNF original…</span></div>
             </div>
+            <section class="html-app" aria-label="Determination · Damaris" hidden><div class="html-app-stage"></div><button class="html-app-return" type="button">← Escritorio</button></section>
             <div class="custom-cursor" aria-hidden="true"><svg viewBox="0 0 24 30"><path d="M3 2v22l6-5 5 9 4-2-5-9 8-1Z"/></svg></div>
           </div><i class="monitor-led"></i></div><div class="stand"></div><div class="stand-base"></div></div>
           <div class="tower" aria-label="Torre gamer con tres ventiladores RGB girando"><div class="tower-top"><i class="power-dot"></i><span>DTRM</span><i class="usb"></i></div><div class="tower-glass"><div class="fan"><i class="blades"></i></div><div class="fan"><i class="blades"></i></div><div class="fan"><i class="blades"></i></div></div><span class="tower-mark">DETERMINATION</span></div></div>
@@ -184,6 +191,7 @@
         </div><div class="game-host" hidden></div>`;
       this.shadowRoot.querySelector('.screen').style.setProperty('--brightness', this._brightness);
       this.shadowRoot.addEventListener('click', e => {
+        if (e.target.closest('.html-app-return')) { this._closeHtmlApp(); return; }
         const app = e.target.closest('[data-app]');
         if (app) {
           this._closeStart();
@@ -272,6 +280,7 @@
     }
 
     _openApp(id) {
+      if (id === 'determination') { this._openHtmlApp(); return; }
       const titles = {notes:'Notas · Guardado automático',calculator:'Calculadora',files:'Biblioteca de canciones',settings:'Configuración'};
       if (!(id in titles)) return;
       if (this._windows.has(id)) {
@@ -304,6 +313,42 @@
 
     _markTask(id,active) {
       this.shadowRoot.querySelectorAll(`.task-icon[data-app="${id}"]`).forEach(button => button.classList.toggle('active',active));
+    }
+
+    _openHtmlApp() {
+      if (this._htmlFrame) { this._htmlFrame.focus(); return; }
+      const overlay=this.shadowRoot.querySelector('.html-app');
+      const stage=overlay.querySelector('.html-app-stage');
+      const frame=document.createElement('iframe');
+      frame.title='Determination · Damaris';
+      frame.src='apps/determination/index.html';
+      frame.setAttribute('sandbox','allow-scripts allow-same-origin');
+      frame.allow='autoplay';
+      const touch=matchMedia('(pointer: coarse)').matches;
+      const width=touch ? 640 : 800, height=touch ? 800 : 600;
+      frame.style.width=width+'px';frame.style.height=height+'px';
+      this._htmlFrame=frame;overlay.hidden=false;
+      this.shadowRoot.querySelector('.screen').classList.add('html-active');
+      const resize=()=>{const scale=Math.min(stage.clientWidth/width,stage.clientHeight/height);frame.style.transform=`translate(-50%,-50%) scale(${scale})`;};
+      this._htmlResize=new ResizeObserver(resize);this._htmlResize.observe(stage);
+      frame.addEventListener('load',()=>{if(this._htmlFrame!==frame)return;this._sendHtmlVolume();frame.focus({preventScroll:true});});
+      stage.append(frame);resize();this._markTask('determination',true);
+      window.FnfPreload?.setGameActive(true);
+    }
+
+    _sendHtmlVolume() {
+      this._htmlFrame?.contentWindow?.postMessage({type:'determination:volume',volume:this._volume},location.origin);
+    }
+
+    _closeHtmlApp(restoreFocus=true) {
+      if (!this._htmlFrame) return;
+      // Remove the document so its music, video and timers stop on every exit.
+      this._htmlFrame.remove();this._htmlFrame=null;
+      this._htmlResize?.disconnect();this._htmlResize=null;
+      this.shadowRoot.querySelector('.html-app').hidden=true;
+      this.shadowRoot.querySelector('.screen').classList.remove('html-active');
+      this._markTask('determination',false);window.FnfPreload?.setGameActive(false);
+      if(restoreFocus)this.shadowRoot.querySelector('.app-icon[data-app="determination"]').focus({preventScroll:true});
     }
 
     _enableDrag(win) {
@@ -379,6 +424,7 @@
         this._volume = Number(volume.value)/100;
         volume.previousElementSibling.querySelector('output').textContent = `${volume.value}%`;
         this._store('pc-room-volume',this._volume);
+        this._sendHtmlVolume();
         this._emit('pc:volume',{volume:this._volume});
       });
       brightness.addEventListener('input', () => {

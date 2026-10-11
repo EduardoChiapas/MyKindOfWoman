@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Determination - Damaris ✨</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ut-orange: #e38100;
+            --ut-yellow: #ffff00;
+            --ut-white: #ffffff;
+            --ut-black: #000000;
+            --ut-red: #ff0000;
+            --ut-cyan: #00ffff; 
+            --ut-hp-red: #c00000;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'VT323', monospace;
+            background: var(--ut-black);
+            color: var(--ut-white);
+            height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        #game-window {
+            width: 100%; max-width: 800px; height: 100vh; max-height: 600px;
+            position: relative; overflow: hidden;
+            background: var(--ut-black);
+        }
+
+        #bg-reveal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            object-fit: cover;
+            opacity: 0; transition: opacity 0.1s ease-out; z-index: 1; pointer-events: none;
+        }
+
+        #overworld {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50; display: block;
+        }
+
+        .snow-particle {
+            position: absolute; background: white; width: 3px; height: 3px;
+            opacity: 0.6; border-radius: 50%; animation: snowFall linear infinite; z-index: 2;
+        }
+        @keyframes snowFall {
+            0% { transform: translateY(-10px); }
+            100% { transform: translateY(600px); }
+        }
+
+        #player-sprite {
+            position: absolute; color: var(--ut-red); font-size: 2rem;
+            width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;
+            z-index: 10; text-shadow: 0 0 8px var(--ut-red);
+        }
+
+        #npc-sprite {
+            position: absolute; color: var(--ut-cyan); font-size: 2.5rem;
+            text-align: center; z-index: 5;
+            text-shadow: 0 0 15px var(--ut-cyan);
+        }
+
+        .speech-bubble {
+            position: absolute; background: white; color: black;
+            padding: 5px 12px; border-radius: 10px; font-size: 1.2rem;
+            bottom: 50px; left: 50%; transform: translateX(-50%);
+            display: none; white-space: nowrap; z-index: 20;
+        }
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -10px; left: 50%;
+            border: 10px solid transparent; border-top-color: white;
+            transform: translateX(-50%);
+        }
+
+        .exclamation {
+            color: var(--ut-red); font-size: 2.5rem; font-weight: bold;
+            position: absolute; top: -35px; left: 5px; display: none; text-shadow: none;
+        }
+
+        #battle-flash {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--ut-white); z-index: 99999; display: none;
+            pointer-events: none;
+        }
+
+        #battle-scene {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; flex-direction: column; justify-content: space-between;
+            padding: 20px; z-index: 100; background: var(--ut-black);
+        }
+
+        .soul-title {
+            text-align: center; font-size: 4.5rem; color: var(--ut-cyan);
+            text-shadow: 0 0 20px var(--ut-cyan);
+            animation: pulseHeart 1.5s infinite ease-in-out; 
+            margin-bottom: 10px; margin-top: 10px;
+        }
+
+        .spare-ready {
+            color: var(--ut-yellow) !important;
+            text-shadow: 0 0 20px var(--ut-yellow), 0 0 40px var(--ut-yellow) !important;
+        }
+
+        @keyframes pulseHeart {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .battle-view { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+        .card {
+            background: var(--ut-black); padding: 30px; border: 5px solid var(--ut-white);
+            font-size: 2.2rem; line-height: 1.5; min-height: 180px; position: relative;
+        }
+        .heart-cursor { color: var(--ut-red); position: absolute; font-size: 1.8rem; display: none; transition: 0.1s; }
+        .list-menu { display: flex; flex-direction: column; gap: 10px; padding-left: 40px; }
+        .grid-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-left: 40px; }
+        .menu-option { color: var(--ut-white); display: block; position: relative; }
+
+        .bottom-ui { width: 100%; padding-bottom: 10px; }
+        .stats-bar { display: flex; align-items: center; gap: 20px; font-size: 1.8rem; font-weight: bold; margin-bottom: 25px; flex-wrap: wrap; justify-content: center;}
+        .hp-bar-bg { width: 80px; height: 25px; background: var(--ut-hp-red); }
+        .hp-bar-fill { width: 100%; height: 100%; background: var(--ut-yellow); transition: width 0.5s ease; }
+        .nav-menu { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;}
+        .nav-btn {
+            flex: 1; max-width: 180px; background: var(--ut-black); border: 3px solid var(--ut-orange);
+            padding: 8px; font-family: 'VT323'; font-size: 1.5rem; color: var(--ut-orange);
+            text-align: center; position: relative; text-transform: uppercase; cursor: pointer;
+            min-width: 100px;
+        }
+        .nav-btn.focused { color: var(--ut-yellow); border-color: var(--ut-yellow); }
+        .nav-btn.focused::before { content: '❤'; position: absolute; left: 10px; color: var(--ut-red); font-size: 1.2rem;}
+
+        #mobile-controls {
+            display: none; width: 100%; max-width: 800px; justify-content: space-between;
+            padding: 20px; background: #111; border-top: 2px solid #333; z-index: 1000;
+        }
+        .d-pad { display: grid; grid-template-columns: repeat(3, 50px); grid-gap: 5px; }
+        .d-btn { width: 50px; height: 50px; background: #333; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border-radius: 10px; font-weight: bold; user-select: none;}
+        .action-btns { display: flex; gap: 15px; align-items: center; }
+        .a-btn { width: 60px; height: 60px; background: #800000; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; border: 3px solid #ff4d4d; user-select: none;}
+        
+        .special-btn { text-align: center; color: var(--ut-yellow); font-size: 2.5rem; animation: pulseHeart 1.5s infinite; cursor: pointer; display: inline-block; width: 100%; margin-top: 40px; text-shadow: 0 0 10px var(--ut-yellow); }
+
+        @media (max-width: 768px) {
+            #mobile-controls { display: flex; }
+            #game-window { height: 70vh; }
+            body { justify-content: flex-start; }
+            .card { font-size: 1.5rem; min-height: 150px; padding: 20px;}
+            .stats-bar { font-size: 1.3rem; margin-bottom: 15px;}
+            .soul-title { font-size: 3.5rem; margin-bottom: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+    <video id="bg-reveal" autoplay loop muted playsinline>
+        <source src="https://www.dropbox.com/scl/fi/4tb25so0dueuj82mo6g7z/4K-SpaceStar-scene-Free-M.G-Stock-Footage.mp4?rlkey=6tsprdw1xay47s4w8ihozhwzj&st=mdqmvb5h&raw=1" type="video/mp4">
+    </video>
+
+    <div id="game-window">
+        <div id="battle-flash"></div>
+
+        <div id="overworld">
+            <div id="snow-container"></div>
+            <div id="npc-sprite">
+                <div id="npc-talk" class="speech-bubble">...</div>
+                <span class="exclamation" id="exc-mark">!</span>
+                ❤
+            </div>
+            <div id="player-sprite">❤</div>
+        </div>
+
+        <div id="battle-scene">
+            <div class="battle-view">
+                <div class="soul-title" id="battle-soul">❤</div>
+                <div class="card" id="dialog-box">
+                    <span class="heart-cursor" id="cursor">❤</span>
+                    <div id="content-area"></div>
+                </div>
+            </div>
+
+            <div class="bottom-ui">
+                <div class="stats-bar">
+                    <span id="name-tag">EDUARDITO</span>
+                    <span>LV 1</span>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <span style="font-size:1.2rem;">HP</span>
+                        <div class="hp-bar-bg"><div class="hp-bar-fill" id="hp-bar"></div></div>
+                    </div>
+                </div>
+
+                <nav class="nav-menu" id="main-nav">
+                    <div class="nav-btn focused" data-type="FIGHT">FIGHT</div>
+                    <div class="nav-btn" data-type="ACT">ACT</div>
+                    <div class="nav-btn" data-type="ITEM">ITEM</div>
+                    <div class="nav-btn" data-type="MERCY">MERCY</div>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobile-controls">
+        <div class="d-pad">
+            <div class="empty"></div>
+            <div class="d-btn" onmousedown="simularTecla('ArrowUp')" ontouchstart="simularTecla('ArrowUp')">▲</div>
+            <div class="empty"></div>
+            <div class="d-btn" onmousedown="simularTecla('ArrowLeft')" ontouchstart="simularTecla('ArrowLeft')">◄</div>
+            <div class="d-btn" onmousedown="simularTecla('ArrowDown')" ontouchstart="simularTecla('ArrowDown')">▼</div>
+            <div class="d-btn" onmousedown="simularTecla('ArrowRight')" ontouchstart="simularTecla('ArrowRight')">►</div>
+        </div>
+        <div class="action-btns">
+            <div class="a-btn b-btn" onmousedown="simularTecla('x')" ontouchstart="simularTecla('x')">B</div>
+            <div class="a-btn" onmousedown="simularTecla('z')" ontouchstart="simularTecla('z')">A</div>
+        </div>
+    </div>
+
+    <script>  
+        const sndSuspense = new Audio('https://www.myinstants.com/media/sounds/undertale-wind.mp3');
+        sndSuspense.loop = true; sndSuspense.volume = 0;
+        const sndEncounter = new Audio('https://www.myinstants.com/media/sounds/undertale-encounter.mp3');
+        const sndSelect = new Audio('https://www.myinstants.com/media/sounds/undertale-select.mp3');
+        const sndConfirm = new Audio('https://www.myinstants.com/media/sounds/undertale-save.mp3');
+        const sndDing = new Audio('https://www.myinstants.com/media/sounds/level-up-undertale.mp3'); 
+        sndDing.volume = 0.4;
+
+        const textSoundPool = [];
+        for(let i=0; i<8; i++) {
+            let snd = new Audio('https://www.myinstants.com/media/sounds/undertale-dialogue-sound.mp3');
+            snd.volume = 0.25;
+            textSoundPool.push(snd);
+        }
+        let poolIndex = 0;
+
+        function playTextSound() {
+            try {
+                textSoundPool[poolIndex].currentTime = 0;
+                textSoundPool[poolIndex].play().catch(()=>{});
+                poolIndex = (poolIndex + 1) % textSoundPool.length;
+            } catch(e){}
+        }
+
+        let audioUnlocked = false;
+        function unlockAudioContext() {
+            if (audioUnlocked) return;
+            const audios = [sndSuspense, sndEncounter, sndSelect, sndConfirm, sndDing, audioBatallaFondo, audioBatalla];
+            textSoundPool.forEach(snd => audios.push(snd));
+            audios.forEach(snd => {
+                snd.play().then(() => {
+                    snd.pause();
+                    snd.currentTime = 0;
+                }).catch(() => {});
+            });
+            audioUnlocked = true;
+        }
+
+        const audioBatalla = new Audio();
+        audioBatalla.loop = true;
+
+        const audioBatallaFondo = new Audio('https://www.dropbox.com/scl/fi/p6s0d42eh4y3umyqsspgf/Savetheworld-Need-or-Want-Instrumental.mp3?rlkey=kgxo8hslfjmczgqoeyjqbva0n&st=kp87k34h&raw=1');
+        audioBatallaFondo.loop = true;
+        audioBatallaFondo.volume = 0.5;
+
+        let musicaIniciada = false;
+        let gameState = 'EXPLORE'; 
+        let actCount = 0;
+        let melodiaSonada = false; 
+        let sparedNotificationPlayed = false;
+        let isForgiven = false;
+        
+        const spareThreshold = 10;
+
+        let endingLines = [
+            "* El viento deja de soplar en la fría habitación.",
+            "* Miras a Damaris de frente y decides dejar caer tus últimas barreras.",
+            "* Sabes que el camino por delante no será nada fácil...",
+            "* Habrá días de dudas y momentos en los que el miedo intente regresar.",
+            "* Pero estás dispuesto a dar cada paso con honestidad, paciencia y amor.",
+            "* Porque al final del día, su paz y su sonrisa valen todo el esfuerzo.",
+            "* \"Te amo. Pase lo que pase...\"",
+            "<br><span style='color: #ff0000; text-shadow: 0 0 15px #ff0000; display: block; text-align: center; margin-top: 10px; font-size: 2.8rem;'>❤ Eso siempre me mantendrá determinado. ❤</span>"
+        ];
+        let currentEndingLine = 0;
+        let isEndingTyping = false;
+
+        const player = document.getElementById('player-sprite');
+        const npc = document.getElementById('npc-sprite');
+        const excMark = document.getElementById('exc-mark');
+        const flash = document.getElementById('battle-flash');
+        const overworld = document.getElementById('overworld');
+        const battleScene = document.getElementById('battle-scene');
+        const bgReveal = document.getElementById('bg-reveal');
+
+        let maxW = Math.min(window.innerWidth, 800);
+        let maxH = Math.min(window.innerHeight, 600);
+        let pX = 40; let pY = maxH / 2;
+        let npcBaseX = maxW - 80; let npcBaseY = maxH / 2 - 20;
+        player.style.left = pX + 'px'; player.style.top = pY + 'px';
+
+        let dist = 1000;
+        let maxDist = maxW - 120;
+        const speedWalk = 10;
+
+        const snowContainer = document.getElementById('snow-container');
+        for(let i=0; i<30; i++) {
+            let snow = document.createElement('div');
+            snow.className = 'snow-particle';
+            snow.style.left = Math.random() * 100 + '%';
+            snow.style.top = Math.random() * -600 + 'px';
+            snow.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            snowContainer.appendChild(snow);
+        }
+
+        function gameLoop() {
+            if (gameState === 'EXPLORE') {
+                dist = Math.hypot(npcBaseX - pX, npcBaseY - pY);
+                let intensidad = 1 - (dist / maxDist);
+                if(intensidad < 0) intensidad = 0; if(intensidad > 1) intensidad = 1;
+                if(musicaIniciada) sndSuspense.volume = intensidad * 0.8;
+                bgReveal.style.opacity = intensidad;
+                let trembleMax = 12 * intensidad;
+                npc.style.left = (npcBaseX + (Math.random() - 0.5) * trembleMax) + 'px';
+                npc.style.top = (npcBaseY + (Math.random() - 0.5) * trembleMax) + 'px';
+                npc.style.textShadow = `0 0 ${15 + (intensidad * 20)}px var(--ut-cyan)`;
+                if (dist < 45) startEncounter();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+
+        function startEncounter() {
+            gameState = 'TRANSITION';
+            sndSuspense.pause();
+            excMark.style.display = 'block';
+            sndEncounter.play();
+            let flashes = 0;
+            let flashInterval = setInterval(() => {
+                flash.style.display = flash.style.display === 'block' ? 'none' : 'block';
+                flashes++;
+                if (flashes >= 6) {
+                    clearInterval(flashInterval);
+                    flash.style.display = 'none';
+                    overworld.style.display = 'none';
+                    bgReveal.style.display = 'none';
+                    battleScene.style.display = 'flex';
+                    audioBatallaFondo.play().catch(()=>{}); 
+                    renderMain();
+                }
+            }, 75);
+        }
+
+        const gameData = {
+            FIGHT: { 
+                layout: 'list', 
+                options: ['* Atacar'], 
+                dialogs: [
+                    [
+                        '* Imposible. Ya hubo suficientes heridas en el pasado.',
+                        '* ¿Hacerle daño? Preferirías perder tú la batalla antes de verla sufrir de nuevo.',
+                        '* Esa versión de ti que lastimaba a quien amaba, ya no existe. Ha sido borrada.',
+                        '* Sientes que luchar no tiene ningún sentido aquí. Solo traería más arrepentimiento.',
+                        '* Levantas la vista, pero tus manos tiemblan. No. Nunca más.',
+                        '* Te das cuenta de que el verdadero enemigo siempre fue tu propio orgullo.'
+                    ]
+                ],
+                clicks: [0]
+            },
+            ACT: { 
+                layout: 'grid', 
+                options: ['* Reconocer', '* Escuchar', '* Sincerarse', '* Prometer', '* Recordar', '* Observar'], 
+                dialogs: [
+                    [ // Reconocer
+                        '* Miras a Damaris a los ojos. Sabes que a veces fuiste ciego a lo que realmente importaba en su corazón.',
+                        '* Reconocer tus errores duele profundamente, pero verla lejos te enseñó la lección más grande de todas.',
+                        '* La inmadurez fue tu escudo mucho tiempo. Ya no quieres defenderte de ella, sino protegerla.',
+                        '* Bajas completamente tus defensas. Tu alma está al descubierto frente a ella.',
+                        '* Admites que el miedo te paralizó en el pasado. Pero hoy, la determinación te impulso a cambiar.',
+                        '* El viento sopla suavemente. Sientes que has dado el primer paso hacia la redención.'
+                    ],
+                    [ // Escuchar
+                        '* Te detienes en completo silencio. El ruido del mundo es demasiado, quieres ser su lugar seguro y tranquilo.',
+                        '* Si ella está cansada, decides sostener el peso un rato. Solo quieres que respire y se relaje.',
+                        '* Entiendes que no hay nada que debatir. Su paz mental es infinitamente más importante que tener la razón.',
+                        '* Prestas atención no solo a sus palabras, sino al silencio que existe entre ellas.',
+                        '* El eco de las discusiones pasadas se desvanece por completo. Ahora solo hay espacio para la empatía.',
+                        '* Al escucharla, sientes que LV (AMOR) significa algo completamente distinto ahora.'
+                    ],
+                    [ // Sincerarse
+                        '* "Sé que el miedo a veces me hizo actuar de la forma equivocada, alejándote sin querer..."',
+                        '* No buscas convencerla de nada hoy. Solo necesitas que sepa que el sentimiento sigue vivo y es sincero.',
+                        '* "Extraño hasta los pequeños detalles que antes no sabía valorar, aquellos que daban color a mis días."',
+                        '* Tu honestidad brilla con un color cálido en la oscuridad. Sientes cómo la tensión disminuye.',
+                        '* Le confiesas que el silencio de su Async fue el ruido más ensordecedor que has experimentado.',
+                        '* Decir la verdad con el corazón abierto TE LLENA DE DETERMINACIÓN.'
+                    ],
+                    [ // Prometer
+                        '* Haces una promesa silenciosa. No de perfección, sino de un esfuerzo real, genuino y constante.',
+                        '* Sabes que las palabras ya no bastan. Dejarás que el tiempo y tus acciones hablen por ti desde ahora.',
+                        '* Prometes darle el espacio que su corazón necesite para sanar, sin importar el tiempo que tome.',
+                        '* Te comprometes a no ser una carga, sino un apoyo invisible si eso es lo que ella requiere.',
+                        '* Juras proteger este vínculo, incluso si por ahora debe mantenerse a la distancia.',
+                        '* Un extraño brillo cálido te rodea al hacer esta promesa. Es la luz de la esperanza.'
+                    ],
+                    [ // Recordar
+                        '* Le recuerdas sutilmente aquella tarde donde todo era tranquilidad y risas compartidas.',
+                        '* Mencionas un chiste local antiguo. Parece que casi sonríe... o tal vez fue solo la luz del lugar.',
+                        '* La nostalgia inunda el campo de batalla pacíficamente, curando viejas cicatrices invisibles.',
+                        '* El recuerdo de cuando se conocieron flota en el aire. Todo parecía tan sencillo y mágico entonces.',
+                        '* A veces te preguntas si ella recuerda las mismas pequeñas cosas que tú guardas con tanto cariño.',
+                        '* Recordar los buenos tiempos te da fuerzas inquebrantables para intentar arreglar los malos.'
+                    ],
+                    [ // Observar
+                        '* La observas en silencio. Notas que su postura tiene una mezcla de duda y expectativa.',
+                        '* El ambiente es tenso, pero extrañamente pacífico. Sabes que no hay prisa alguna.',
+                        '* Ves tu propio reflejo en el cristal imaginario de este encuentro y cierras los ojos...',
+                        '* Te das cuenta del largo y difícil viaje que has recorrido para estar parado justo aquí, frente a ella.',
+                        '* Miras profundamente en tu interior. Las cicatrices están ahí, pero ya no duelen de la misma forma.',
+                        '* Es un momento de profunda claridad... * A pesar de todo, sigues siendo tú.'
+                    ]
+                ],
+                clicks: [0, 0, 0, 0, 0, 0]
+            },
+            ITEM: { 
+                layout: 'list', 
+                options: ['* Carta vieja', '* Mi paciencia', '* Nuestra Foto', '* Detalle guardado'], 
+                dialogs: [
+                    [ // Carta vieja
+                        '* Una de las cartas que te dio. Recuerdas perfectamente cómo se sentía el mundo en ese preciso instante.',
+                        '* Las palabras escritas en papel no han cambiado en absoluto. Tu cariño hacia ella tampoco lo ha hecho.',
+                        '* Trazas las letras con tu dedo. Cada trazo es un reminder de lo que alguna vez fue hermoso.',
+                        '* Aunque el papel esté desgastado, los sentimientos que evoca están más intactos que nunca.',
+                        '* El inmenso poder de los recuerdos TE LLENA DE DETERMINACIÓN.'
+                    ],
+                    [ // Mi paciencia
+                        '* Le ofreces todo el tiempo del mundo. No hay un reloj corriendo, no hay presión de ningún tipo.',
+                        '* Su tranquilidad es muchísimo más valiosa que tu ansiedad egoísta por arreglar las cosas rápido.',
+                        '* Te sientas a esperar mentalmente, sin exigir absolutamente nada a cambio.',
+                        '* Entiendes que las flores necesitan tiempo para volver a crecer después de una fuerte tormenta.',
+                        '* Tu HP de Paciencia se restaura al máximo.'
+                    ],
+                    [ // Nuestra foto
+                        '* Sacas tu teléfono y observas detenidamente una foto de los dos en tiempos más brillantes.',
+                        '* Ambos se veían tan felices. Te prometes a ti mismo hacer todo lo posible para recuperar esa sonrisa genuina.',
+                        '* Notas detalles en los que antes no te fijabas: la forma inquebrantable en que sus ojos brillaban al mirarte.',
+                        '* Guardas el teléfono lentamente en tu bolsillo. El frío de la pantalla contrasta con el calor en tu pecho.',
+                        '* Sientes una chispa inquebrantable de esperanza que se niega a apagarse.'
+                    ],
+                    [ // Detalle guardado
+                        '* Buscas en tus bolsillos y sientes ese pequeño detalle físico que guardaste especialmente para ella.',
+                        '* Sabes que aún no es el momento adecuado para dárselo. Lo sostienes con supremo cuidado.',
+                        '* Es un símbolo de que estabas pensando en ella incluso cuando las cosas estaban en su peor punto.',
+                        '* Imaginas el momento en que puedas entregárselo y ella sonría. Esa imagen te da fuerzas.',
+                        '* Saber que está ahí, guardado a salvo para ella, te motiva a seguir intentándolo con mucha suavidad.'
+                    ]
+                ],
+                clicks: [0, 0, 0, 0]
+            },
+            MERCY: { 
+                layout: 'list', 
+                options: ['* Pedir Perdón', '* Dar Espacio', '* Agradecer'], 
+                dialogs: [
+                    [ // Pedir Perdón
+                        '* "Perdóname por no haber sabido cuidar con la delicadeza necesaria lo que éramos."',
+                        '* "No te pido que vuelvas hoy. Solo quiero pedir perdón desde el fondo más sincero de mi ser."',
+                        '* Sientes que un peso enorme y oscuro se levanta de tus hombros al ser por fin honesto.',
+                        '* No hay excusas esta vez. Solo una disculpa pura y sin condiciones ocultas.',
+                        '* El aire a tu alrededor se siente mucho más ligero al dejar caer tu orgullo al suelo.'
+                    ],
+                    [ // Dar Espacio
+                        '* Das un paso atrás. Le demuestras físicamente que ella tiene el control absoluto de la situación ahora.',
+                        '* El silencio se vuelve extrañamente reconfortante. Estás aquí, pero a la distancia que ella elija.',
+                        '* Entiendes de una vez por todas que el amor genuino también significa saber soltar y dar alas.',
+                        '* Le haces saber que su libertad de decidir es lo más sagrado para ti en este momento.',
+                        '* Tu alma retrocede un poco, dándole espacio a la suya para sanar y respirar en completa paz.'
+                    ],
+                    [ // Agradecer
+                        '* "Gracias por todo lo que me enseñaste, incluso si la lección nos duele a ambos en este momento."',
+                        '* La gratitud suaviza la poca tensión que quedaba flotando en la fría habitación.',
+                        '* Aceptar lo que fue y agradecerlo, es tu primer paso vital para sanar, ya sea juntos o separados.',
+                        '* Le agradeces internamente por haber iluminado tu vida de tantas maneras durante el tiempo que compartieron.',
+                        '* Tu alma se ilumina con un brillo dorado de sincera y profunda gratitud.'
+                    ]
+                ],
+                clicks: [0, 0, 0]
+            }
+        };
+
+        const frasesRandom = [
+            "* El corazón de Damaris de frente ladea con calma...", 
+            "* Sientes que el aire se vuelve un poco más cálido.", 
+            "* Estás lleno de esperanza y arrepentimiento a partes iguales.", 
+            "* Damaris espera a que encuentres las palabras correctas.",
+            "* Huele ligeramente a nostalgia y a lluvia.",
+            "* Sabes en tu interior que estás haciendo lo correcto.",
+            "* El silencio no es incómodo. Es un silencio necesario.",
+            "* Una extraña luz brilla a través del cuarto.",
+            "* Sientes que tus pecados pasados pesan un poco menos.",
+            "* El destino de este encuentro está en tus manos... y en las de ella."
+        ];
+        
+        let mainIndex = 0; let subIndex = 0; let currentMenuType = '';
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const contentArea = document.getElementById('content-area');
+        const cursor = document.getElementById('cursor');
+        let typingTimer;
+
+        function renderMain() {
+            if (isForgiven) {
+                gameState = 'BATTLE_FINAL';
+                cursor.style.display = 'none';
+                document.getElementById('main-nav').style.display = 'none'; 
+                contentArea.innerHTML = "<div class='special-btn'>❤ Comenzar todo de nuevo</div>";
+                return;
+            }
+
+            gameState = 'BATTLE_MAIN'; cursor.style.display = 'none';
+            contentArea.innerHTML = frasesRandom[Math.floor(Math.random() * frasesRandom.length)];
+            navBtns.forEach((btn, i) => { i === mainIndex ? btn.classList.add('focused') : btn.classList.remove('focused'); });
+        }
+
+        function renderSubMenu() {
+            gameState = 'BATTLE_SUB'; subIndex = 0;
+            currentMenuType = navBtns[mainIndex].getAttribute('data-type');
+            const data = gameData[currentMenuType];
+            let html = `<div class="${data.layout === 'grid' ? 'grid-menu' : 'list-menu'}">`;
+            data.options.forEach((opt, i) => { 
+                let styleClass = "menu-option";
+                if (currentMenuType === 'MERCY' && opt === '* Pedir Perdón' && actCount >= spareThreshold) {
+                    styleClass += " spare-ready";
+                }
+                html += `<div class="${styleClass}" id="opt-${i}">${opt}</div>`; 
+            });
+            contentArea.innerHTML = html + `</div>`;
+            cursor.style.display = 'block'; updateCursorPos();
+        }
+
+        function updateCursorPos() {
+            const targetOpt = document.getElementById(`opt-${subIndex}`);
+            if (targetOpt) {
+                const rect = targetOpt.getBoundingClientRect();
+                const containerRect = document.getElementById('dialog-box').getBoundingClientRect();
+                cursor.style.top = (rect.top - containerRect.top + 2) + 'px';
+                cursor.style.left = (rect.left - containerRect.left - 25) + 'px';
+            }
+        }
+
+        function typeDialog(text) {
+            gameState = 'BATTLE_DIALOG'; 
+            cursor.style.display = 'none';
+            contentArea.innerHTML = ""; 
+            let i = 0;
+            let charCounter = 0; 
+            
+            function type() {
+                if (gameState !== 'BATTLE_DIALOG') return; 
+                
+                if (i < text.length) {
+                    let char = text.charAt(i);
+                    
+                    if (char === '<') { 
+                        let tag = ""; 
+                        while(text.charAt(i) !== '>' && i < text.length) { 
+                            tag += text.charAt(i); 
+                            i++; 
+                        }
+                        tag += '>'; 
+                        contentArea.innerHTML += tag;
+                    } else { 
+                        contentArea.innerHTML += char; 
+                        
+                        if (char !== ' ' && char !== '*') {
+                            charCounter++;
+                            if (charCounter % 2 === 0) {
+                                playTextSound();
+                            }
+                        }
+                    }
+                    i++; 
+                    typingTimer = setTimeout(type, 35);
+                }
+            }
+            clearTimeout(typingTimer); 
+            type();
+        }
+
+        let npcTypingTimer;
+        function showNPCTalk(text) {
+            const bubble = document.getElementById('npc-talk');
+            bubble.style.display = 'block';
+            bubble.innerHTML = "";
+            clearTimeout(npcTypingTimer);
+            let i = 0;
+            let charCounter = 0;
+            function type() {
+                if (i < text.length) {
+                    bubble.innerHTML += text.charAt(i);
+                    if (text.charAt(i) !== ' ') {
+                        charCounter++;
+                        if (charCounter % 2 === 0) playTextSound();
+                    }
+                    i++;
+                    npcTypingTimer = setTimeout(type, 50);
+                } else {
+                    npcTypingTimer = setTimeout(() => { bubble.style.display = 'none'; }, 2500);
+                }
+            }
+            type();
+        }
+
+        function triggerEnding() {
+            gameState = 'ENDING_TRANSITION';
+            // Se quitan las pausas para que la música siga sonando sutilmente
+            // audioBatallaFondo.pause();
+            // audioBatalla.pause();
+            
+            const sndFin = new Audio('https://www.myinstants.com/media/sounds/undertale-logo-sound.mp3');
+            sndFin.volume = 0.3; // Volumen bajo para que no sature sobre la canción
+            sndFin.play().catch(()=>{});
+            
+            const flashFin = document.createElement('div');
+            flashFin.id = 'flash-fin';
+            flashFin.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:white;z-index:99999;opacity:0;transition:opacity 1.5s ease-in;display:flex;align-items:center;justify-content:center;font-family:"VT323", monospace;padding:20px;box-sizing:border-box;';
+            document.body.appendChild(flashFin);
+            
+            setTimeout(() => { flashFin.style.opacity = '1'; }, 50);
+            
+            setTimeout(() => {
+                flashFin.style.background = 'black';
+                flashFin.style.color = 'white';
+                flashFin.innerHTML = `
+                    <div id="ending-box" style="width: 100%; max-width: 700px; background: #000000; border: 6px solid #ffffff; padding: 30px; box-sizing: border-box; font-size: 2.2rem; line-height: 1.5; text-align: left; min-height: 220px; position: relative; user-select:none;">
+                        <span id="ending-text"></span>
+                        <span id="ending-cursor" style="display:none; position:absolute; bottom: 15px; right: 25px; color: yellow; font-size: 2rem; animation: pulseHeart 1s infinite;">▼</span>
+                    </div>
+                `;
+                gameState = 'ENDING_DIALOG';
+                typeEndingLine();
+            }, 3000);
+        }
+
+        function typeEndingLine() {
+            if (currentEndingLine >= endingLines.length) return;
+            isEndingTyping = true;
+            let text = endingLines[currentEndingLine];
+            let endingTextEl = document.getElementById('ending-text');
+            let endingCursor = document.getElementById('ending-cursor');
+            
+            endingCursor.style.display = 'none'; 
+            endingTextEl.innerHTML = ""; 
+            
+            let i = 0;
+            let charCounter = 0;
+            
+            function type() {
+                if (gameState !== 'ENDING_DIALOG') return;
+                if (i < text.length) {
+                    let char = text.charAt(i);
+                    if (char === '<') { 
+                        let tag = ""; 
+                        while(text.charAt(i) !== '>' && i < text.length) { 
+                            tag += text.charAt(i); i++; 
+                        }
+                        tag += '>'; 
+                        endingTextEl.innerHTML += tag;
+                    } else { 
+                        endingTextEl.innerHTML += char; 
+                        if (char !== ' ' && char !== '*') {
+                            charCounter++;
+                            if (charCounter % 2 === 0) playTextSound();
+                        }
+                    }
+                    i++; 
+                    setTimeout(type, 45); 
+                } else {
+                    isEndingTyping = false;
+                    if (currentEndingLine < endingLines.length - 1) {
+                        endingCursor.style.display = 'block'; 
+                    } else {
+                        // Sutil desvanecimiento al llegar al mensaje final de determinación
+                        const fadeOut = setInterval(() => {
+                            if (audioBatalla.volume > 0.1) {
+                                audioBatalla.volume -= 0.01;
+                            } else {
+                                clearInterval(fadeOut);
+                            }
+                        }, 200);
+                    }
+                }
+            }
+            type();
+        }
+
+        function procesarInput(key) {
+            unlockAudioContext();
+
+            if(!musicaIniciada && gameState === 'EXPLORE') { sndSuspense.play().catch(()=>{}); musicaIniciada = true; }
+            if (gameState === 'ENDING_TRANSITION' || gameState === 'ENDED') return; 
+
+            if (gameState === 'EXPLORE') {
+                if (key === 'ArrowUp' && pY > 50) pY -= speedWalk;
+                else if (key === 'ArrowDown' && pY < maxH - 50) pY += speedWalk;
+                else if (key === 'ArrowLeft' && pX > 20) pX -= speedWalk;
+                else if (key === 'ArrowRight' && pX < maxW - 20) pX += speedWalk;
+                player.style.left = pX + 'px'; player.style.top = pY + 'px';
+            } else {
+                if (key === 'ArrowRight') {
+                    if (gameState === 'BATTLE_MAIN') { mainIndex = (mainIndex + 1) % navBtns.length; sndSelect.play(); renderMain(); } 
+                    else if (gameState === 'BATTLE_SUB' && gameData[currentMenuType].layout === 'grid') {
+                        if (subIndex % 2 === 0 && subIndex + 1 < gameData[currentMenuType].options.length) { subIndex++; sndSelect.play(); updateCursorPos(); }
+                    }
+                } else if (key === 'ArrowLeft') {
+                    if (gameState === 'BATTLE_MAIN') { mainIndex = (mainIndex - 1 + navBtns.length) % navBtns.length; sndSelect.play(); renderMain(); } 
+                    else if (gameState === 'BATTLE_SUB' && gameData[currentMenuType].layout === 'grid') {
+                        if (subIndex % 2 !== 0) { subIndex--; sndSelect.play(); updateCursorPos(); }
+                    }
+                } else if (key === 'ArrowDown' || key === 'ArrowUp') {
+                    if (gameState === 'BATTLE_SUB') {
+                        const jump = gameData[currentMenuType].layout === 'grid' ? 2 : 1;
+                        if (key === 'ArrowDown' && subIndex + jump < gameData[currentMenuType].options.length) subIndex += jump;
+                        else if (key === 'ArrowUp' && subIndex - jump >= 0) subIndex -= jump;
+                        sndSelect.play(); updateCursorPos();
+                    }
+                } else if (key === 'Enter' || key === 'z' || key === 'Z') {
+                    sndConfirm.play().catch(()=>{});
+
+                    if (gameState === 'ENDING_DIALOG') {
+                        if (!isEndingTyping && currentEndingLine < endingLines.length - 1) {
+                            currentEndingLine++;
+                            typeEndingLine();
+                        }
+                        return;
+                    }
+
+                    if (gameState === 'BATTLE_MAIN') renderSubMenu();
+                    else if (gameState === 'BATTLE_FINAL') {
+                        triggerEnding();
+                    }
+                    else if (gameState === 'BATTLE_SUB') {
+                        const optName = gameData[currentMenuType].options[subIndex];
+                        const dialogArray = gameData[currentMenuType].dialogs[subIndex];
+                        let currentClick = gameData[currentMenuType].clicks[subIndex];
+                        if (currentClick >= dialogArray.length) currentClick = dialogArray.length - 1;
+                        
+                        let text = dialogArray[currentClick];
+                        
+                        if (gameData[currentMenuType].clicks[subIndex] < dialogArray.length - 1) {
+                            gameData[currentMenuType].clicks[subIndex]++;
+                        }
+                        
+                        if (currentMenuType === 'ACT' && !melodiaSonada) {
+                            audioBatallaFondo.pause();
+                            audioBatallaFondo.currentTime = 0;
+                            
+                            audioBatalla.src = 'https://www.dropbox.com/scl/fi/dsi0desjmgawd9mq04yyy/ZOE-Luna-Unplugged.mp3?rlkey=p1x1wruuwt9hbmqka881m8jvh&st=6ain9vfm&raw=1';
+                            audioBatalla.volume = 0.5;
+                            audioBatalla.load();
+                            audioBatalla.play().catch(e => console.log("Error de reproducción:", e));
+                            
+                            melodiaSonada = true;
+                            text = text + '<br><br>* Una canción muy especial empieza a sonar...';
+                        }
+
+                        if (currentMenuType === 'ACT' || currentMenuType === 'ITEM') {
+                            actCount++;
+
+                            if (actCount >= spareThreshold && !sparedNotificationPlayed) {
+                                document.getElementById('battle-soul').classList.add('spare-ready');
+                                sndDing.play().catch(()=>{}); 
+                                sparedNotificationPlayed = true;
+                                showNPCTalk("Parece que sus defensas bajan un poco...");
+                            }
+                        }
+
+                        if (currentMenuType === 'MERCY' && optName === '* Pedir Perdón') {
+                            if (actCount >= spareThreshold) {
+                                if (currentClick === dialogArray.length - 1 && !isForgiven) {
+                                    showNPCTalk("Perdonado...");
+                                    
+                                    audioBatalla.pause();
+                                    audioBatalla.src = 'https://www.dropbox.com/scl/fi/rv93vtogynlku7ygdtqu8/Mac-DeMarco-My-Kind-Of-Woman.mp3?rlkey=mvauul26nbp7ab1hayx2ia86x&st=nqfdujhr&raw=1';
+                                    audioBatalla.volume = 0.4;
+                                    audioBatalla.load();
+                                    audioBatalla.play().catch(()=>{});
+                                    
+                                    isForgiven = true;
+                                    text = text + "<br><br>* Te disculpas desde el fondo de tu corazón.<br>* Damaris te dio otra oportunidad, no la desaproveches...";
+                                }
+                            } else {
+                                text = "* Intentas pedir perdón, pero sientes que tus palabras aún no son suficientes...<br>* Primero debes **Reconocer**, **Escuchar**, **Sincerarse** o usar tus **ITEMS**.";
+                            }
+                        }
+
+                        typeDialog(text);
+                    } else if (gameState === 'BATTLE_DIALOG') renderMain();
+                } else if (key === 'x' || key === 'X' || key === 'Escape') {
+                    if (gameState === 'BATTLE_SUB' || gameState === 'BATTLE_DIALOG') { sndSelect.play(); renderMain(); }
+                }
+            }
+        }
+        function simularTecla(tecla) { procesarInput(tecla); }
+        window.addEventListener('keydown', (e) => { procesarInput(e.key); });
+    </script>
+</body>
+</html>

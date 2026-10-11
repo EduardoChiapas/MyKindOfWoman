@@ -73,3 +73,9 @@ El escritorio emite `pc:launch-game`, `pc:close` y `pc:volume` con `{volume}`. E
 El puente del motor original envía `fnf-original:ready`, `fnf-original:win` con `{songId,stats}` y, si corresponde, `fnf-original:error`. El host acepta esos mensajes únicamente desde la ventana exacta del iframe y su mismo origen. Las victorias guardan el progreso sin cerrar FNF ni conceder una llave. `quest:key-obtained` queda reservado para una futura integración y no se emite al ganar ninguna canción. Un flag `key3` de una versión anterior de este guardado se retira al cargar, conservando las victorias. El volumen se envía al motor como `fnf-original:volume`. Si falta la compilación original, se muestra el error y se vuelve al escritorio.
 
 Los autores, procedencias y licencias se detallan en `CREDITOS.md` y `ASSET_CREDITS.md`.
+
+## App Determination
+
+El icono de corazón abre el HTML «Ojala le guste» dentro del monitor, conservando su historia y opciones. Usa flechas, Enter/Z y X/Escape; en móvil aparecen sus controles táctiles originales. «← Escritorio», en la esquina superior derecha del monitor, cierra la app y todos sus sonidos. El diálogo y los menús utilizan las muestras originales de Undertale ya incluidas en el proyecto; las transiciones respetan la preferencia de movimiento reducido. La música, video y fuente mantienen los enlaces externos del HTML original.
+
+Si copias la PC a otro proyecto, incluye también `apps/determination/` junto a `pc-desktop.js`.

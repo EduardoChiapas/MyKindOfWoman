@@ -429,7 +429,7 @@
   ],
   "runtimeZipSha256": "d3d7294bcb0c9eeda569452e223f4498543b1fcc4fe6ee32888d74a8dfb42167",
   "runtimeZipBytes": 46290931,
-  "engineSha256": "9032ef643e33eded14832276280d41a6430b582d31f6ed0f32a74d8354d7972b",
+  "engineSha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
   "sourcePort": "date-week-source/",
   "limitations": "Engine compatibility port; Kade and FNF 0.8.6 have different native HUD/menu/scoring behavior. Original artwork/audio/chart timings are reused.",
   "heartbassDance": {

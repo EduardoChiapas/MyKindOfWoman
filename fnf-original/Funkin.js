@@ -18549,6 +18549,21 @@ Main.prototype = $extend(openfl_display_Sprite.prototype,{
 			flixel_FlxG.sound.set_volume(Math.max(0.0,Math.min(1.0,volume)));
 		});
 		Main.postWebHostMessage({ type : "fnf-original:ready"});
+		var previousControlsMode = "";
+		flixel_FlxG.signals.postUpdate.add(function() {
+			var mode = "menu";
+			if(((flixel_FlxG.game._state) instanceof funkin_play_PlayState)) {
+				var play = flixel_FlxG.game._state;
+				if(play.subState == null && !play.isPlayerDying) {
+					mode = "play";
+				}
+			}
+			if(mode == previousControlsMode) {
+				return;
+			}
+			previousControlsMode = mode;
+			Main.postWebHostMessage({ type : "fnf-original:controls", mode : mode});
+		});
 	}
 	,init: function(event) {
 		if(this.hasEventListener("addedToStage")) {
@@ -18573,7 +18588,7 @@ Main.prototype = $extend(openfl_display_Sprite.prototype,{
 		var game = new flixel_FlxGame(this.gameWidth,this.gameHeight,flixel_util_typeLimit_InitialState.fromType(this.initialState),framerate,framerate,this.skipSplash,openfl_Lib.get_current().stage.window.__fullscreen || funkin_Preferences.get_autoFullscreen());
 		game._customSoundTray = funkin_ui_options_FunkinSoundTray;
 		this.addChild(game);
-		haxe_Log.trace("hxcpp_debug_server is disabled! This build does not support debugging.",{ fileName : "source/Main.hx", lineNumber : 365, className : "Main", methodName : "setupGame"});
+		haxe_Log.trace("hxcpp_debug_server is disabled! This build does not support debugging.",{ fileName : "source/Main.hx", lineNumber : 377, className : "Main", methodName : "setupGame"});
 		this.initializeWebHostBridge();
 	}
 	,handleDebugDisplayKeys: function() {

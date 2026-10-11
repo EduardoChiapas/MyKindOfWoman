@@ -1,15 +1,15 @@
 {
   "status": "pass",
-  "scope": "Native FNF 0.8.6 HTML5, Tutorial, The Date Week compatibility port and unchanged Bad Bunny ZIP. Runtime QA uses original charts/audio and native keyboard inputs without changing gameplay state. Performance is not benchmarked.",
-  "verifiedAt": "2026-10-11T05:36:32.143756+00:00",
+  "scope": "Native FNF 0.8.6 HTML5, Tutorial, The Date Week compatibility port and unchanged Bad Bunny ZIP. Runtime QA uses original charts/audio and native keyboard inputs without changing gameplay state. Performance is not benchmarked. Mobile touch zones forward native keyboard events; checked in a mobile-size browser and with pointer-input QA. No physical phone benchmark.",
+  "verifiedAt": "2026-10-11T06:02:00.125284+00:00",
   "engine": {
     "name": "Friday Night Funkin’",
     "version": "0.8.6",
     "target": "HTML5",
     "source": "https://github.com/FunkinCrew/Funkin",
     "file": "fnf-original/Funkin.js",
-    "bytes": 16410651,
-    "sha256": "9032ef643e33eded14832276280d41a6430b582d31f6ed0f32a74d8354d7972b",
+    "bytes": 16411121,
+    "sha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
     "compiledOriginalEngine": true,
     "originalLimeWrapper": true,
     "soundExtension": "ogg",
@@ -77,7 +77,7 @@
   },
   "runtime": {
     "status": "pass",
-    "buildSha256": "9032ef643e33eded14832276280d41a6430b582d31f6ed0f32a74d8354d7972b",
+    "buildSha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
     "dateWeek": {
       "status": "pass",
       "engineSha256": "9032ef643e33eded14832276280d41a6430b582d31f6ed0f32a74d8354d7972b",
@@ -136,14 +136,777 @@
     },
     "badBunny": "Original ZIP unchanged; prior full runtime audit is preserved under priorBadBunnyRuntimeAudit.",
     "preloadCache": {
-      "version": "3512c56f32a59ce629f527661f46634a366caad6190d34633453e0687ae717c0",
+      "version": "de3b4e7ed7510a98e2db0a9878c34fa5d845d50dbb6754cb66a4f31d53f47b45",
       "warmFiles": 1188,
-      "totalBytes": 253477445,
-      "engineSha256": "9032ef643e33eded14832276280d41a6430b582d31f6ed0f32a74d8354d7972b",
+      "totalBytes": 253477915,
+      "engineSha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
       "modSha256": "df3af4870cab2a097044a6479854fe1aa583c920401a5d475cfe4eb1c42ba961",
       "dateWeekSha256": "d3d7294bcb0c9eeda569452e223f4498543b1fcc4fe6ee32888d74a8dfb42167",
       "allFiles": 1627,
       "excludedVideos": true
+    },
+    "mobileControls": {
+      "status": "pass",
+      "input": "PointerEvents through invisible screen quarters to native keyboard input",
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "menu": "Original native title, main menu and Story Mode entered by tapping invisible regions",
+      "returnToWeekMenu": true,
+      "physicalDeviceTested": false,
+      "native": {
+        "state": "won-naturally",
+        "mode": "single",
+        "songId": "tutorial",
+        "difficulty": "normal",
+        "notes": 32,
+        "pressed": 32,
+        "clock": 67194,
+        "matched": true,
+        "weekOrder": [],
+        "completed": [
+          {
+            "songId": "tutorial",
+            "difficulty": "normal",
+            "notes": 32,
+            "inputsDispatched": 32,
+            "lastAudioClock": 67194,
+            "nativeStats": {
+              "score": 16064,
+              "misses": 0,
+              "maxCombo": 32,
+              "totalNotesHit": 32,
+              "totalNotes": 32,
+              "difficulty": "normal",
+              "variation": "default"
+            },
+            "wonAt": "2026-10-11T06:01:35.077Z"
+          }
+        ],
+        "events": [
+          {
+            "type": "chart-armed",
+            "songId": "tutorial",
+            "difficulty": "normal",
+            "notes": 32,
+            "at": "2026-10-11T06:00:01.114Z"
+          },
+          {
+            "type": "original-audio-matched",
+            "songId": "tutorial",
+            "clock": 15,
+            "at": "2026-10-11T06:00:27.886Z"
+          },
+          {
+            "type": "real-native-win",
+            "detail": {
+              "songId": "tutorial",
+              "stats": {
+                "score": 16064,
+                "misses": 0,
+                "maxCombo": 32,
+                "totalNotesHit": 32,
+                "totalNotes": 32,
+                "difficulty": "normal",
+                "variation": "default"
+              }
+            },
+            "at": "2026-10-11T06:01:35.077Z"
+          }
+        ],
+        "inputEvents": [
+          {
+            "type": "keydown",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 14404
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 14503
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 15604
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 15684
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 16804
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 16884
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 18015
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 18095
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 24004
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 24084
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 25204
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 25284
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 26404
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 26484
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 27596
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 27684
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 33604
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 33684
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 34804
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 34895
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 36004
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 36084
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 37215
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 37284
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 43204
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 43284
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 43804
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 43884
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 44404
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 44484
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 45604
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 45684
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 46204
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 46284
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 46804
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 46884
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 50404
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 50487
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 50695
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 50783
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 51004
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 51084
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 51295
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 51383
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 52207
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 52284
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 52815
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 52884
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 53415
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 53484
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 54015
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 54084
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 54615
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 54684
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 55215
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 55284
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 55804
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowRight",
+            "lane": 3,
+            "songId": "tutorial",
+            "clock": 55884
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 56404
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowLeft",
+            "lane": 0,
+            "songId": "tutorial",
+            "clock": 56484
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 57004
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "lane": 2,
+            "songId": "tutorial",
+            "clock": 57084
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 57604
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "lane": 1,
+            "songId": "tutorial",
+            "clock": 58735
+          }
+        ]
+      },
+      "host": {
+        "fixture": "Host only; original engine in iframe; no authored gameplay",
+        "gameState": "PC",
+        "gamingPC": {
+          "active": true,
+          "playing": true,
+          "progress": {},
+          "game": {
+            "mode": "ready",
+            "original": true,
+            "source": "fnf-original/index.html",
+            "iframeAttached": true,
+            "volume": 1
+          }
+        },
+        "host": {
+          "mode": "ready",
+          "original": true,
+          "source": "fnf-original/index.html",
+          "iframeAttached": true,
+          "volume": 1
+        },
+        "iframeExists": true,
+        "iframeSource": "http://127.0.0.1:4181/fnf-original/index.html",
+        "nativeLocation": "http://127.0.0.1:4181/fnf-original/index.html",
+        "nativeCanvases": [
+          {
+            "id": "",
+            "width": 1280,
+            "height": 720,
+            "visibleWidth": 693,
+            "visibleHeight": 390
+          }
+        ],
+        "iframeReadError": null,
+        "body": {
+          "pc": true,
+          "roomInert": true,
+          "desktopHidden": false,
+          "gameVisible": true,
+          "externalScreen": true
+        },
+        "adapterCalls": {
+          "movementResets": 1,
+          "joystickResets": 1
+        },
+        "fullscreen": null,
+        "focus": {
+          "documentHasFocus": true,
+          "activeElement": {
+            "tag": "GAMING-DESKTOP",
+            "id": null,
+            "classes": ""
+          },
+          "activeChain": [
+            {
+              "tag": "GAMING-DESKTOP",
+              "id": null,
+              "classes": ""
+            },
+            {
+              "tag": "FNF-ORIGINAL-HOST",
+              "id": null,
+              "classes": ""
+            },
+            {
+              "tag": "IFRAME",
+              "id": null,
+              "classes": ""
+            }
+          ],
+          "frame": {
+            "hasFocus": true,
+            "activeElement": {
+              "tag": "BODY",
+              "id": null,
+              "classes": ""
+            }
+          }
+        },
+        "keyboardEvents": [
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "code": "ArrowDown",
+            "keyCode": 40,
+            "which": 40,
+            "isTrusted": false,
+            "time": 1791698482481
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "code": "ArrowDown",
+            "keyCode": 40,
+            "which": 40,
+            "isTrusted": false,
+            "time": 1791698482554
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "code": "ArrowUp",
+            "keyCode": 38,
+            "which": 38,
+            "isTrusted": false,
+            "time": 1791698483082
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "code": "ArrowUp",
+            "keyCode": 38,
+            "which": 38,
+            "isTrusted": false,
+            "time": 1791698483156
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowRight",
+            "code": "ArrowRight",
+            "keyCode": 39,
+            "which": 39,
+            "isTrusted": false,
+            "time": 1791698483676
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowRight",
+            "code": "ArrowRight",
+            "keyCode": 39,
+            "which": 39,
+            "isTrusted": false,
+            "time": 1791698483750
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowLeft",
+            "code": "ArrowLeft",
+            "keyCode": 37,
+            "which": 37,
+            "isTrusted": false,
+            "time": 1791698484275
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowLeft",
+            "code": "ArrowLeft",
+            "keyCode": 37,
+            "which": 37,
+            "isTrusted": false,
+            "time": 1791698484351
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowUp",
+            "code": "ArrowUp",
+            "keyCode": 38,
+            "which": 38,
+            "isTrusted": false,
+            "time": 1791698484876
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowUp",
+            "code": "ArrowUp",
+            "keyCode": 38,
+            "which": 38,
+            "isTrusted": false,
+            "time": 1791698484951
+          },
+          {
+            "type": "keydown",
+            "key": "ArrowDown",
+            "code": "ArrowDown",
+            "keyCode": 40,
+            "which": 40,
+            "isTrusted": false,
+            "time": 1791698485475
+          },
+          {
+            "type": "keyup",
+            "key": "ArrowDown",
+            "code": "ArrowDown",
+            "keyCode": 40,
+            "which": 40,
+            "isTrusted": false,
+            "time": 1791698486603
+          }
+        ],
+        "webglCapability": {
+          "available": true,
+          "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+          "vendor": "Google Inc. (Intel)",
+          "renderer": "ANGLE (Intel, Intel(R) HD Graphics 620 (0x00005916) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "maxTextureSize": 16384
+        },
+        "observedEvents": [
+          {
+            "type": "fnf-original:ready",
+            "at": "2026-10-11T05:59:39.029Z",
+            "detail": {}
+          },
+          {
+            "type": "fnf-original:win",
+            "at": "2026-10-11T06:01:35.076Z",
+            "detail": {
+              "songId": "tutorial",
+              "stats": {
+                "score": 16064,
+                "misses": 0,
+                "maxCombo": 32,
+                "totalNotesHit": 32,
+                "totalNotes": 32,
+                "difficulty": "normal",
+                "variation": "default"
+              }
+            }
+          }
+        ],
+        "preload": {
+          "phase": "waiting",
+          "bytes": 0,
+          "totalBytes": 0,
+          "completed": 0,
+          "total": 0,
+          "cachedBytes": 0,
+          "downloadedBytes": 0
+        }
+      },
+      "engineSha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
+      "unitChecks": [
+        "invisible screen quarters without buttons or artwork",
+        "multitouch chords",
+        "same-arrow reference count",
+        "held keys",
+        "sliding between zones",
+        "release on teardown",
+        "menu swipe directions",
+        "source/origin validation"
+      ]
     }
   },
   "dateWeek": {
@@ -1000,5 +1763,6 @@
         }
       }
     }
-  }
+  },
+  "priorDateRuntimeBuildSha256": "9032ef643e33eded14832276280d41a6430b582d31f6ed0f32a74d8354d7972b"
 }

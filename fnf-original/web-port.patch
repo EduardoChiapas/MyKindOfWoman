@@ -1,5 +1,5 @@
 diff --git a/source/Main.hx b/source/Main.hx
-index 8114a42..8ddc628 100644
+index 8114a42..31bc4a4 100644
 --- a/source/Main.hx
 +++ b/source/Main.hx
 @@ -24,6 +24,7 @@ import openfl.net.NetStream;
@@ -152,7 +152,7 @@ index 8114a42..8ddc628 100644
      if (stage != null)
      {
        init();
-@@ -82,6 +214,32 @@ class Main extends Sprite
+@@ -82,6 +214,44 @@ class Main extends Sprite
      }
    }
  
@@ -179,13 +179,25 @@ index 8114a42..8ddc628 100644
 +      FlxG.sound.volume = Math.max(0.0, Math.min(1.0, volume));
 +    });
 +    postWebHostMessage({type: 'fnf-original:ready'});
++    var previousControlsMode:String = '';
++    FlxG.signals.postUpdate.add(() -> {
++      var mode = 'menu';
++      if (Std.isOfType(FlxG.state, funkin.play.PlayState))
++      {
++        var play:funkin.play.PlayState = cast FlxG.state;
++        if (play.subState == null && !play.isPlayerDying) mode = 'play';
++      }
++      if (mode == previousControlsMode) return;
++      previousControlsMode = mode;
++      postWebHostMessage({type:'fnf-original:controls', mode:mode});
++    });
 +  }
 +  #end
 +
    function init(?event:Event):Void
    {
      if (hasEventListener(Event.ADDED_TO_STAGE))
-@@ -206,6 +364,10 @@ class Main extends Sprite
+@@ -206,6 +376,10 @@ class Main extends Sprite
      #else
      trace('hxcpp_debug_server is disabled! This build does not support debugging.');
      #end

@@ -79,3 +79,7 @@ Los autores, procedencias y licencias se detallan en `CREDITOS.md` y `ASSET_CRED
 El icono de corazón abre el HTML «Ojala le guste» dentro del monitor, conservando su historia y opciones. Usa flechas, Enter/Z y X/Escape; en móvil aparecen sus controles táctiles originales. «← Escritorio», en la esquina superior derecha del monitor, cierra la app y todos sus sonidos. El diálogo y los menús utilizan las muestras originales de Undertale ya incluidas en el proyecto; las transiciones respetan la preferencia de movimiento reducido. La música, video y fuente mantienen los enlaces externos del HTML original.
 
 Si copias la PC a otro proyecto, incluye también `apps/determination/` junto a `pc-desktop.js`.
+
+## Controles de FNF en celular
+
+En dispositivos táctiles, durante las canciones la pantalla tiene cuatro zonas verticales invisibles: **← ↓ ↑ →**, de izquierda a derecha. Toca cualquier altura de la zona correspondiente; mantén el dedo para notas largas y usa varios dedos para acordes. No se añaden botones, flechas, líneas ni efectos visuales sobre el juego. En los menús originales, desliza arriba/abajo para seleccionar y a los lados para cambiar dificultad; toca para confirmar y toca con dos dedos para volver. Los controles envían las teclas al motor original y se liberan al levantar/cancelar el toque, pausar, ocultar la página o cerrar FNF. Se puede jugar en ambas orientaciones; horizontal deja más espacio al juego. En escritorio permanecen los controles de teclado habituales.

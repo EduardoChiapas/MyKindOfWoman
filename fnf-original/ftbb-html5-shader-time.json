@@ -1,0 +1,82 @@
+{
+  "status": "pass",
+  "scope": "Mod ZIP fidelity and shader/script compatibility assertions; browser runtime checked separately",
+  "reason": "OpenFL HTML5 exposes the GLSL iTime uniform as a dynamic superclass field; Polymod rejects the scripted iTime property as a redefinition.",
+  "changedEntry": "source/ftbb/stages/FTBBStage.hx",
+  "scriptField": "iTime -> ftbbTime",
+  "shaderUniform": "iTime (unchanged)",
+  "renamedScriptIdentifiers": 17,
+  "shaders": [
+    "water",
+    "sky",
+    "sun"
+  ],
+  "glslAndQuotedStringsByteIdentical": true,
+  "otherZipEntriesByteIdentical": 67,
+  "artAudioChartsUnchanged": true,
+  "engineChanged": false,
+  "originalZipSha256": "7a8c6cf0193eb3b4a7f96d438909b1d97394852aedb192a99494e1cb07762252",
+  "webZipSha256": "df3af4870cab2a097044a6479854fe1aa583c920401a5d475cfe4eb1c42ba961",
+  "webZipBytes": 61671462,
+  "entries": 68,
+  "originalScriptSha256": "8bb587a06df129872e6950a3dd86d0cd149f9000fcf3735219211411acfdeec0",
+  "webScriptSha256": "02f625f276fdb0d02a2e323aa6374834af41959a76829c0d0313b7b4990a047f",
+  "browserRuntime": {
+    "status": "pass",
+    "verifiedAt": "2026-10-11T02:17:52.810Z",
+    "song": "celoso",
+    "stage": "ftbb (shared by Celoso, Palmas and Amarre)",
+    "method": "Original engine observed through temporary read-only DOM probe; test-only alert spy records every attempted alert. No alert override or probe ships.",
+    "nativeAlertCount": 0,
+    "errorCount": 0,
+    "shaderSamples": [
+      {
+        "state": "funkin.play.PlayState",
+        "shaderTimes": [
+          {
+            "name": "water",
+            "exists": true,
+            "time": 9.10759999999405
+          },
+          {
+            "name": "sky",
+            "exists": true,
+            "time": 9.10759999999405
+          },
+          {
+            "name": "sun",
+            "exists": true,
+            "time": 9.10759999999405
+          }
+        ]
+      },
+      {
+        "state": "funkin.play.PlayState",
+        "shaderTimes": [
+          {
+            "name": "water",
+            "exists": true,
+            "time": 34.860099999994574
+          },
+          {
+            "name": "sky",
+            "exists": true,
+            "time": 34.860099999994574
+          },
+          {
+            "name": "sun",
+            "exists": true,
+            "time": 34.860099999994574
+          }
+        ]
+      }
+    ],
+    "observedEvents": [
+      {
+        "type": "fnf-original:ready",
+        "at": "2026-10-11T02:15:19.812Z",
+        "detail": {}
+      }
+    ]
+  }
+}

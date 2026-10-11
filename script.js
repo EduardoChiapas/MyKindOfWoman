@@ -47,13 +47,15 @@ function loadImage(src) {
 }
 
 const playerSprite = loadImage('assets/player/frisk.png');
+const gamingPCSprite = loadImage('assets/props/gaming-pc.png');
+const torielOriginalArt = loadImage('assets/rooms/toriel_room.png');
 
 const roomImages = {
   livingRoom: loadImage('assets/rooms/living_room.png'),
   entrance: loadImage('assets/rooms/entrance.png'),
   hallway: loadImage('assets/rooms/hallway.png'),
   friskRoom: loadImage('assets/rooms/frisk_room.png'),
-  torielRoom: loadImage('assets/rooms/toriel_room.png'),
+  torielRoom: loadImage('assets/rooms/toriel_room-layout.png'),
   kitchen: loadImage('assets/rooms/kitchen.png'),
   basementHallway: loadImage('assets/rooms/basement.png')
 };
@@ -366,9 +368,10 @@ const rooms = {
       R(20, 52, 54, 31),
       // Armario alto con la flor.
       R(86, 28, 31, 55),
-      // La alfombra a la izquierda de la cama es únicamente visual.
-      // Cama.
-      R(151, 59, 64, 72),
+      // Cama trasladada a la pared izquierda según la referencia.
+      R(20, 89, 64, 72),
+      // Nueva mesa horizontal de la PC.
+      R(133, 63, 54, 29),
       // Silla del escritorio.
       R(157, 142, 18, 25),
       // Escritorio.
@@ -453,6 +456,7 @@ function facePlayer(direction) {
 }
 
 window.addEventListener('keydown', (event) => {
+  if (gameState === 'PC') return;
   if (event.target && (event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))) return;
   // Native buttons own Enter/Space. Let their click handler activate once;
   // otherwise a focused audio/help/book button could also examine the room.
@@ -1074,6 +1078,11 @@ function checkInteraction() {
   const object = findInteraction();
   if (!object) return;
 
+  if (object.action === 'pc') {
+    window.GamingPC.open();
+    return;
+  }
+
   if (object.action === 'book') {
     gameState = 'BOOK';
     resetMovementInput();
@@ -1132,15 +1141,18 @@ function updateCamera(snap = false) {
 // ============================================================
 // GAME LOOP
 // ============================================================
-function startGame() {
+function startGame(destination = 'entrance') {
   if (gameState !== 'INTRO' || !HouseExperience.canStart()) return;
   HouseExperience.startAudio();
   introContainer.style.display = 'none';
   gameContainer.style.display = 'grid';
   gameState = 'PLAYING';
-  currentRoom = 'entrance';
+  currentRoom = destination === 'torielRoom' ? 'torielRoom' : 'entrance';
   resetMovementInput();
-  placePlayerAtFeet(160, 206);
+  if (currentRoom === 'torielRoom') {
+    placePlayerAtFeet(145, 112);
+    facePlayer('up');
+  } else placePlayerAtFeet(160, 206);
   roomNameLabel.textContent = rooms[currentRoom].label;
   setAudioRoom(currentRoom);
   updateCamera(true);
@@ -1284,12 +1296,51 @@ function drawRoom() {
       roomW,
       roomH
     );
+    if (currentRoom === 'torielRoom') drawGamingPC();
     if (currentRoom === 'hallway') {
       // El color morado estaba incorporado en el fondo original, no en clip().
       // Retirar sólo el cristal antiguo antes de pintar el nuevo gris/celeste.
       const glass = worldToScreen(MIRROR_GLASS);
       ctx.clearRect(Math.round(glass.x), Math.round(glass.y), glass.width, glass.height);
     }
+  }
+}
+
+function drawGamingPC() {
+  const px = x => x * ROOM_SCALE - camera.x;
+  const py = y => y * ROOM_SCALE - camera.y;
+  const fill = (color, x, y, width, height) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(px(x), py(y), width * ROOM_SCALE, height * ROOM_SCALE);
+  };
+  // Replace only the rough PC/table patch in the supplied layout reference.
+  // The reference floor and wall are one native pixel above the original.
+  // Sample y + 1 so every horizontal seam continues across the repaired area.
+  const floor = torielOriginalArt;
+  if (floor.complete && floor.naturalWidth) {
+    ctx.drawImage(floor, 120, 55, 26, 40, px(130), py(54), 52, 80);
+    ctx.drawImage(floor, 120, 55, 26, 40, px(156), py(54), 52, 80);
+    ctx.drawImage(floor, 120, 55, 10, 40, px(182), py(54), 20, 80);
+  }
+  // Small desk uses exactly the original room's warm grey palette and 1px edges.
+  fill('#4a4a4a', 133, 63, 54, 20);
+  fill('#b3b1a7', 134, 64, 52, 17);
+  fill('#e2e2dc', 135, 64, 50, 1);
+  fill('#888368', 134, 80, 52, 2);
+  fill('#4a4a4a', 134, 83, 52, 5);
+  fill('#999983', 135, 83, 50, 3);
+  fill('#4a4a4a', 136, 88, 4, 4);
+  fill('#4a4a4a', 182, 88, 4, 4);
+  fill('#b3b1a7', 137, 88, 2, 3);
+  fill('#b3b1a7', 183, 88, 2, 3);
+  if (gamingPCSprite.complete && gamingPCSprite.naturalWidth) {
+    // Crop transparent padding only while drawing; the generated PNG stays intact.
+    ctx.drawImage(gamingPCSprite, 552, 376, 469, 337,
+      Math.round(px(143)), Math.round(py(53)), 33 * ROOM_SCALE, 24 * ROOM_SCALE);
+    ctx.fillStyle = '#89ddd7';
+    ctx.globalAlpha = .6 + .25 * Math.sin(HouseExperience.elapsedSeconds * 2);
+    ctx.fillRect(px(172), py(74), ROOM_SCALE, ROOM_SCALE);
+    ctx.globalAlpha = 1;
   }
 }
 
@@ -1442,8 +1493,8 @@ function gameLoop(timestamp) {
   lastFrameTime = timestamp;
   gameFrame += 1;
   update(deltaSeconds);
-  draw();
+  if (gameState !== 'PC') draw();
   requestAnimationFrame(gameLoop);
 }
 
-HouseExperience.boot([playerSprite, ...Object.values(roomImages)], [bgm, bgmDown]);
+HouseExperience.boot([playerSprite, gamingPCSprite, torielOriginalArt, ...Object.values(roomImages)], [bgm, bgmDown]);

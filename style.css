@@ -21,6 +21,8 @@ button:active { transform: translateY(1px); }
 #btn-start { border: 1px solid #bb8d5b; background: #38281e; padding: 14px 26px; font-size: 14px; box-shadow: 3px 3px #0005; min-width: 256px; }
 #btn-start:hover { background: #483222; border-color: var(--cream); }
 #btn-start span { margin-left: 18px; color: var(--warm); }
+#btn-pc-demo { display:block;margin:12px auto 0;padding:8px 15px;background:#171924;border:1px solid #627ba0;color:#c3d7ef;font-size:14px; }
+#btn-pc-demo:hover { background:#263249;border-color:#88cde9; }
 #loading-status { font-size: 10px; margin-top: 14px; color: var(--muted); }
 .intro-controls { margin-top: 34px; font-size: 10px; color: #8e7e74; line-height: 1.8; }
 #game-container { display: none; place-items: center; background: #000; }

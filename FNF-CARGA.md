@@ -1,6 +1,6 @@
 # Descarga anticipada de FNF
 
-Al terminar de cargar la página, `fnf-preload.js` prepara los archivos de FNF en segundo plano. La PC muestra el progreso y el mensaje «Archivos descargados». La preparación no arranca el motor, reproduce audio ni cambia las canciones.
+Después de entrar en la casa, `fnf-preload.js` espera 2,5 segundos y prepara los archivos de FNF en segundo plano mientras caminas. Antes de entrar no registra el worker ni inicia descargas de FNF. Usa una descarga de fondo a la vez y pide prioridad baja de red. Un círculo de 22 px en la esquina inferior derecha indica el progreso; al completarse muestra una pequeña marca durante 2,5 segundos y desaparece. No intercepta clics ni toques. La PC conserva también el mensaje «Archivos descargados». La preparación no arranca el motor, reproduce audio ni cambia las canciones.
 
 Se descargan aproximadamente 207 MB correspondientes al motor, sus bibliotecas de arranque y menús, Tutorial y el ZIP del mod de Bad Bunny. Los videos y recursos exclusivos de otras semanas quedan fuera de la descarga anticipada. Al abrir FNF, la cola de fondo se pausa para dar prioridad al juego.
 

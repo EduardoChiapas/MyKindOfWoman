@@ -20,7 +20,7 @@ self.addEventListener('activate', event => event.waitUntil((async () => {
   await self.clients.claim();
 })()));
 
-async function acquire(path) {
+async function acquire(path, background = false) {
   if (inFlight.has(path)) return inFlight.get(path);
   const task = (async () => {
     const key = keyFor(path);
@@ -32,7 +32,7 @@ async function acquire(path) {
     } catch { /* Storage restrictions must never stop the original game. */ }
     const url = new URL(path, root);
     url.searchParams.set('fnf_revision', manifest.files[path][0]);
-    const response = await fetch(url, {cache:'no-cache'});
+    const response = await fetch(url, {cache:'no-cache', priority:background ? 'low' : 'auto'});
     if (!response.ok) throw new Error('No se pudo descargar ' + path + ' (' + response.status + ')');
     let stored = false;
     if (cache) {
@@ -59,7 +59,7 @@ self.addEventListener('message', event => {
   if (!port || event.data?.type !== 'fnf:cache') return;
   const path = event.data.path;
   if (!warmFiles.has(path)) { port.postMessage({ok:false}); return; }
-  event.waitUntil(acquire(path).then(result => {
+  event.waitUntil(acquire(path, true).then(result => {
     port.postMessage({ok:true, stored:result.stored, source:result.source, bytes:manifest.files[path][1]});
   }).catch(error => port.postMessage({ok:false, message:String(error.message)})));
 });

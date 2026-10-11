@@ -4,8 +4,38 @@
   const root = new URL('fnf-original/', document.currentScript.src);
   let registrationPromise, running = false, gameActive = false;
   let state = {phase:'waiting', bytes:0, totalBytes:0, completed:0, total:0, cachedBytes:0, downloadedBytes:0};
+  let doneTimer, publishTimer, enteredHouse = false, indicatorFinished = false;
+  const indicator = document.createElement('div');
+  indicator.id = 'fnf-download-indicator';
+  indicator.hidden = true;
+  indicator.setAttribute('role','progressbar');
+  indicator.setAttribute('aria-label','Descargando FNF en segundo plano');
+  indicator.setAttribute('aria-valuemin','0'); indicator.setAttribute('aria-valuemax','100');
+  indicator.innerHTML = `<style>
+    #fnf-download-indicator{position:fixed;bottom:max(10px,env(safe-area-inset-bottom));right:max(10px,env(safe-area-inset-right));z-index:1010;width:22px;height:22px;padding:2px;border-radius:50%;background:#080e17a8;color:#b5e7ff;pointer-events:none}
+    #fnf-download-indicator[hidden]{display:none!important}#fnf-download-indicator svg{display:block;width:18px;height:18px}
+    #fnf-download-indicator .ring{transition:stroke-dashoffset .3s linear}#fnf-download-indicator .done{display:none}
+    #fnf-download-indicator[data-ready] {color:#85e9b4}#fnf-download-indicator[data-ready] .arrow{display:none}#fnf-download-indicator[data-ready] .done{display:block}
+    @media(prefers-reduced-motion:reduce){#fnf-download-indicator .ring{transition:none}}
+  </style><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="#ccefff30" stroke-width="1.4"/><circle class="ring" cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="50.27" stroke-dashoffset="50.27" transform="rotate(-90 10 10)"/><path class="arrow" d="M10 5.5v7m-3-3 3 3 3-3M7 15h6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path class="done" d="m6 10 2.5 2.5 5-5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  document.body.append(indicator);
+  function updateIndicator() {
+    const percent = state.totalBytes ? Math.floor(state.bytes / state.totalBytes * 100) : 0;
+    indicator.setAttribute('aria-valuenow',String(percent));
+    indicator.setAttribute('aria-label',state.phase === 'ready' ? 'FNF descargado' : 'Descargando FNF en segundo plano');
+    indicator.title = state.phase === 'ready' ? 'FNF descargado' : `Descargando FNF en segundo plano · ${percent}%`;
+    indicator.querySelector('.ring').style.strokeDashoffset = String(50.27 * (1 - percent / 100));
+    if (gameActive || !enteredHouse || !['downloading','ready'].includes(state.phase) || (state.phase === 'ready' && indicatorFinished)) { indicator.hidden = true; return; }
+    indicator.hidden = false;
+    indicator.toggleAttribute('data-ready',state.phase === 'ready');
+    if (state.phase === 'ready' && !doneTimer) doneTimer = setTimeout(() => {indicatorFinished = true; indicator.hidden = true;}, 2500);
+  }
   const snapshot = () => ({...state});
-  const publish = () => window.dispatchEvent(new CustomEvent('fnf:preload', {detail:snapshot()}));
+  const publish = () => {
+    // Avoid hundreds of DOM updates while the player is walking.
+    if (publishTimer) return;
+    publishTimer = setTimeout(() => {publishTimer = null; updateIndicator(); window.dispatchEvent(new CustomEvent('fnf:preload', {detail:snapshot()}));}, 250);
+  };
 
   async function prepare() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return null;
@@ -61,18 +91,30 @@
           state.completed++; publish();
         }
       };
-      await Promise.all([work(),work(),work()]);
+      // One background download at a time keeps house input/rendering first.
+      await work();
       if (!halted) { state.phase = 'ready'; publish(); }
     } catch { state.phase = 'paused'; publish(); }
     finally { running = false; }
   }
 
-  window.FnfPreload = Object.freeze({prepare, start, getState:snapshot, setGameActive(value){gameActive=Boolean(value);}});
+  window.FnfPreload = Object.freeze({prepare, start, getState:snapshot, setGameActive(value){gameActive=Boolean(value); updateIndicator();}});
   const schedule = () => {
-    if ('requestIdleCallback' in window) requestIdleCallback(() => start(), {timeout:2500});
-    else setTimeout(() => start(), 1500);
+    // Give the first house frames and its audio time to start before fetching FNF.
+    setTimeout(() => {
+      if ('requestIdleCallback' in window) requestIdleCallback(() => start(), {timeout:2500});
+      else start();
+    }, 2500);
   };
-  if (document.readyState === 'complete') schedule();
-  else window.addEventListener('load', schedule, {once:true});
+  const house = document.getElementById('game-container');
+  if (house) {
+    // Observe the existing entry UI; do not alter rooms or the house game loop.
+    const observer = new MutationObserver(() => {
+      if (house.style.display !== 'grid') return;
+      enteredHouse = true; observer.disconnect(); schedule();
+    });
+    if (house.style.display === 'grid') { enteredHouse = true; schedule(); }
+    else observer.observe(house, {attributes:true, attributeFilter:['style']});
+  }
   window.addEventListener('online', () => { if (state.phase === 'paused') start(); });
 })();

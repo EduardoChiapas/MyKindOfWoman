@@ -275,7 +275,33 @@
         "quota fallback",
         "path allowlist"
       ],
-      "performanceNote": "Local integration checks; friend connection/device and frame rate not benchmarked. First visit still downloads resources and engine still decodes them when opened."
+      "performanceNote": "Local integration checks; friend connection/device and frame rate not benchmarked. First visit still downloads resources and engine still decodes them when opened.",
+      "walkingSchedule": {
+        "status": "pass",
+        "startsAfterHouseEntry": true,
+        "firstFrameGraceMs": 2500,
+        "requestsBeforeEntry": 0,
+        "backgroundConcurrency": 1,
+        "networkPriority": "low",
+        "gameplayInput": "Frisk movement observed during background cache preparation",
+        "indicator": {
+          "pixels": 22,
+          "corner": "bottom-right",
+          "interceptsInput": false,
+          "progressObserved": 45,
+          "hiddenBeforeEntry": true,
+          "completionHiddenAfterMs": 2500
+        },
+        "unitChecks": [
+          "no registration/download before house entry",
+          "entry delay",
+          "one request at a time",
+          "pause during FNF",
+          "progress display",
+          "completion teardown remains hidden after closing FNF"
+        ],
+        "houseSourceChanged": false
+      }
     }
   }
 }

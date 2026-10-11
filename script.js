@@ -456,7 +456,7 @@ function facePlayer(direction) {
 }
 
 window.addEventListener('keydown', (event) => {
-  if (gameState === 'PC') return;
+  if (['PC', 'LUMO', 'LUMO_GAME'].includes(gameState)) return;
   if (event.target && (event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))) return;
   // Native buttons own Enter/Space. Let their click handler activate once;
   // otherwise a focused audio/help/book button could also examine the room.
@@ -983,6 +983,7 @@ function applyRoomChange(exit) {
   transitionGraceFrames = TRANSITION_GRACE_FRAMES;
   roomNameLabel.textContent = rooms[currentRoom].label;
   updateCamera(true);
+  window.LumoGame?.roomChanged();
 }
 
 function updateRoomTransition(deltaSeconds) {
@@ -1069,7 +1070,8 @@ function findInteraction() {
     centerX - Math.max(item.x, Math.min(centerX, item.x + item.width)),
     centerY - Math.max(item.y, Math.min(centerY, item.y + item.height))
   );
-  return rooms[currentRoom].interactives.filter(item => rectsOverlap(probe, item))
+  const lumo = window.LumoGame?.getInteraction(probe, feet);
+  return [...rooms[currentRoom].interactives, ...(lumo ? [lumo] : [])].filter(item => rectsOverlap(probe, item))
     .sort((a, b) => distanceToObject(a) - distanceToObject(b))[0];
 }
 
@@ -1077,6 +1079,8 @@ function checkInteraction() {
   if (gameState !== 'PLAYING') return;
   const object = findInteraction();
   if (!object) return;
+  if (window.LumoGame?.interact(object)) return;
+  window.LumoGame?.observe(object);
 
   if (object.action === 'pc') {
     window.GamingPC.open();
@@ -1158,6 +1162,7 @@ function startGame(destination = 'entrance') {
   updateCamera(true);
   canvas.focus({ preventScroll: true });
   lastFrameTime = null;
+  window.LumoGame?.start();
   requestAnimationFrame(gameLoop);
 }
 
@@ -1270,7 +1275,9 @@ function draw() {
   const ambienceOptions = { scale: ROOM_SCALE, reducedMotion: HouseExperience.reducedMotion };
   HouseAmbience.draw(ctx, currentRoom, camera, HouseExperience.elapsedSeconds, ambienceOptions);
   if (currentRoom === 'hallway') drawMirrorReflection();
+  window.LumoGame?.draw(ctx, camera, 'back');
   drawPlayer();
+  window.LumoGame?.draw(ctx, camera, 'front');
   HouseAmbience.drawForeground(ctx, currentRoom, camera, getPlayerHitbox(), ambienceOptions);
   if (rooms[currentRoom].drawForeground) rooms[currentRoom].drawForeground(ctx, camera);
   drawLighting();
@@ -1493,6 +1500,7 @@ function gameLoop(timestamp) {
   lastFrameTime = timestamp;
   gameFrame += 1;
   update(deltaSeconds);
+  window.LumoGame?.tick(deltaSeconds);
   if (gameState !== 'PC') draw();
   requestAnimationFrame(gameLoop);
 }

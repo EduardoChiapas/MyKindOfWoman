@@ -26,3 +26,9 @@ Muestras de Undertale distribuidas en el repositorio de **Create Your Frisk**:
 Repositorio de procedencia: https://github.com/RhenaudTheLukark/CreateYourFrisk/tree/master/Assets/Default/Sounds
 
 Las muestras se reproducen a su tono original, con volumen controlado por el juego. `sfx-data.js` contiene una copia incorporada de estas muestras para funcionamiento local sin servidor. Los derechos de las muestras originales corresponden a sus autores; la licencia del motor Create Your Frisk no sustituye los derechos de los recursos de Undertale.
+
+## Lumo
+
+Las tres hojas de referencia aportadas por el creador se conservan sin modificaciones en `assets/lumo/`: mundo blanco/lavanda y retratos en blanco y negro. El manifiesto recorta y alinea los cuadros al reproducirlos. Dos cuadros de la animación de comer se generaron a partir de esas referencias; el prompt, procedencia y comprobaciones de las hojas originales están en esa carpeta. El resto utiliza el arte suministrado. El tarareo de cuatro notas es una melodía original de esta implementación.
+
+La habitación opcional de Lumo reutiliza los muebles del dormitorio original. La protagonista se llama Mira en los textos del juego y la app Determination; la fuente histórica de esa app se conserva fuera de los archivos publicados.

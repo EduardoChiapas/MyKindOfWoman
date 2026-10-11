@@ -344,7 +344,8 @@
     });
     syncAudioButton();
     global.addEventListener('keydown', event => {
-      if (event.repeat || !started || externalScreen) return;
+      if (event.repeat || !started || externalScreen || ['LUMO','LUMO_GAME'].includes(gameState)) return;
+      if (event.target && (event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))) return;
       if (event.code === 'KeyM') { event.preventDefault(); toggleMute(); }
       if (event.code === 'KeyF') {
         event.preventDefault();

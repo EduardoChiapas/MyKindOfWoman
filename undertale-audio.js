@@ -127,8 +127,23 @@
     syncOutput();
   }
 
+  function hum() {
+    if (!context || !output || context.state !== 'running' || muted || paused || document.hidden) return false;
+    stop('hum');
+    // Original four-note motif; reused unchanged by later authorized chapters.
+    [261.626, 329.628, 293.665, 391.995].forEach((frequency,index) => {
+      const source=context.createOscillator(), gain=context.createGain();
+      source.type='sine'; source.frequency.value=frequency;
+      const at=context.currentTime+index*.3;
+      gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.035,at+.045);
+      gain.gain.linearRampToValueAtTime(0,at+.26);source.connect(gain).connect(output);
+      const voice={source,gain,kind:'hum'};voices.push(voice);source.onended=()=>removeVoice(voice);
+      source.start(at);source.stop(at+.29);
+    });
+    return true;
+  }
   global.UndertaleAudio = Object.freeze({
-    prepare, play, stop, setMuted, setPaused,
+    prepare, play, hum, stop, setMuted, setPaused,
     get activeVoices() { return voices.length; },
     get sampleStatus() { return { ...sampleStatus }; }
   });

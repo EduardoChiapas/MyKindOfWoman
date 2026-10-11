@@ -172,7 +172,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'toriel_pc', x: 133, y: 53, width: 54, height: 65, action: 'pc',
-      text: '* La PC está encendida.\n* Una tercera llave espera entre las canciones.'
+      text: '* La PC está encendida.\n* Sus juegos y aplicaciones te esperan en el escritorio.'
     },
     {
       id: 'toriel_desk', x: 180, y: 141, width: 33, height: 59,

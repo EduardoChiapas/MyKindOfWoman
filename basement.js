@@ -120,7 +120,7 @@ const BasementMaze = (() => {
     { id: 'forgotten-4', ...rect(813, 580, 12, 36), text: '* Hay una carta sin sobre.\n* Solo dice: «Guardé una porción para ti».' },
     { id: 'forgotten-5', ...rect(945, 625, 25, 8), text: '* Una canica azul refleja la luz de la lámpara.\n* Por un instante, parece contener todo un cielo.' },
     { id: 'forgotten-6', ...rect(300, 853, 12, 36), text: '* Una cinta roja marca la página de un cuento.\n* El final espera pacientemente a su lectora.' },
-    { id: 'forgotten-7', ...rect(805, 900, 35, 8), text: '* Una tarjeta lleva el nombre de Damaris.\n* Debajo, con letra cuidadosa: «Aquí siempre habrá un lugar para ti».' }
+    { id: 'forgotten-7', ...rect(805, 900, 35, 8), text: '* Una tarjeta lleva el nombre de Mira.\n* Debajo, con letra cuidadosa: «Aquí siempre habrá un lugar para ti».' }
   ];
 
   const lamps = [

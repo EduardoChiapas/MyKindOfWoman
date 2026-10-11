@@ -1,0 +1,10 @@
+
+# Lumo private server configuration
+.env
+.env.*
+!.env.example
+node_modules/
+logs/
+*.log
+server/*.pem
+server/*.key

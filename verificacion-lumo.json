@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-11",
+  "chapter": "HOME",
+  "automated_tests": {
+    "passed": 36,
+    "failed": 0
+  },
+  "stress_tests": {
+    "local_adversarial_chat_turns": 1800,
+    "hostile_contexts": 2000,
+    "preference_recall_after_turns": 1000
+  },
+  "browser_checks": [
+    "home_start",
+    "original_sprites_and_bw_portraits",
+    "meeting_and_pet",
+    "free_text_and_local_label",
+    "typing_does_not_move_player_or_toggle_help",
+    "memory_game_completed_and_recorded",
+    "cookie_pickup_consumption",
+    "hideout_unlock_and_drawing_scene",
+    "closed_closet_evasive_dialogue",
+    "save_reload",
+    "responsive_390x844",
+    "composer_visible_390x430",
+    "pc_desktop_unchanged"
+  ],
+  "tested_live_model": false,
+  "android_physical_device_tested": false,
+  "published": false,
+  "notes": "Provider tests use mocks. Requires private server key/model for real AI. Browser responsive checks do not replace Android device validation. Generative consistency is not guaranteed.",
+  "original_fnf_files_unchanged": 1649
+}

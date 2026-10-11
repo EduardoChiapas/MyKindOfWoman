@@ -59,3 +59,9 @@ Comprobados los sonidos por letra, selección, confirmación y cancelación; lí
 Revisión visual en navegador de inicio, entrada, sala con muebles, diálogo y ayuda; sin errores de consola en esas comprobaciones. Los scripts de prueba y el servidor de desarrollo no forman parte del juego entregado.
 
 Los fondos, el personaje y las pistas proceden del ZIP suministrado. Los elementos de Undertale pertenecen a sus respectivos autores; la dedicatoria y las ampliaciones son parte de este proyecto personal.
+
+## Lumo en HOME
+
+Lumo acompaña a Mira. Usa L, el botón de Lumo o Z al acercarte: conversación estilo Undertale, caricias, regalos, memoria, escondidas y un escondite opcional. Amistad y recuerdos persisten; la PC y el motor original de FNF permanecen integrados.
+
+Sin credenciales funciona Diálogo local. Para IA real desde GitHub Pages, despliega el servidor por separado, guarda la clave sólo allí y configura el endpoint HTTPS en lumo-config.js. Consulta LUMO.md y server/LUMO_BACKEND.md. En Windows, iniciar.cmd abre el servidor local; si existe .env, la carga sin publicarla.

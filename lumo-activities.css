@@ -1,0 +1,13 @@
+.lumo-memory { position:fixed; inset:0; z-index:160; display:grid; place-items:center; background:rgba(0,0,0,.76); padding:12px; font-family:Undertale,monospace; color:white; }
+.lumo-memory-card { width:min(520px,100%); max-height:95dvh; overflow:auto; background:#000; border:3px solid #fff; padding:20px; text-align:center; box-shadow:0 0 0 4px #000; }
+.lumo-memory h2 { font-size:22px; font-weight:normal; margin:0 0 16px; }
+.lumo-memory p { font-size:17px; line-height:1.5; }
+.lumo-memory-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:18px 0; }
+.lumo-memory button { border:2px solid white; color:white; background:#000; font:inherit; cursor:pointer; touch-action:manipulation; }
+.lumo-memory-grid button { min-height:65px; font-size:30px; }
+.lumo-memory button:hover,.lumo-memory button:focus-visible { color:#ffdf42; border-color:#ffdf42; outline:2px solid #ffdf42; outline-offset:3px; }
+.lumo-memory button.is-matched { color:#ad92eb; border-color:#ad92eb; }
+.lumo-memory-exit { padding:12px 20px; }
+.lumo-hide-status { position:fixed; left:12px; top:max(12px,env(safe-area-inset-top)); z-index:99; max-width:calc(100vw - 24px); padding:9px 12px; background:#000; color:#fff; border:2px solid #fff; font:15px Undertale,monospace; }
+.lumo-hide-status button { font:inherit; background:none; color:#ffdf42; border:0; cursor:pointer; padding:4px 8px; }
+@media(max-width:480px) { .lumo-memory-card{padding:15px}.lumo-memory-grid{gap:8px}.lumo-memory h2{font-size:19px}.lumo-memory p{font-size:15px}.lumo-hide-status{font-size:13px} }

@@ -182,7 +182,7 @@
               <div class="taskbar"><div class="system-name"><b></b>DETERMINATION OS</div><button class="task-icon start" title="Inicio" aria-label="Abrir Inicio" aria-expanded="false">${ICONS.windows}</button>${taskIcons}<div class="tray"><span class="tray-volume" title="Volumen">♫</span><div class="tray-time"><div class="clock"></div><div class="date"></div></div></div></div>
               <div class="loading-banner" hidden><i class="loading-spinner"></i><span class="loading-label">Abriendo FNF original…</span></div>
             </div>
-            <section class="html-app" aria-label="Determination · Damaris" hidden><div class="html-app-stage"></div><button class="html-app-return" type="button">← Escritorio</button></section>
+            <section class="html-app" aria-label="Determination · Mira" hidden><div class="html-app-stage"></div><button class="html-app-return" type="button">← Escritorio</button></section>
             <div class="custom-cursor" aria-hidden="true"><svg viewBox="0 0 24 30"><path d="M3 2v22l6-5 5 9 4-2-5-9 8-1Z"/></svg></div>
           </div><i class="monitor-led"></i></div><div class="stand"></div><div class="stand-base"></div></div>
           <div class="tower" aria-label="Torre gamer con tres ventiladores RGB girando"><div class="tower-top"><i class="power-dot"></i><span>DTRM</span><i class="usb"></i></div><div class="tower-glass"><div class="fan"><i class="blades"></i></div><div class="fan"><i class="blades"></i></div><div class="fan"><i class="blades"></i></div></div><span class="tower-mark">DETERMINATION</span></div></div>
@@ -320,7 +320,7 @@
       const overlay=this.shadowRoot.querySelector('.html-app');
       const stage=overlay.querySelector('.html-app-stage');
       const frame=document.createElement('iframe');
-      frame.title='Determination · Damaris';
+      frame.title='Determination · Mira';
       frame.src='apps/determination/index.html';
       frame.setAttribute('sandbox','allow-scripts allow-same-origin');
       frame.allow='autoplay';

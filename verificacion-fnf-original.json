@@ -1,0 +1,281 @@
+{
+  "status": "pass",
+  "scope": "Original HTML5 engine, original Tutorial and Bad Bunny week; PC integration only. Runtime keyboard QA uses original charts/audio and changes no engine gameplay state. Performance is not benchmarked.",
+  "verifiedAt": "2026-10-11T00:55:33.574Z",
+  "engine": {
+    "name": "Friday Night Funkin’",
+    "version": "0.8.6",
+    "target": "HTML5",
+    "source": "https://github.com/FunkinCrew/Funkin",
+    "file": "fnf-original/Funkin.js",
+    "bytes": 16367953,
+    "sha256": "02bdc66466c7b887de58bbeed2cb757e7b38ba64d031a2c575e54f2afeeadef4",
+    "compiledOriginalEngine": true,
+    "originalLimeWrapper": true,
+    "soundExtension": "ogg",
+    "productMatchesAuditedBuild": true
+  },
+  "mod": {
+    "name": "feat. Bad Bunny",
+    "id": "ftbb",
+    "version": "1.0.0",
+    "apiVersion": "0.8.6",
+    "file": "fnf-original/mods/ftbb.zip",
+    "bytes": 61671462,
+    "sha256": "df3af4870cab2a097044a6479854fe1aa583c920401a5d475cfe4eb1c42ba961",
+    "entries": 68,
+    "allEntriesMatchSuppliedOriginalBytes": false,
+    "productMatchesAuditedZip": true,
+    "compatibilityPatch": "fnf-original/ftbb-html5-shader-time.patch",
+    "otherEntriesMatchSuppliedOriginalBytes": 67,
+    "glslArtAudioChartsUnchanged": true
+  },
+  "staticChecks": {
+    "status": "pass",
+    "baseSongs": [
+      "tutorial"
+    ],
+    "baseWeeks": [
+      "tutorial"
+    ],
+    "availableWeeks": [
+      "tutorial",
+      "ftbb"
+    ],
+    "availableSongs": [
+      "tutorial",
+      "celoso",
+      "palmas",
+      "amarre"
+    ],
+    "storySongOrder": [
+      "celoso",
+      "palmas",
+      "amarre"
+    ],
+    "resultsBoundary": "Original StoryMenuState replaces ResultState for normal HTML5 play; percentage animation is skipped. Story playlist retains its next-song branch.",
+    "victoryBridge": "Natural instrumental completion only; duplicate, failure, death, retry, practice, botplay, charting and nonzero start-timestamp guards audited."
+  },
+  "isolatedHostChecks": {
+    "status": "pass",
+    "method": "Node VM with isolated host/room adapters; native gameplay is not simulated.",
+    "checks": [
+      "Messages require the exact iframe source and same origin.",
+      "Volume is clamped and posted to the exact origin.",
+      "Manual exit tears down the iframe and returns to the desktop.",
+      "Tutorial and all three mod victories preserve the iframe and visible FNF session.",
+      "Only three mod songs increment progress; no song grants a key or emits a quest reward.",
+      "Invalid song IDs and victories after PC closure do not change progress.",
+      "Index opens the original host and original app icon, without the old Canvas game."
+    ]
+  },
+  "runtime": {
+    "status": "pass",
+    "buildSha256": "02bdc66466c7b887de58bbeed2cb757e7b38ba64d031a2c575e54f2afeeadef4",
+    "startup": "pass",
+    "originalMenus": {
+      "status": "pass",
+      "availableWeeks": [
+        "tutorial",
+        "ftbb"
+      ],
+      "badBunnyTracks": [
+        "Celoso",
+        "Palmas",
+        "Amarre"
+      ],
+      "originalModGraphics": "observed"
+    },
+    "tutorial": {
+      "status": "pass",
+      "completion": "Natural song completion observed in the original engine.",
+      "stats": {
+        "score": 14136,
+        "totalNotesHit": 32,
+        "misses": 16,
+        "difficulty": "hard",
+        "totalNotes": 48
+      },
+      "inputNote": "QA held the 32 notes from the normal chart while the original engine played its 48-note hard chart. The recorded win and misses are from that native run.",
+      "testedBuildSha256": "0ff6e0f5da6d46c54571dc3ac2283fa0838089df7e6732c2b232f9728b2d09d8"
+    },
+    "modSongs": {
+      "status": "pass",
+      "songs": [
+        {
+          "songId": "celoso",
+          "difficulty": "hard",
+          "notes": 225,
+          "inputsDispatched": 225,
+          "lastAudioClock": 133288,
+          "nativeStats": {
+            "score": 111495,
+            "misses": 0,
+            "maxCombo": 225,
+            "totalNotesHit": 225,
+            "totalNotes": 225,
+            "difficulty": "hard",
+            "variation": "default"
+          },
+          "wonAt": "2026-10-11T00:47:47.397Z"
+        },
+        {
+          "songId": "palmas",
+          "difficulty": "hard",
+          "notes": 560,
+          "inputsDispatched": 560,
+          "lastAudioClock": 224346,
+          "nativeStats": {
+            "score": 276795,
+            "misses": 2,
+            "maxCombo": 401,
+            "totalNotesHit": 558,
+            "totalNotes": 560,
+            "difficulty": "hard",
+            "variation": "default"
+          },
+          "wonAt": "2026-10-11T00:51:42.393Z"
+        },
+        {
+          "songId": "amarre",
+          "difficulty": "hard",
+          "notes": 413,
+          "inputsDispatched": 413,
+          "lastAudioClock": 165739,
+          "nativeStats": {
+            "score": 206502,
+            "misses": 0,
+            "maxCombo": 413,
+            "totalNotesHit": 413,
+            "totalNotes": 413,
+            "difficulty": "hard",
+            "variation": "default"
+          },
+          "wonAt": "2026-10-11T00:54:48.455Z"
+        }
+      ],
+      "testedModSha256": "7a8c6cf0193eb3b4a7f96d438909b1d97394852aedb192a99494e1cb07762252"
+    },
+    "storySequence": {
+      "status": "pass",
+      "order": [
+        "celoso",
+        "palmas",
+        "amarre"
+      ],
+      "method": "Natural original Story Mode transitions after instrumental completion, with chart-driven keyboard input in the scratch QA fixture."
+    },
+    "weekMenuReturnWithoutPercentage": {
+      "status": "pass",
+      "after": [
+        "tutorial",
+        "ftbb-week"
+      ],
+      "nativeState": "funkin.ui.story.StoryMenuState",
+      "sameIframeRetained": true,
+      "percentageResultAnimationShown": false
+    },
+    "audioAndInput": {
+      "status": "pass",
+      "method": "Original Lime/Howler audio, original charts, original scoring and keyboard controls.",
+      "errors": []
+    },
+    "keyIII": {
+      "status": "disabled",
+      "reason": "User requested no key reward yet. Current host records victories only.",
+      "validation": "Isolated current integration asserts no quest:key-obtained event and no key3 flag after all three wins. Live week fixture loaded the prior integration before this steering; it validates the engine sequence only."
+    },
+    "manualExit": {
+      "status": "pass",
+      "iframeRemoved": true,
+      "gameVisible": false,
+      "playing": false
+    },
+    "performance": "not-benchmarked",
+    "instrumentation": "Scratch-only keyboard fixture and a read-only state probe; neither is included in the delivered game. The delivered engine is the exact audited compiler output with its original Lime wrapper.",
+    "shaderCompatibility": {
+      "status": "pass",
+      "verifiedAt": "2026-10-11T02:17:52.810Z",
+      "song": "celoso",
+      "stage": "ftbb (shared by Celoso, Palmas and Amarre)",
+      "method": "Original engine observed through temporary read-only DOM probe; test-only alert spy records every attempted alert. No alert override or probe ships.",
+      "nativeAlertCount": 0,
+      "errorCount": 0,
+      "shaderSamples": [
+        {
+          "state": "funkin.play.PlayState",
+          "shaderTimes": [
+            {
+              "name": "water",
+              "exists": true,
+              "time": 9.10759999999405
+            },
+            {
+              "name": "sky",
+              "exists": true,
+              "time": 9.10759999999405
+            },
+            {
+              "name": "sun",
+              "exists": true,
+              "time": 9.10759999999405
+            }
+          ]
+        },
+        {
+          "state": "funkin.play.PlayState",
+          "shaderTimes": [
+            {
+              "name": "water",
+              "exists": true,
+              "time": 34.860099999994574
+            },
+            {
+              "name": "sky",
+              "exists": true,
+              "time": 34.860099999994574
+            },
+            {
+              "name": "sun",
+              "exists": true,
+              "time": 34.860099999994574
+            }
+          ]
+        }
+      ],
+      "observedEvents": [
+        {
+          "type": "fnf-original:ready",
+          "at": "2026-10-11T02:15:19.812Z",
+          "detail": {}
+        }
+      ],
+      "testedModSha256": "df3af4870cab2a097044a6479854fe1aa583c920401a5d475cfe4eb1c42ba961"
+    },
+    "preloadCache": {
+      "status": "pass",
+      "scope": "Original FNF downloads/cache only; house gameplay unchanged",
+      "warmFiles": 1187,
+      "warmBytes": 207143816,
+      "cacheScope": "fnf-original/",
+      "backgroundEngineRunning": false,
+      "secondVisitCachedBytes": 207143816,
+      "secondVisitDownloadedBytes": 0,
+      "nativeStartup": "ready",
+      "nativeErrors": [],
+      "versionedFiles": true,
+      "unchangedFilesReusedAcrossVersions": true,
+      "unitChecks": [
+        "foreground/warmup download deduplication",
+        "persistent cache reuse",
+        "new revision refetch",
+        "obsolete revision cleanup",
+        "FNF-only scope",
+        "range passthrough",
+        "quota fallback",
+        "path allowlist"
+      ],
+      "performanceNote": "Local integration checks; friend connection/device and frame rate not benchmarked. First visit still downloads resources and engine still decodes them when opened."
+    }
+  }
+}

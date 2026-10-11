@@ -59,6 +59,11 @@
         const url = new URL(ENTRY, document.baseURI);
         if (url.origin !== location.origin) throw new Error('El juego original debe estar alojado junto a esta web.');
         this._origin = url.origin;
+        // Establish the FNF-only cache scope before navigating the real engine.
+        // Downloads continue without blocking on the full warmup queue.
+        await window.FnfPreload?.prepare();
+        if (token !== this._token) return this.getState();
+        window.FnfPreload?.setGameActive(true);
         const response = await fetch(url.href,{cache:'no-cache',signal:this._controller.signal});
         if (!response.ok) throw new Error('Falta el juego original compilado en fnf-original/index.html.');
         const html = await response.text();
@@ -98,6 +103,7 @@
       ++this._token;
       this._controller?.abort();
       this._controller = null;
+      window.FnfPreload?.setGameActive(false);
       // Removing the entire native document tears down its audio context,
       // timers and engine. No hidden game continues playing behind the desk.
       this._iframe?.remove();

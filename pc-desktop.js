@@ -58,6 +58,7 @@
       this._brightness = this._readNumber('pc-room-brightness', 1, .5, 1.3);
       this._nowPlaying = '';
       this._render();
+      this._onPreload = () => this._updatePreload();
       this._onKey = e => {
         if (!this._open || this._gameActive) return;
         if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.close(); }
@@ -67,12 +68,15 @@
     connectedCallback() {
       if (!this._open) this.hidden = true;
       document.addEventListener('keydown', this._onKey, true);
+      window.addEventListener('fnf:preload', this._onPreload);
+      this._updatePreload();
       this._clockTick();
       this._clockInterval = setInterval(() => this._clockTick(), 1000);
     }
 
     disconnectedCallback() {
       document.removeEventListener('keydown', this._onKey, true);
+      window.removeEventListener('fnf:preload', this._onPreload);
       clearInterval(this._clockInterval);
       clearTimeout(this._toastTimer);
       clearTimeout(this._loadingTimer);
@@ -80,6 +84,15 @@
     }
 
     get gameHost() { return this.shadowRoot.querySelector('.game-host'); }
+
+    _updatePreload() {
+      const status = this.shadowRoot.querySelector('.fnf-download');
+      const state = window.FnfPreload?.getState();
+      if (!status || !state) return;
+      status.hidden = ['waiting','unavailable'].includes(state.phase);
+      const percent = state.totalBytes ? Math.floor(state.bytes / state.totalBytes * 100) : 0;
+      status.textContent = state.phase === 'ready' ? 'FNF · Archivos descargados' : state.phase === 'paused' ? 'FNF · La descarga continuará al jugar' : `${state.downloadedBytes ? 'Descargando' : 'Preparando'} FNF · ${percent}%`;
+    }
     get volume() { return this._volume; }
     get gameActive() { return this._gameActive; }
 
@@ -158,7 +171,7 @@
           <div class="setup"><div class="monitor-rig"><div class="monitor"><div class="screen">
             <div class="desktop"><div class="wallpaper-shape"></div><div class="desktop-word"><strong>STAY DETERMINED.</strong><span>UN MUNDO DENTRO DE OTRO</span></div>
               <div class="icons">${icons}</div><div class="song-progress"><i class="dot"></i><span class="progress-label">Biblioteca de canciones</span></div>
-              <div class="window-layer"></div>
+              <div class="fnf-download" role="status" style="position:absolute;left:12px;bottom:48px;color:#c1d6ef;font-size:clamp(7px,1vw,11px);pointer-events:none" hidden></div><div class="window-layer"></div>
               <div class="quick-panel" hidden><h3>Hola, Frisk.</h3><p>Tu escritorio está listo. Pulsa FNF para abrir el juego original y elegir una canción.</p><div class="quick-apps">${['fnf','files','notes','calculator','settings'].map(id => `<button data-app="${id}"><span class="small-icon">${ICONS[id]}</span>${id === 'fnf' ? 'Jugar FNF' : appNames[id]}</button>`).join('')}</div><div class="quick-power"><button data-power>${ICONS.power} Apagar · volver a la habitación</button></div></div>
               <div class="taskbar"><div class="system-name"><b></b>DETERMINATION OS</div><button class="task-icon start" title="Inicio" aria-label="Abrir Inicio" aria-expanded="false">${ICONS.windows}</button>${taskIcons}<div class="tray"><span class="tray-volume" title="Volumen">♫</span><div class="tray-time"><div class="clock"></div><div class="date"></div></div></div></div>
               <div class="loading-banner" hidden><i class="loading-spinner"></i><span class="loading-label">Abriendo FNF original…</span></div>

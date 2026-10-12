@@ -29,3 +29,6 @@ Privacidad accesible desde opciones externas: información sobre el proveedor, h
 Mente/backend integrado: 42 pruebas; UI limpia: siete; HomeStory integrado: diez. Puente de llamada/cercanía y actor verificados por sus suites. PC apps registradas con Ryon local y escena HOME en verificación de navegador; estas pruebas no certifican una partida completa.
 
 Android físico, proveedor real con credenciales/modelo y despliegue siguen pendientes. No afirmar IA real a partir de mocks ni HOME terminado por integrar funciones. La raíz actualizará evidencia y resultado final de entrega.
+
+
+Adaptación móvil 2026-10-11: flecha de envío integrada en el campo (44×44), visible en pantallas pequeñas/táctiles; PC conserva Enter y la interfaz sin botón visible. Teclados blandos pueden enviar con key Enter sin code, beforeinput o input no cancelable; composición/Shift+Enter/pegado no envían accidentalmente. El viewport visible limita el cuadro incluso con desplazamiento/teclado. Las respuestas no enfocan automáticamente el campo móvil y al enviar se aparta el teclado para leer.

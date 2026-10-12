@@ -8,7 +8,7 @@ const vm = require('node:vm');
 
 // A small DOM fixture exercises the real public UI and its event handlers.
 // Geometry checks here are functional; device rendering is checked separately.
-function fixture({ reducedMotion = true, allowAI = false, consent = false, deferred = false } = {}) {
+function fixture({ reducedMotion = true, allowAI = false, consent = false, deferred = false, touch = false } = {}) {
   let document;
   class Node {
     constructor(tag = 'div') {
@@ -89,7 +89,7 @@ function fixture({ reducedMotion = true, allowAI = false, consent = false, defer
   const viewport = { width: 1000, height: 800, offsetLeft: 0, offsetTop: 0, addEventListener: (type, fn) => { (events[`viewport:${type}`] ||= []).push(fn); } };
   const window = {
     innerWidth: 1000, innerHeight: 800, visualViewport: viewport,
-    matchMedia: () => ({ matches: reducedMotion }),
+    matchMedia: query => ({ matches: query.includes('reduced-motion') ? reducedMotion : touch }),
     getComputedStyle: () => ({ fontSize: '24px', fontFamily: 'Undertale' }),
     addEventListener(type, handler) { (events[type] ||= []).push(handler); }
   };
@@ -235,6 +235,65 @@ test('clearing a pending private chat aborts it and prevents its late response r
   await f.button('VOLVER AL DIÁLOGO').click();
   assert.equal(f.get('.lumo-text').textContent, 'Aquí estoy, Mira.');
   assert.equal(f.get('.lumo-history-list'), null);
+});
+
+test('phone sends from soft-keyboard beforeinput or Enter without code and prevents duplicate sends', async () => {
+  const f = fixture({ touch: true, deferred: true }); f.ui.open(); f.ready();
+  const input = f.get('.lumo-input'), send = f.get('.lumo-send');
+  assert.equal(send.classList.contains('sr-only'), false);
+  assert.equal(send.attributes['aria-label'], 'Enviar mensaje');
+  assert.notEqual(f.document.activeElement, input, 'incoming dialogue never opens the phone keyboard automatically');
+  input.focus(); input.value = 'Mensaje desde el teléfono';
+  const event = { type: 'beforeinput', inputType: 'insertParagraph', cancelable: true, preventDefault() { this.prevented = true; } };
+  input.dispatchEvent(event); assert.equal(event.prevented, true);
+  f.key('Unidentified', input, { key: 'Enter' });
+  f.get('.lumo-chat-form').dispatchEvent({ type: 'submit', preventDefault() {} });
+  assert.deepEqual(f.messages, ['Mensaje desde el teléfono']);
+  assert.equal(input.disabled, false);
+  assert.notEqual(f.document.activeElement, input, 'sending dismisses the keyboard for reading the answer');
+  f.resolve({text:'Aquí sigo, Mira.',source:'local'});
+  for(let i=0;i<10 && f.ui.isPending;i++)await Promise.resolve();
+  f.ready(); input.value = 'Otra pregunta';
+  f.key('Unidentified', input, { key: 'Enter' });
+  assert.deepEqual(f.messages, ['Mensaje desde el teléfono', 'Otra pregunta']);
+  f.ui.close(); f.resolve({text:'Respuesta tardía',source:'local'}); await Promise.resolve();
+});
+
+test('phone composition, pasted newlines and Shift Enter never submit incomplete messages', async () => {
+  const f = fixture({ touch: true }); f.ui.open(); f.ready();
+  const input = f.get('.lumo-input'); input.value = 'Componiendo';
+  input.dispatchEvent({type:'compositionstart'});
+  f.key('Unidentified',input,{key:'Enter',keyCode:229});
+  input.dispatchEvent({type:'beforeinput',inputType:'insertLineBreak',preventDefault(){}});
+  assert.equal(f.messages.length,0);
+  input.dispatchEvent({type:'compositionend'});
+  f.key('Enter',input,{shiftKey:true});
+  input.dispatchEvent({type:'beforeinput',inputType:'insertLineBreak',preventDefault(){assert.fail('Shift Enter must keep its newline');}});
+  input.value='Primera\nSegunda';input.dispatchEvent({type:'input',inputType:'insertLineBreak'});
+  input.dispatchEvent({type:'input',inputType:'insertFromPaste'});
+  assert.equal(f.messages.length,0);
+  input.value='Texto confirmado';
+  f.get('.lumo-chat-form').dispatchEvent({type:'submit',preventDefault(){}});
+  await Promise.resolve(); await Promise.resolve();
+  assert.deepEqual(f.messages,['Texto confirmado']);
+  for(let i=0;i<10 && f.ui.isPending;i++)await Promise.resolve();
+  f.ready(); input.value='Otra línea\n';
+  input.dispatchEvent({type:'beforeinput',inputType:'insertLineBreak',cancelable:false,preventDefault(){assert.fail('noncancelable events must use the input fallback');}});
+  assert.equal(f.messages.length,1);
+  input.dispatchEvent({type:'input',inputType:'insertLineBreak'});
+  await Promise.resolve(); await Promise.resolve();
+  assert.deepEqual(f.messages,['Texto confirmado','Otra línea']);
+});
+
+test('phone keyboard handles offset, clipped world and tiny landscape viewport without overflow', () => {
+  const f=fixture({touch:true});f.window.innerWidth=340;f.window.innerHeight=390;
+  Object.assign(f.viewport,{width:340,height:390});f.ui.open();f.ready();f.get('.lumo-input').focus();
+  Object.assign(f.viewport,{height:170,offsetTop:40,offsetLeft:20});
+  f.stage.rect={left:-650,top:-280,right:194,bottom:-20,width:844,height:260};
+  for(const handler of f.events['viewport:resize'])handler();
+  const rect=f.get('#lumo-ui').getBoundingClientRect();
+  assert.ok(rect.left>=26);assert.ok(rect.right<=354);assert.ok(rect.top>=46);assert.ok(rect.bottom<=204);
+  assert.ok(rect.height>0);assert.equal(f.get('.lumo-chat-form').hidden,false);
 });
 
 test('natural typewriter completion opens input only after the final page; scene dialogue awaits a text advance', async () => {

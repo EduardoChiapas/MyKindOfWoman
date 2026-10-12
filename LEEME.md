@@ -6,7 +6,7 @@ El orden del catálogo es **Tutorial → The Date Week → feat. Bad Bunny**. Th
 
 ## Controles de HOME y privacidad
 
-Acércate a Lumo y usa Z/E o toca su sprite. Solo verás retrato, texto y campo de escritura; el campo aparece al terminar la última página. Toca el texto para acelerar/avanzar; Enter envía, Esc/X fuera del campo o toque exterior cierra. No hay historial visible, botones extra, etiquetas ni avisos técnicos dentro del chat.
+Acércate a Lumo y usa Z/E o toca su sprite. Solo verás retrato, texto y campo de escritura; el campo aparece al terminar la última página. Toca el texto para acelerar/avanzar; En PC, Enter envía y Shift+Enter añade una línea. En teléfono, la flecha integrada en el campo o la tecla Enviar del teclado mandan el mensaje; la respuesta no vuelve a abrir el teclado automáticamente. Esc/X fuera del campo o toque exterior cierra. No hay historial visible, botones extra, etiquetas ni avisos técnicos dentro del chat.
 
 L / silbato llaman a Lumo sin abrir chat. J abre el diario; H abre opciones. Compañía, regalos y actividades se consultan externamente. Las opciones permiten información de privacidad y borrado de mensajes recientes/recuerdos personales sin reiniciar la partida. La entrada del sótano sigue cerrada durante HOME.
 

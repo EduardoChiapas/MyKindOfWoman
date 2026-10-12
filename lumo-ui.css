@@ -147,3 +147,14 @@
 .lumo-next { display: block; font-size: 15px !important; padding: 0; min-height: 0; }
 .lumo-chat-form { flex-basis: 38px; }
 .lumo-overlay[data-mode='conversation'] .lumo-actions { display: none; }
+/* The touch send target belongs to the writing field, without a toolbar. */
+.lumo-touch .lumo-chat-form { position: relative; flex-basis: 44px; min-height: 44px; gap: 0; }
+.lumo-touch .lumo-input { height: 44px; padding: 10px 52px 8px 8px; font-size: 17px !important; }
+.lumo-touch .lumo-send {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 44px; min-height: 44px; padding: 0;
+  border: 2px solid #fff; border-left: 1px solid #888;
+  font-size: 22px; text-align: center; cursor: pointer; touch-action: manipulation;
+}
+.lumo-touch .lumo-send:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
+.lumo-touch[data-phase='pending'] .lumo-send { color: #777; }

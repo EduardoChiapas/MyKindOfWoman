@@ -9,7 +9,7 @@
     SAD: 'sad', SUPPORTIVE: 'supportive'
   };
   let adapter = {};
-  let root, panel, line, text, portrait, next, actions, form, input, tools;
+  let root, panel, line, text, portrait, next, actions, form, input, send, tools;
   let opened = false;
   let mode = 'conversation';
   let phase = 'speaking';
@@ -30,6 +30,9 @@
   let characters = [];
   let typing = false;
   let pending = false;
+  let composing = false;
+  let explicitLineBreak = false;
+  let viewportBaseline = 0;
   let finishSpeech = null;
   let recent = [];
   let previousFocus = null;
@@ -93,6 +96,10 @@
     root.dataset.aiConnected = String(source === 'ai');
   }
 
+  function touchComposer() {
+    return Boolean(global.matchMedia?.('(any-pointer: coarse)').matches || global.navigator?.maxTouchPoints > 0 || global.innerWidth <= 600);
+  }
+
   function syncViewport() {
     if (!root) return;
     const viewport = global.visualViewport;
@@ -105,17 +112,22 @@
     stage ||= document.getElementById('game-stage');
     const rect = stage?.getBoundingClientRect?.();
     const valid = rect && rect.width > 0 && rect.height > 0;
-    const left = Math.max(vl + 6, valid ? rect.left + 6 : vl + 6);
-    const right = Math.min(vl + vw - 6, valid ? rect.right - 6 : vl + vw - 6);
-    const width = Math.max(180, right - left);
-    const keyboardOpen = Boolean(viewport && global.innerHeight - viewport.height > 150);
+    const touch = touchComposer();
+    if (document.activeElement !== input) viewportBaseline = Math.max(vh, global.innerHeight);
+    const availableWidth = Math.max(1, vw - 12);
+    const stageVisible = valid && rect.right > vl + 6 && rect.left < vl + vw - 6;
+    const stageLeft = stageVisible ? Math.max(vl + 6, rect.left + 6) : vl + 6;
+    const right = stageVisible ? Math.min(vl + vw - 6, rect.right - 6) : vl + vw - 6;
+    const width = Math.min(availableWidth, Math.max(Math.min(180, availableWidth), right - stageLeft));
+    const left = Math.max(vl + 6, Math.min(stageLeft, vl + vw - 6 - width));
+    const keyboardOpen = Boolean(viewport && (global.innerHeight - vh > 150 || touch && document.activeElement === input && viewportBaseline - vh > 150));
     const secondary = mode !== 'conversation';
     const withComposer = composerStarted && mode === 'conversation';
     const small = width < 600;
     const minimum = secondary ? 210 : withComposer ? (small ? 144 : 134) : (small ? 100 : 106);
     const desired = secondary ? Math.min(390, vh * .65) : Math.max(minimum, (valid ? rect.height : vh) * .28);
-    const height = Math.max(100, Math.min(desired, vh - 12));
-    const bottom = Math.min(vt + vh - 6, valid ? rect.bottom - 6 : vt + vh - 6);
+    const height = Math.max(1, Math.min(desired, vh - 12));
+    const bottom = keyboardOpen ? vt + vh - 6 : Math.max(vt + 6 + height, Math.min(vt + vh - 6, valid ? rect.bottom - 6 : vt + vh - 6));
     const top = Math.max(vt + 6, bottom - height);
     layout = { width, height, textLines: Math.max(1, Math.min(4, Math.floor((height - (withComposer ? 64 : 25)) / (small ? 22 : 26)))) };
     root.style.setProperty('--lumo-left', `${Math.round(left)}px`);
@@ -125,6 +137,8 @@
     root.style.setProperty('--lumo-text-lines', layout.textLines);
     root.classList.toggle('lumo-keyboard-open', keyboardOpen);
     root.classList.toggle('lumo-small', small);
+    root.classList.toggle('lumo-touch', touch);
+    send?.classList.toggle('sr-only', !touch);
   }
 
   function adoptHistory() {
@@ -227,7 +241,7 @@
     }
     phase = 'reply'; composerStarted = true;
     setMode(mode);
-    if (mode === 'conversation') input.focus({ preventScroll: true });
+    if (mode === 'conversation' && !touchComposer()) input.focus({ preventScroll: true });
     if (finishSpeech) { const done = finishSpeech; finishSpeech = null; done(true); }
   }
 
@@ -384,6 +398,7 @@
     const allowAI = settings.allowAI === true && settings.aiConsent === true;
     stopTyping();
     input.value = '';
+    if (touchComposer()) input.blur();
     composerStarted = true;
     setMode('conversation');
     addHistory('user', message);
@@ -505,6 +520,7 @@
     if (!opened) return;
     const target = event.target;
     const editing = target?.matches?.('input, textarea, select');
+    if (target === input) explicitLineBreak = (event.code === 'Enter' || event.key === 'Enter') && Boolean(event.shiftKey);
     if (event.code === 'Escape') {
       event.preventDefault(); close();
     } else if (event.code === 'Tab') {
@@ -514,7 +530,7 @@
       if (!focusable.length) { event.preventDefault(); panel.focus({ preventScroll: true }); }
       else if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
-    } else if (editing && target === input && event.code === 'Enter' && !event.shiftKey && !event.isComposing) {
+    } else if (editing && target === input && (event.code === 'Enter' || event.key === 'Enter') && !event.shiftKey && !event.isComposing && !composing && event.keyCode !== 229) {
       event.preventDefault();
       if (!event.repeat) submit();
     } else if (target?.classList?.contains('lumo-send') && ['Enter', 'Space'].includes(event.code)) {
@@ -546,8 +562,9 @@
     form = element('form', 'lumo-chat-form'); form.hidden = true;
     const label = element('label', 'sr-only', 'Mensaje de Mira para Lumo'); label.htmlFor = 'lumo-message';
     input = element('textarea', 'lumo-input'); input.id = 'lumo-message'; input.rows = 1; input.maxLength = 600; input.placeholder = 'Habla con Lumo...'; input.autocomplete = 'off'; input.spellcheck = true;
-    input.setAttribute('enterkeyhint', 'send'); input.setAttribute('aria-describedby', 'lumo-chat-help');
-    const send = element('button', 'sr-only lumo-send', 'Enviar mensaje'); send.type = 'submit';
+    input.setAttribute('enterkeyhint', 'send'); input.setAttribute('inputmode', 'text'); input.setAttribute('autocapitalize', 'sentences'); input.setAttribute('aria-describedby', 'lumo-chat-help');
+    send = element('button', 'sr-only lumo-send', '➤'); send.type = 'submit'; send.setAttribute('aria-label', 'Enviar mensaje');
+    send.addEventListener('pointerdown', event => { event.preventDefault(); });
     form.append(label, input, send); form.addEventListener('submit', event => { event.preventDefault(); submit(); });
     const help = element('p', 'sr-only lumo-chat-help', 'Enter envía. Shift más Enter crea una línea. Escape cierra. Toca el texto para avanzar.'); help.id = 'lumo-chat-help';
     actions = element('nav', 'lumo-actions'); actions.setAttribute('aria-label', 'Interacciones con Lumo');
@@ -565,6 +582,19 @@
     global.visualViewport?.addEventListener('resize', syncViewport);
     global.visualViewport?.addEventListener('scroll', syncViewport);
     input.addEventListener('focus', syncViewport);
+    input.addEventListener('compositionstart', () => { composing = true; });
+    input.addEventListener('compositionend', () => { composing = false; });
+    input.addEventListener('beforeinput', event => {
+      if (!touchComposer() || composing || event.isComposing || explicitLineBreak || !['insertLineBreak', 'insertParagraph'].includes(event.inputType) || event.cancelable === false) return;
+      event.preventDefault(); submit();
+    });
+    input.addEventListener('input', event => {
+      // Some soft keyboards cannot cancel beforeinput or don't emit keydown.
+      if (touchComposer() && !composing && !event.isComposing && !explicitLineBreak && ['insertLineBreak', 'insertParagraph'].includes(event.inputType)) {
+        input.value = input.value.replace(/\n$/, ''); submit();
+      }
+      explicitLineBreak = false;
+    });
     if (global.ResizeObserver) new global.ResizeObserver(syncViewport).observe(typeof adapter.stage === 'object' ? adapter.stage : document.getElementById('game-stage') || document.body);
     root.addEventListener('pointerdown', event => { if (event.target === root) event.preventDefault(); });
     loadPortraitManifest(); syncViewport();
@@ -601,7 +631,7 @@
     setMode('conversation');
     syncViewport();
     if (options.greeting !== false) showResponse(options.greeting || greeting(), options);
-    if (phase === 'reply') input.focus({ preventScroll: true });
+    if (phase === 'reply' && !touchComposer()) input.focus({ preventScroll: true });
     else panel.focus({ preventScroll: true });
     play('confirm');
     return api;
@@ -614,6 +644,7 @@
     request?.abort(); request = null;
     stopTyping();
     pending = false;
+    composing = false; explicitLineBreak = false;
     root.classList.remove('lumo-thinking');
     root.hidden = true;
     root.setAttribute('aria-busy', 'false');

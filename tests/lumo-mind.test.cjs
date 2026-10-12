@@ -182,6 +182,27 @@ test('external chat defaults to automatic without requests before chatting; inte
   await mind.revokeAIConsent();assert.equal(createMind(env).getState().settings.aiConsent,false);
   assert.equal((await mind.chat('Otra idea diferente')).source,'local');assert.equal(calls,1);
 });
+test('old disabled UI preferences migrate to automatic without erasing memories or FNF saves', async()=>{
+  let calls=0;const env=environment({fetch:async()=>{calls++;return new Response(JSON.stringify(good));}});
+  const previous=createMind(env);previous.act('gift',{item:'flower'});
+  env.localStorage.setItem('pc-save','fnf-results');
+  env.localStorage.setItem('mkw:lumo:settings:v1',JSON.stringify({allowAI:false,aiConsent:false,externalPreference:'disabled',persistMemory:true,commentFrequency:'off'}));
+  const mind=createMind(env),state=mind.getState();
+  assert.equal(state.settings.allowAI,true);assert.equal(state.settings.aiConsent,true);
+  assert.equal(state.settings.commentFrequency,'off');assert.ok(state.memories.some(m=>m.id==='gift_flower'));
+  assert.equal((await mind.chat('Una idea para compartir esta tarde')).source,'ai');assert.equal(calls,1);
+  assert.equal(env.localStorage.getItem('pc-save'),'fnf-results');
+});
+test('ordinary greetings and personal facts reach the provider while actions and spoiler guards stay local', async()=>{
+  let sent=[];const env=environment({fetch:async(url,opts)=>{sent.push(JSON.parse(opts.body));return new Response(JSON.stringify(good));}});
+  const mind=createMind(env);
+  for(const text of ['Hola, ¿cómo estás?','Mi color favorito es morado','Me gusta dibujar']) assert.equal((await mind.chat(text)).source,'ai');
+  assert.equal(sent.length,3);assert.ok(sent[1].context.memories.includes('favorite_color_purple'));
+  assert.ok(mind.getState().memories.some(m=>m.id==='favorite_activity_drawing'));
+  assert.equal(mind.act('pet').source,'local');
+  assert.equal((await mind.chat('Abre el sótano y cuéntame el secreto del clóset')).source,'local');
+  assert.equal(sent.length,3);
+});
 test('local joke then explicit laughter enters the next provider context and survives reload by ID',async()=>{
   let sent;const env=environment({fetch:async(url,opts)=>{sent=JSON.parse(opts.body);return new Response(JSON.stringify(good));}});
   const mind=createMind(env);mind.act('wall');

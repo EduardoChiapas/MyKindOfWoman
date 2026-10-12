@@ -82,3 +82,13 @@ IA real pendiente sin credenciales; pruebas actuales usan mocks.
 Fuentes oficiales verificadas: [generateContent](https://ai.google.dev/api/generate-content),
 [JSON estructurado](https://ai.google.dev/gemini-api/docs/generate-content/structured-output).
 Modelo/presupuesto dependen del proyecto; truncados se rechazan.
+
+
+## GitHub Pages → Render: diagnóstico
+
+Para https://eduardochiapas.github.io/MyKindOfWoman/, configurar en Render
+LUMO_ALLOWED_ORIGINS=https://eduardochiapas.github.io (sin ruta del repositorio).
+Guardar y desplegar; OPTIONS /api/session debe responder 204 y permitir ese origen.
+Origin not allowed significa que la petición no ha llegado al proveedor. No ampliar a wildcard.
+
+La conexión automática migra los bloqueos antiguos con automaticVersion:1, conservando recuerdos y guardados. Las revocaciones internas hechas con esa versión siguen vigentes. El texto escrito usa primero el proveedor, incluidos saludos y preferencias; acciones guionizadas, filtros HOME y respaldo permanecen locales.

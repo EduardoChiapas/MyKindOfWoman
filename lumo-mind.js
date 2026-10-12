@@ -95,7 +95,7 @@
     let state, initialized = false, history = [], localActions = [], pending = false, turn = 0, session = null, consentSent = false, currentController = null;
     let storageAvailable = true, unsupportedSave = false;
     // aiConsent is the legacy transport permission, not proof of a player's explicit consent.
-    const settings = { endpoint: '/api/chat', allowAI: true, aiConsent: true, externalPreference: 'auto', persistMemory: true, commentFrequency: 'low', timeoutMs: 18000 };
+    const settings = { endpoint: '/api/chat', allowAI: true, aiConsent: true, externalPreference: 'auto', automaticVersion: 1, persistMemory: true, commentFrequency: 'low', timeoutMs: 18000 };
     let trustedExternal = null;
     try {
       const configured = environment.LUMO_CONFIG && environment.LUMO_CONFIG.endpoint;
@@ -148,10 +148,9 @@
         if (storedSettings && storedSettings.length <= 2048) {
           const prefs = JSON.parse(storedSettings);
           if (prefs && typeof prefs === 'object') {
-            if (typeof prefs.allowAI === 'boolean') settings.allowAI = prefs.allowAI;
-            if (['auto', 'enabled', 'disabled'].includes(prefs.externalPreference)) settings.externalPreference = prefs.externalPreference;
-            // Older defaults required a separate button. Preserve an opt-out, migrate the unused gate.
-            if (prefs.externalPreference === 'disabled' || prefs.allowAI === false) {
+            // The automatic-connection release replaces old UI gates. Preserve only a
+            // revocation made under this release by the internal safety API.
+            if (prefs.automaticVersion === 1 && (prefs.externalPreference === 'disabled' || prefs.allowAI === false)) {
               settings.allowAI = false; settings.aiConsent = false; settings.externalPreference = 'disabled';
             } else { settings.allowAI = true; settings.aiConsent = true; }
             if (typeof prefs.persistMemory === 'boolean') settings.persistMemory = prefs.persistMemory;
@@ -345,7 +344,7 @@
     async function revokeAIConsent() {
       settings.allowAI = false; settings.aiConsent = false; settings.externalPreference = 'disabled';
       if (currentController) currentController.abort();
-      try {environment.localStorage.setItem(SETTINGS_KEY,JSON.stringify({allowAI:false,aiConsent:false,externalPreference:'disabled',persistMemory:settings.persistMemory,commentFrequency:settings.commentFrequency}));} catch (_) {}
+      try {environment.localStorage.setItem(SETTINGS_KEY,JSON.stringify({allowAI:false,aiConsent:false,externalPreference:'disabled',automaticVersion:settings.automaticVersion,persistMemory:settings.persistMemory,commentFrequency:settings.commentFrequency}));} catch (_) {}
       if (session) { try { await sessionPost('/consent', { consent: false }); } catch (_) {} }
       consentSent = false; return false;
     }
@@ -429,9 +428,8 @@
       if (options.signal) options.signal.addEventListener('abort', cancel, { once: true });
       const timeout = setTimeout(cancel, settings.timeoutMs);
       try {
-        // Fixed snippets and rare approved examples are local so they cannot repeat by model choice.
-        const personal = /pequen|tres\s+pixeles|diminut|aranas|como\s+estas|\bhola\b|callate|silencio|mi color favorito es|mi actividad favorita es|eres (?:increible|genial|bonito|guapo|hermoso|adorable)|me gusta (?:dibujar|pintar|la musica|tocar piano|jugar|explorar)/.test(n);
-        if (!result && personal && character === 'lumo') result = localChat(text, context);
+        // Typed conversation uses the provider first, including greetings and personal
+        // preferences. Scripted actions and narrative guards remain local.
         if (!result && options.allowAI !== false && settings.allowAI && settings.aiConsent && typeof environment.fetch === 'function') {
           try {
             await ensureSession(controller.signal);
@@ -487,7 +485,7 @@
         else if (target.origin === origin && /^https?:$/.test(target.protocol) && target.pathname === (character === 'ryon' ? '/api/ryon/chat' : '/api/chat') && !target.search && !target.hash) settings.endpoint = target.pathname;
       }
       if (Number.isFinite(opts.timeoutMs)) settings.timeoutMs = Math.max(1000, Math.min(20000, opts.timeoutMs));
-      try { environment.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ allowAI: settings.allowAI, aiConsent: settings.aiConsent, externalPreference: settings.externalPreference, persistMemory: settings.persistMemory, commentFrequency: settings.commentFrequency })); } catch (_) { storageAvailable = false; }
+      try { environment.localStorage.setItem(SETTINGS_KEY, JSON.stringify({ allowAI: settings.allowAI, aiConsent: settings.aiConsent, externalPreference: settings.externalPreference, automaticVersion: settings.automaticVersion, persistMemory: settings.persistMemory, commentFrequency: settings.commentFrequency })); } catch (_) { storageAvailable = false; }
       if (character === 'lumo' && environment.RyonMind) environment.RyonMind.configure({allowAI:settings.allowAI,aiConsent:settings.aiConsent,persistMemory:settings.persistMemory});
       persist(); return clone(settings);
     }

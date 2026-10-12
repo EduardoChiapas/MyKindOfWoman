@@ -8,7 +8,7 @@ El orden del catálogo es **Tutorial → The Date Week → feat. Bad Bunny**. Th
 
 Acércate a Lumo y usa Z/E o toca su sprite. Solo verás retrato, texto y campo de escritura; el campo aparece al terminar la última página. Toca el texto para acelerar/avanzar; Enter envía, Esc/X fuera del campo o toque exterior cierra. No hay historial visible, botones extra, etiquetas ni avisos técnicos dentro del chat.
 
-L / silbato llaman a Lumo sin abrir chat. J abre el diario; H abre opciones. Compañía, regalos y actividades se consultan externamente. Las opciones permiten privacidad, borrado de mensajes recientes/recuerdos personales y permiso de IA sin reiniciar la partida. La entrada del sótano sigue cerrada durante HOME.
+L / silbato llaman a Lumo sin abrir chat. J abre el diario; H abre opciones. Compañía, regalos y actividades se consultan externamente. Las opciones permiten información de privacidad y borrado de mensajes recientes/recuerdos personales sin reiniciar la partida. La entrada del sótano sigue cerrada durante HOME.
 
 El backend Gemini requiere habilitación/modelo/clave de servidor; sin esa configuración utiliza respuestas locales. La conexión se activa automáticamente al conversar, sin controles de autorización o desconexión visibles. La presentación limpia conserva Gemini, sesiones y memoria. Consulta server/LUMO_BACKEND.md para configuración; no se pide una clave dentro del juego.
 

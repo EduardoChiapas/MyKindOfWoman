@@ -208,7 +208,7 @@
   function interact(object) {
     if (object.id==='lumo') { if (hide) return findHidden(); open(); return true; }
     if (object.id==='hallway_locked_door') {
-      if (!hasHideout()) { showDialog('* La puerta está cerrada.\n* En la madera hay una estrella diminuta.'); return true; }
+      if (!hasHideout()) { showDialog(global.HomeWorld?'* Un pasadizo demasiado pequeño.\n* Lumo todavía no te ha invitado a entrar.':'* La puerta está cerrada.\n* En la madera hay una estrella diminuta.'); return true; }
       world.hideout=true; save(); mind.remember('event',{id:'secret_room_found'}); global.HomeProgress?.record('lumo_room_found');
       changeRoom({target:'lumoRoom',spawn:global.HomeWorld?[120,170]:[120,158],facing:'up'}); return true;
     }
@@ -272,6 +272,7 @@
     if ((layer==='back')===behind) actor.draw(context2d,view);
   }
   function roomChanged() {
+    global.LumoUI.dismissAmbient?.();
     cancelHide(); actor.onRoomChange({roomId:currentRoom,room:rooms[currentRoom],player,feet:getPlayerHitbox(),state:gameState});
     stageEncounter();
     updateInterests();
@@ -338,6 +339,7 @@
     if (met()) { global.HomeProgress?.record('played_fnf'); mind.act('game',{game:'fnf',result:'win'},context()); actor.perform('celebrate',3); }
   });
   global.LumoGame=Object.freeze({start,tick,draw,roomChanged,interact,observe,open,call:callLumo,callForStory,
+    get drawingClaimed(){return world.claimed.includes('lumo_drawing_pickup');},
     get mind(){return mind;},
     getInteraction:(probe,feet)=>companionVisible()?actor.getInteraction(probe,feet):null,
     getState:()=>({chapter:'HOME',world:clone(world),actor:actor.getState(),mind:mind.getState(),activity:hide ? clone(hide) : global.LumoActivities.active ? 'memory' : null}),

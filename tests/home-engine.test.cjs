@@ -64,6 +64,8 @@ function fixture(saved={},options={}){
   range('function checkRoomExit(','function worldToScreen(');
   vm.runInContext(source('lumo-actor.js'),context);
   vm.runInContext(source('home-story.js'),context);
+  vm.runInContext(source('home-objects.js'),context);
+  vm.runInContext(source('home-pixel-art.js'),context);
   vm.runInContext(source('home-world.js'),context);
   const actualUI=c.LumoUI;
   c.LumoUI=new Proxy({},{get(_target,key){return key==='mount'?adapter=>actualUI.mount({...adapter,manifest:c.LUMO_ASSETS}):Reflect.get(actualUI,key);}});
@@ -158,7 +160,7 @@ test('the actual native and Lumo adapters wait for all seven finale pages before
     f.c.HomeStory.tick(.05);assert.equal(f.c.gameState,'DIALOG');assert.equal(f.calls.native.length,i+2);
     frames(f,8);assert.equal(f.calls.native.length,i+2,'A native page waits for confirmation.');f.c.advanceInteraction();
   }
-  for(const text of ['Eh...','¿Mira?','No me gusta mucho esa puerta.']){
+  for(const text of ['Eh...','¿Mira?','No me gusta mucho esa bajada.']){
     f.c.HomeStory.tick(.05);assert.equal(f.c.LumoUI.isOpen,true);assert.equal(f.ui.get('.lumo-chat-form').hidden,true);
     assert.equal(f.ui.get('.lumo-text').textContent,text);frames(f,8);assert.equal(f.ui.get('.lumo-text').textContent,text);
     f.c.LumoUI.advance();await Promise.resolve();await Promise.resolve();

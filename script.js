@@ -1086,8 +1086,8 @@ function checkInteraction() {
   const object = findInteraction();
   if (!object) return;
   if (object.id==='lumo' && window.HomeStory?.interact(object)) return;
-  if (window.LumoGame?.interact(object)) return;
-  if (window.HomeStory?.interact(object)) return;
+  if (window.LumoGame?.interact(object)) { window.HomeObjectsState?.interact(object); return; }
+  if (window.HomeStory?.interact(object)) { window.HomeObjectsState?.interact(object); return; }
   window.LumoGame?.observe(object);
 
   if (object.action === 'pc') {
@@ -1105,7 +1105,9 @@ function checkInteraction() {
     return;
   }
 
-  showDialog(object.text);
+  window.HomeObjectsState?.interact(object);
+  window.HomeWorld?.feedback(object);
+  showDialog(window.HomeWorld?.description(object) || object.text);
 }
 
 function closeInteraction(reason = 'cancel') {

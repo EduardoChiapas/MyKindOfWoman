@@ -731,6 +731,7 @@
     return toast(value, { ...options, duration, force: true });
   }
 
-  const api = Object.freeze({ mount, open, close, speak, toast, bubble, advance, sendMessage, openSettings, openActions, refresh: () => { if (opened) setMode(mode); }, get isOpen() { return opened; }, get isPending() { return pending; }, get aiConnected() { return source === 'ai'; } });
+  function dismissAmbient(){clearTimeout(toastTimer);toastTimer=null;if(toastNode)toastNode.hidden=true;}
+  const api = Object.freeze({ mount, open, close, speak, toast, bubble, dismissAmbient, advance, sendMessage, openSettings, openActions, refresh: () => { if (opened) setMode(mode); }, get isOpen() { return opened; }, get isPending() { return pending; }, get aiConnected() { return source === 'ai'; } });
   global.LumoUI = api;
 })(window);

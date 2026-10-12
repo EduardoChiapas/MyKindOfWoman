@@ -6,10 +6,8 @@
   'use strict';
   const rect=(x,y,width,height)=>({x,y,width,height});
   const image=src=>{if(!global)return null;const value=new global.Image();value.src=src;return value;};
-  const images={wood:image('assets/rooms/living_room.png'),hall:image('assets/rooms/hallway.png'),
-    bedroom:image('assets/rooms/frisk_room.png'),kitchen:image('assets/rooms/kitchen.png'),
-    entrance:image('assets/rooms/entrance.png'),table:image('assets/props/living_table.png'),
-    chair:image('assets/props/reading_chair.png'),atlas:image('assets/home/furniture-atlas.png'),extra:image('assets/home/lumo-furniture-atlas.png')};
+  const images={wood:image('assets/rooms/living_room.png'),
+    atlas:image('assets/home/furniture-atlas.png')};
   // Tight atlas frames preserve transparent margins without stretching cell backgrounds.
   const FRAMES={piano:[65,95,355,329],sofa:[475,136,390,267],bath:[924,85,376,328],
     sink:[1450,72,206,347],toilet:[136,498,200,332],bench:[480,504,384,315],
@@ -29,58 +27,60 @@
   }
   const deco=(id,kind,x,y,width,height,text)=>({...prop(id,kind,x,y,width,height,text),solid:null});
   const exit=(dir,target,spawn,x,y,width,height,facing)=>({...rect(x,y,width,height),dir,target,spawn,facing:facing||dir});
-  const COMMON={wall:'#f6e7bd',trim:'#956239',shade:'#d8bd8f'};
+  const COMMON={wall:'#f6e6b9',trim:'#84613e',shade:'#dcc69d'};
   function definitions(){return {
     gallery:{label:'Corredor interior',nativeWidth:320,nativeHeight:240,palette:COMMON,
-      walkable:[rect(18,72,284,142),rect(142,48,36,32),rect(142,210,36,30),rect(0,120,26,42),rect(294,120,26,42)],
+      walkable:[rect(18,72,284,142),rect(142,48,36,32),rect(142,210,36,30),rect(0,120,26,42),rect(294,120,26,42),rect(0,176,26,36)],
       exits:[exit('down','hallway',[590,91],146,226,28,14),exit('up','bathroom',[120,170],146,58,28,18),
         exit('left','readingRoom',[286,139],0,124,14,34),exit('right','gardenHall',[26,108],306,124,14,34)],
-      props:[deco('gallery_picture','portrait',43,30,50,29,'* Un paisaje tranquilo.\n* Este corredor une los rincones de la casa.'),
-        deco('gallery_candle_left','candle',114,34,11,23,'* Una vela ilumina el camino de vuelta.'),
-        deco('gallery_candle_right','candle',196,34,11,23,'* Cera tibia, en su pequeño soporte.'),
-        prop('gallery_plant','plant',237,50,32,42,'* Las hojas apenas rozan la pared.\n* El centro del corredor queda libre.'),
-        {...prop('hallway_locked_door','secret',48,153,34,45,'* En la puerta pequeña hay una estrella diminuta.',rect(48,175,34,23)),target:'lumoRoom',condition:'lumo_hideout'}],
-      rug:rect(106,99,108,66)},
+      props:[deco('gallery_picture','map',43,30,50,29,'* Enrollas el mapa de la casa.\n* Tú sigues sabiendo dónde está la cocina.'),
+        deco('gallery_candle_left','clock',109,27,22,43,'* El péndulo se balancea.\n* El reloj parece tomarse su trabajo muy en serio.'),
+        deco('gallery_candle_right','hooks',195,34,34,36,'* Acomodas una bufanda en el perchero.\n* Ahora parece menos dramática.'),
+        prop('gallery_plant','mailbox',247,59,32,34,'* Abres el buzón de ideas.\n* Una tarjeta dice: HOY TAMBIÉN PUEDES DESCANSAR.'),
+        prop('gallery_umbrella','umbrella',237,165,27,40,'* Abres el paraguas un poquito.\n* Aquí dentro no llueve. Por ahora, solo te tapa la vista.'),
+        {...deco('hallway_locked_door','alcove',0,176,18,36,'* Un pasadizo pequeño.\n* Hay una estrella junto al borde.'),target:'lumoRoom',condition:'lumo_hideout'}]},
     bathroom:{label:'Baño',nativeWidth:240,nativeHeight:200,palette:{...COMMON,wall:'#d7dfce'},floor:'tile',
       walkable:[rect(18,72,204,102),rect(102,170,36,30)],
       exits:[exit('down','gallery',[160,88],106,186,28,14)],
-      props:[prop('bathroom_tub','bath',25,64,79,69,'* El agua está quieta.\n* Una toalla doblada espera cerca.',rect(27,99,75,31)),
-        prop('bathroom_sink','sink',128,27,37,62,'* El espejo está limpio.\n* Eres Mira, incluso con el pelo despeinado.',rect(129,73,35,15)),
-        prop('bathroom_toilet','toilet',181,59,30,50,'* Todo está en su sitio.\n* Lumo ha decidido esperar prudentemente junto a la puerta.',rect(182,88,28,20)),
-        deco('bathroom_towel','towel',72,30,31,22,'* Una toalla suave, perfectamente doblada.') ]},
+      props:[prop('bathroom_tub','bath',25,64,79,69,'* Empujas suavemente el patito.\n* Ha iniciado una expedición de dos centímetros.',rect(27,99,75,31)),
+        prop('bathroom_sink','sink',128,27,37,62,'* Abres el grifo.\n* En el espejo sigues siendo Mira, incluso despeinada.',rect(129,73,35,15)),
+        prop('bathroom_toilet','toilet',181,59,30,50,'* Levantas la tapa.\n* Inspección terminada. No hay misiones secundarias aquí.',rect(182,88,28,20)),
+        deco('bathroom_towel','towel',72,30,31,22,'* Doblas la toalla sobre la barra.\n* Una victoria doméstica pequeña.'),
+        deco('bathroom_soap','soap',170,41,21,28,'* Una pulsación. Dos burbujas.\n* El jabón cumple lo prometido.') ]},
     readingRoom:{label:'Sala de lectura',nativeWidth:320,nativeHeight:240,palette:COMMON,
       walkable:[rect(18,74,284,140),rect(294,120,26,42)],
       exits:[exit('right','gallery',[34,141],306,124,14,34)],
-      props:[prop('reading_books','bookcase',30,25,63,61,'* Cuentos, recetas y libros de plantas.\n* Puedes escoger uno sin pedir permiso.',rect(32,73,59,13)),
-        deco('reading_window','window',135,25,71,40,'* La luz entra suavemente.\n* Se ven las hojas del jardín.'),
-        prop('reading_sofa','sofa',126,72,78,53,'* Dos cojines cómodos.\n* Hay sitio para ti y para una criatura diminuta.',rect(128,101,74,23)),
-        prop('reading_chair','chair',47,134,47,50,'* Un sillón apartado del paso.\n* Aquí una tarde puede durar todo un libro.',rect(51,162,39,21)),
-        prop('reading_table','table',131,155,74,40,'* Una mesa para jugar a las parejas o compartir una historia.',rect(132,173,72,20)),
-        prop('reading_plant','plant',252,169,31,40,'* Una planta recibe la última franja de luz del día.')],
-      rug:rect(112,119,108,87)},
+      props:[prop('reading_books','bookcase',30,25,63,61,'* Abres un libro de plantas.\n* El dibujo de una flor ocupa toda la página.',rect(32,73,59,13)),
+        deco('reading_window','blindWindow',135,25,71,40,'* Bajas la persiana.\n* La luz se convierte en rayitas.'),
+        prop('reading_sofa','chaise',126,72,78,53,'* Acomodas el cojín del diván.\n* Ya tiene el grado correcto de comodidad.',rect(128,101,74,23)),
+        prop('reading_chair','beanbag',47,134,47,50,'* El puf se hunde y recupera su forma.\n* Cero dignidad. Muchísima comodidad.',rect(51,162,39,21)),
+        prop('reading_table','gameTable',131,155,74,40,'* Una mesa con cartas de parejas.\n* Podrías jugar aquí con Lumo.',rect(132,173,72,20)),
+        prop('reading_plant','recordPlayer',252,160,34,48,'* El disco comienza a girar.\n* La aguja sigue sus surcos.'),
+        deco('reading_origami','origami',222,49,26,21,'* Doblas una grulla de papel.\n* Se queda vigilando la sala.') ]},
     gardenHall:{label:'Pasillo del jardín',nativeWidth:320,nativeHeight:156,palette:COMMON,
       walkable:[rect(0,76,320,56)],
       exits:[exit('left','gallery',[285,141],0,81,14,51),exit('right','garden',[34,170],306,81,14,51)],
-      props:[deco('garden_hall_window','window',112,26,82,39,'* Tras el vidrio, el jardín sigue tranquilo.'),
-        prop('garden_hall_flower','plant',235,44,31,40,'* Otra planta, cuidada con paciencia.'),
-        deco('garden_hall_picture','portrait',35,30,50,29,'* Una pequeña pintura de hojas y luz.')],rug:rect(80,87,150,32)},
+      props:[deco('garden_hall_window','glass',112,26,82,39,'* El vidrio de colores atrapa un destello.\n* Hasta el polvo tiene buen aspecto.'),
+        prop('garden_hall_flower','bootrack',236,46,37,38,'* Limpias las botas en su soporte.\n* La tierra se queda aquí. El jardín, afuera.'),
+        deco('garden_hall_picture','windchime',44,28,33,37,'* Rozas el móvil de viento.\n* Responde con una nota pequeñita.') ]},
     garden:{label:'Jardín de casa',nativeWidth:320,nativeHeight:240,palette:COMMON,floor:'garden',
       walkable:[rect(18,82,284,136),rect(0,150,26,42)],
       exits:[exit('left','gardenHall',[285,108],0,154,14,34)],
-      props:[prop('garden_workbench','bench',206,68,75,61,'* Macetas, semillas y una palita.\n* Todo lo necesario para cuidar algo pequeño.',rect(209,105,69,23)),
-        prop('garden_flower','seedling',57,84,33,45,'* Una flor en su maceta.\n* La regadera está cerca; puedes cuidarla a tu ritmo.'),
-        prop('garden_tree_left','plant',29,34,45,58,'* Hojas verdes sobre la pared del jardín.'),
-        prop('garden_tree_right','plant',260,159,34,44,'* Esta planta disfruta de su propio rincón.'),
-        deco('garden_watering_can','can',145,143,32,21,'* Una regadera ligera.\n* No es necesario regar dos veces para demostrar cariño.'),
-        prop('garden_bench','gardenBench',81,177,65,29,'* Un banco bajo, mirando las flores.\n* También puedes descansar aquí.',rect(84,193,59,12))]},
+      props:[prop('garden_workbench','pottingBench',206,68,75,61,'* Semillas, una palita y sobres de papel.\n* Todo lo necesario para cuidar algo pequeño.',rect(209,105,69,23)),
+        prop('garden_flower','flowerbed',57,84,33,45,'* Una flor en su jardinera.\n* La regadera está cerca; puedes cuidarla a tu ritmo.'),
+        deco('garden_tree_left','trellis',29,28,45,62,'* Apartas una hoja de la enredadera.\n* Vuelve despacio a su sitio.'),
+        prop('garden_tree_right','birdbath',260,159,34,44,'* Una onda cruza el bebedero.\n* El pajarito prefiere observarte desde el borde.'),
+        deco('garden_watering_can','wateringCan',145,143,32,21,'* Una regadera ligera.\n* No es necesario regar dos veces para demostrar cariño.'),
+        prop('garden_bench','gardenBench',81,177,65,29,'* Acomodas el cojín del banco.\n* También puedes descansar aquí.',rect(84,193,59,12)),
+        deco('garden_frog','frog',162,190,27,22,'* Das cuerda a la rana de juguete.\n* Salta una vez. Parece satisfecha.') ]},
     lumoRoom:{label:'El escondite de Lumo',nativeWidth:240,nativeHeight:200,palette:{...COMMON,wall:'#ddd4ed'},
       walkable:[rect(18,72,204,102),rect(102,170,36,30)],
-      exits:[exit('down','gallery',[66,208],106,186,28,14)],
-      props:[prop('lumo_bed','bed',29,76,39,60,'* Una cama diminuta.\n* La almohada parece una nube doblada.',rect(30,105,37,30)),
+      exits:[exit('down','gallery',[34,194],106,186,28,14)],
+      props:[prop('lumo_bed','hammock',29,76,39,60,'* La camita colgante se mece despacio.\n* Una nube doblada hace de almohada.',rect(30,105,37,30)),
         prop('lumo_desk','desk',155,85,47,39,'* Un escritorio lleno de dibujos y estrellas.',rect(156,111,45,13)),
         deco('lumo_drawing','drawing',84,29,63,34,'* Dos figuras y una estrella.\n* Debajo dice: MI MEJOR AMIGA.'),
         prop('lumo_box','box',181,143,25,23,'* Una caja para guardar aventuras, sin prisa.',rect(181,150,25,16)),
-        deco('lumo_candle','candle',43,32,11,23,'* Una luz pequeña para una habitación pequeña.')],rug:rect(82,102,68,50)}
+        deco('lumo_candle','mobile',35,28,31,34,'* Tres estrellas de papel giran un poquito.\n* Lumo tiene un cielo a su medida.') ]}
   };}
   let installed=null,scale=2,worldRooms=null,flowerState=()=>false;
   const nativeToWorld=(r,R)=>R(r.x,r.y,r.width,r.height);
@@ -145,8 +145,10 @@
     fill(ctx,p.shade,18,66,w-36,7);fill(ctx,p.trim,18,73,w-36,1);
     woodFloor(ctx,18,74,w-36,bottom-74);
     if(def.floor==='tile'){
+      ctx.save();ctx.beginPath();ctx.rect(18,74,w-36,bottom-74);ctx.clip();
       fill(ctx,'#e8e3ce',18,74,w-36,bottom-74);
       for(let y=74;y<bottom;y+=12)for(let x=18;x<w-18;x+=12){fill(ctx,((x-18)/12+(y-74)/12)%2?'#c6d1bb':'#eee8d4',x,y,11,11);}
+      ctx.restore();
     }
     if(def.floor==='garden'){
       fill(ctx,'#6e8851',18,74,w-36,bottom-74);
@@ -160,8 +162,16 @@
     fill(ctx,p.trim,17,16,1,bottom-15);fill(ctx,p.trim,w-18,16,1,bottom-15);
     fill(ctx,p.wall,18,bottom,w-36,4);fill(ctx,p.trim,18,bottom-1,w-36,1);
     if(def.rug)rug(ctx,def.rug);doors(ctx,def);
+    for(const a of def.props.filter(p=>p.kind==='alcove')){
+      woodFloor(ctx,0,a.y-4,26,a.height+8);
+      fill(ctx,p.wall,0,a.y-27,14,23);fill(ctx,p.trim,14,a.y-27,1,23);
+    }
   }
   function special(ctx,p){const {x,y,width:w,height:h}=p;
+    const state={...global?.HomeWorld?.objects?.visual(p.id),
+      motion:global?.HouseExperience?.reducedMotion!==true,time:global?.performance?.now?.()||0,
+      claimed:p.id==='lumo_desk'&&global?.LumoGame?.drawingClaimed===true};
+    if(global?.HomePixelArt?.draw(ctx,p,state))return;
     if(p.kind==='seedling'){
       // Original flower head is sampled without the corridor's opaque wall.
       blit(ctx,'plant',x,y+9,w,h-9);
@@ -203,5 +213,25 @@
     ctx.restore();}
   function drawPiano(ctx,view,foreground=false,feet){if(!installed)return;const p=prop('home_piano','piano',32,78,74,69,'');
     if(foreground&&(!feet||feet.y+feet.height>p.depthY*scale))return;setup(ctx,view);special(ctx,p);ctx.restore();}
-  return {definitions,install,assets:Object.values(images).filter(Boolean),drawPiano,drawProps,frames:FRAMES,extraFrames:EXTRA_FRAMES,getFeet:null};
+  const alternatives={
+    gallery_picture:'* Desenrollas el mapa.\n* Baño, lectura, jardín. No hace falta una brújula.',
+    gallery_candle_right:'* Dejas caer la bufanda.\n* Está lista para una aventura con frío.',
+    gallery_plant:'* Cierras el buzón de ideas.\n* Ninguna idea se ha escapado.',
+    gallery_umbrella:'* Cierras el paraguas.\n* El pronóstico de interiores sigue siendo favorable.',
+    bathroom_sink:'* Cierras el grifo.\n* La última gota cae en el lavabo.',
+    bathroom_toilet:'* Bajas la tapa.\n* Misterio resuelto.',
+    bathroom_towel:'* Extiendes la toalla.\n* Ahora tiene espacio para secarse.',
+    reading_books:'* Cierras el libro y lo devuelves a su sitio.\n* La flor sigue entre las páginas.',
+    reading_window:'* Subes la persiana.\n* Vuelve la luz del jardín.',
+    reading_plant:'* Detienes el tocadiscos.\n* La aguja descansa.',
+    reading_origami:'* Desdoblas la grulla con cuidado.\n* Puede volver a volar otro día.',
+    garden_hall_flower:'* Devuelves las botas a su soporte.\n* Todavía queda un poco de tierra en las suelas.'
+  };
+  function description(object){if(!installed||!object)return null;
+    if(global?.HomeWorld?.objects?.readOnly&&Object.values(installed).some(def=>def.props.some(p=>p.id===object.id)))return '* Lo observas con atención.\n* Todo sigue en su sitio.';
+    const visual=global?.HomeWorld?.objects?.visual(object.id);
+    return visual&&alternatives[object.id]&&!visual.value?alternatives[object.id]:null;
+  }
+  function feedback(object){if(object?.id==='garden_hall_picture'&&!global?.HomeWorld?.objects?.readOnly)global?.UndertaleAudio?.note(3,{volume:.35});}
+  return {definitions,install,assets:Object.values(images).filter(Boolean),drawPiano,drawProps,description,feedback,frames:FRAMES,extraFrames:EXTRA_FRAMES,getFeet:null,objects:null};
 });

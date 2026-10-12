@@ -46,7 +46,7 @@
  // Preserve all original FNF/PC storage. Starting over affects HOME alone.
  const start=document.getElementById('btn-start');start.firstChild.textContent=progress.hasSave()?'Continuar ':'Entrar en casa ';
  const fresh=document.createElement('button');fresh.type='button';fresh.textContent='Nueva partida';fresh.hidden=!progress.hasSave();
- let newerSave=progress.getState().readOnly===true;
+ let newerSave=progress.getState().readOnly===true||global.HomeObjectsState?.readOnly===true;
  try{for(const name of ['lumo','ryon']){const saved=JSON.parse(localStorage.getItem('mkw:'+name+':v2')||'null');if(saved&&(![1,2].includes(saved.version)||Number(saved.memoryVersion)>3))newerSave=true;}}catch{}
  fresh.disabled=newerSave;
  const confirmBox=document.createElement('div');confirmBox.className='home-reset';confirmBox.hidden=true;confirmBox.setAttribute('role','dialog');confirmBox.setAttribute('aria-label','Nueva partida');
@@ -57,7 +57,7 @@
  const openReset=()=>{confirmBox.hidden=false;no.focus();};
  fresh.addEventListener('click',openReset);no.addEventListener('click',()=>{confirmBox.hidden=true;if(wasInGame){wasInGame=false;introContainer.style.display='none';gameContainer.style.display='grid';gameState='PLAYING';focus();}else fresh.focus();});
  confirmBox.addEventListener('keydown',event=>{if(event.code==='Escape'){event.preventDefault();no.click();}});
- yes.addEventListener('click',async()=>{if(!progress.reset())return;yes.disabled=true;await Promise.allSettled([mind.deleteSession(),global.RyonMind.deleteSession()]);try{for(const key of ['mkw:lumo:world:v1','mkw:lumo:v2','mkw:lumo:v1','mkw:ryon:v2','mkw:ryon:v1'])localStorage.removeItem(key);}catch{}location.reload();});
+ yes.addEventListener('click',async()=>{if(newerSave||global.HomeObjectsState?.reset()===false||!progress.reset())return;yes.disabled=true;await Promise.allSettled([mind.deleteSession(),global.RyonMind.deleteSession()]);try{for(const key of ['mkw:lumo:world:v1','mkw:lumo:v2','mkw:lumo:v1','mkw:ryon:v2','mkw:ryon:v1'])localStorage.removeItem(key);}catch{}location.reload();});
  confirmBox.append(message,yes,no);start.after(fresh,confirmBox);
  const erase=document.createElement('button');erase.type='button';erase.textContent='Empezar HOME de nuevo';erase.disabled=newerSave;erase.addEventListener('click',()=>{wasInGame=true;document.getElementById('btn-close-help').click();introContainer.style.display='flex';gameContainer.style.display='none';gameState='INTRO';openReset();});options.append(erase);
  global.addEventListener('pagehide',()=>checkpoint());

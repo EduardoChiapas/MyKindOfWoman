@@ -21,3 +21,8 @@ segundo atlas, `assets/home/furniture-atlas.png`. Los atlas complementan el
 estilo; no son sprites oficiales de Undertale. No se editaron las referencias.
 
 Prompts completos y parámetros conservados en GENERATION_PROMPTS.md.
+
+
+## Pulido del ala nueva y accesos — 2026-10-12
+
+La revisión vigente usa home-pixel-art.js para los33 objetos distintos del ala nueva, con contornos y píxeles enteros editables. Se retiró su uso de los muebles bitmap escalados y recursos clonados. El piano de la sala original conserva furniture-atlas.png; lumo-furniture-atlas.png ya no se carga. Ambos PNG y sus prompts se conservan como fuentes históricas. No se han editado imágenes originales de Undertale, Mira, Lumo o FNF en esta revisión. Estados visuales e interpolación separados en home-objects.js; posiciones y colisión en home-world.js. Es arte propio inspirado en la paleta existente, sin afirmar procedencia oficial.

@@ -15,10 +15,10 @@
   };
   const HINTS={anomaly_session:'Vuelve a la computadora después de explorar.',anomaly_photo:'Vuelve a mirar el recuerdo de tu habitación.',
     anomaly_piano:'Hay una partitura sobre el piano de la sala.',anomaly_message:'Comprueba la computadora una vez más.',
-    anomaly_lumo:'Da un paseo con Lumo y vuelve a hablarle.',anomaly_door:'Mira la entrada cerrada junto a las escaleras.'};
-  const DOOR_PAGES=[{text:'* La puerta está cerrada.'},{text:'* No recuerdas haberla visto abierta.'},{text:'* ...'},
-    {text:'* Se escucha algo al otro lado.'},{speaker:'LUMO',text:'Eh...',emotion:'SCARED'},
-    {speaker:'LUMO',text:'¿Mira?',emotion:'SCARED'},{speaker:'LUMO',text:'No me gusta mucho esa puerta.',emotion:'SCARED'}];
+    anomaly_lumo:'Da un paseo con Lumo y vuelve a hablarle.',anomaly_door:'Mira la bajada al sótano junto a las escaleras.'};
+  const DOOR_PAGES=[{text:'* Las escaleras descienden hacia la oscuridad.'},{text:'* No puedes bajar.'},{text:'* ...'},
+    {text:'* Se escucha algo desde abajo.'},{speaker:'LUMO',text:'Eh...',emotion:'SCARED'},
+    {speaker:'LUMO',text:'¿Mira?',emotion:'SCARED'},{speaker:'LUMO',text:'No me gusta mucho esa bajada.',emotion:'SCARED'}];
 
   function createCore(progress,emit=()=>{}){
     if(!progress||typeof progress.record!=='function')throw TypeError('HomeStory necesita HomeProgress.');
@@ -84,8 +84,8 @@
       onRyonmessage(){progress.record('pc_found');if(progress.record('ryon_met'))emitEvent('ryon',{id:'ryon_met'});return true;},
       resetRecipe(){recipeSteps=[];},waterFlower(){const first=progress.waterFlower();emitEvent('garden',{id:'flower_watered',first});return first;},
       setBriefPacing(enabled){spacing=enabled?8:15;},
-      hint(){return progress.has('home_complete')?'Puedes seguir explorando HOME. La puerta permanece cerrada.':
-        !prerequisites()?'Explora, conversa y reúne los tres recuerdos. Las actividades secundarias pueden esperar.':HINTS[progress.nextAnomaly()]||'La entrada del sótano sigue cerrada. Acércate con Lumo.';},
+      hint(){return progress.has('home_complete')?'Puedes seguir explorando HOME. No puedes bajar al sótano.':
+        !prerequisites()?'Explora, conversa y reúne los tres recuerdos. Las actividades secundarias pueden esperar.':HINTS[progress.nextAnomaly()]||'No puedes bajar al sótano. Acércate con Lumo.';},
       getState(){return {elapsed,currentRoom,lastAnomalyAt,lastAnomalyRoom,spacing,roomsSince:roomsSince.size,finalePhase,
         recipeSteps:recipeSteps.length,melodyFound:progress.has('home_melody_found'),complete:progress.has('home_complete')};}
     });
@@ -181,8 +181,8 @@
         const result=core.cookStep(prompts[step][2][index]);if(result.accepted){step++;paint();body.querySelector('button')?.focus();}})));}
     paint();body.querySelector('button')?.focus();}
   function openGarden(){const body=makePanel('CUIDAR LA FLOR');const watered=progress.has('flower_watered');
-    paragraph(body,watered?'La tierra conserva humedad. Basta con acompañar su crecimiento, sin hacer nada más.':'La flor sigue en su maceta. Hay una pequeña regadera cerca.');
-    if(!watered)body.append(button('REGAR CON CUIDADO',()=>{core.waterFlower();openGarden();}));
+    paragraph(body,watered?'La tierra conserva humedad. Los pétalos se han abierto. Basta con acompañar su crecimiento.':'La flor tiene espacio para crecer. Hay una regadera cerca.');
+    if(!watered)body.append(button('REGAR CON CUIDADO',()=>{core.waterFlower();global.HomeObjectsState?.interact('garden_flower');closePanel();adapter.showDialog?.('* Riegas con cuidado.\n* Los pétalos se abren un poquito.\n* Por hoy, es suficiente.');}));
     paragraph(body,'La flor se queda en la casa. Su cuidado se conserva en la partida.');}
   function beginSequence(pages,done){closePanel();sequence={pages,index:0,waiting:false,done};}
   function tickSequence(){if(!sequence)return;if(sequence.waiting){if(adapter.isDialogOpen?.())return;sequence.waiting=false;}
@@ -194,12 +194,12 @@
     const explore=button('SEGUIR EXPLORANDO HOME',()=>{ending.node.remove();ending=null;adapter.setEnding?.(false);adapter.pause?.(false);actor()?.setEmotion?.('NORMAL');actor()?.setFollowing?.(true);adapter.resumeFocus?.();});
     explore.hidden=true;content.append(explore);ending.node.append(content);global.document.body.append(ending.node);ending.button=explore;}
   function doorInteraction(){progress.touch('entrance_basement_door');
-    if(progress.has('home_complete')){adapter.showDialog?.('* La puerta sigue cerrada.\n* HOME ha terminado; puedes seguir visitando la casa.');return true;}
+    if(progress.has('home_complete')){adapter.showDialog?.('* No puedes bajar al sótano.\n* HOME ha terminado; puedes seguir visitando la casa.');return true;}
     if(core.tryAnomaly('anomaly_door')){actor()?.faceToward?.({x:425,y:223});actor()?.perform?.('scared',2);
-      adapter.showDialog?.('* Lumo mira la puerta durante unos segundos.\n* Después vuelve a mirarte, sin una de sus bromas habituales.');return true;}
-    if(!core.allAnomalies()){adapter.showDialog?.('* La puerta del sótano está cerrada.\n* No puedes entrar durante HOME.');return true;}
+      adapter.showDialog?.('* Lumo mira la bajada durante unos segundos.\n* Después vuelve a mirarte, sin una de sus bromas habituales.');return true;}
+    if(!core.allAnomalies()){adapter.showDialog?.('* Las escaleras bajan hacia la oscuridad.\n* No puedes entrar durante HOME.');return true;}
     const pages=core.approachDoor();if(pages)beginSequence(pages,()=>{core.finishDoorDialogue();beginEnding();});
-    else adapter.showDialog?.('* Un golpe rompe el silencio.\n* Lumo deja de moverse. La puerta sigue cerrada.');return true;}
+    else adapter.showDialog?.('* Un golpe rompe el silencio.\n* Lumo deja de moverse. No puedes bajar.');return true;}
   function interact(object){const context=getContext();if(!started||!object||panel||sequence||ending||context.hidden||context.state!=='PLAYING')return false;
     const room=context.roomId,id=object.id;if(!ROOM_KEYS[room]||room!==core.getState().currentRoom)return false;
     if(room==='entrance'&&id==='entrance_basement_door')return doorInteraction();
@@ -226,7 +226,6 @@
       if(ending.elapsed>=1.3&&!ending.complete){core.completeHome();ending.complete=true;ending.button.hidden=false;ending.button.focus();}}
   }
   function draw(ctx,camera={x:0,y:0}){if(!started)return;const room=getContext().roomId;
-    if(room==='entrance'&&progress.barrier?.('entrance')){drawClosedDoor(ctx,camera);return;}
     if(room!=='livingRoom')return;
     if(global.HomeWorld){global.HomeWorld.drawPiano(ctx,camera);return;}
     ctx.save();ctx.translate(Math.round(68-camera.x),Math.round(176-camera.y));ctx.scale(2,2);ctx.imageSmoothingEnabled=false;
@@ -239,16 +238,6 @@
     ctx.fillStyle='#352a23';ctx.fillRect(1,15,68,9);ctx.fillStyle='#efddb0';for(let x=4;x<66;x+=6)ctx.fillRect(x,16,5,7);
     ctx.fillStyle='#302529';for(const x of [8,14,26,32,38,50,56])ctx.fillRect(x,15,3,4);ctx.fillStyle='#f1e5b9';ctx.fillRect(27,-5,16,11);
     ctx.fillStyle='#574936';for(let y=-2;y<5;y+=2)ctx.fillRect(29,y,12,1);ctx.restore();}
-  function drawClosedDoor(ctx,camera){
-    // Code-native overlay exactly on the central HOME barrier; the PNG stays intact.
-    ctx.save();ctx.translate(Math.round(410-camera.x),Math.round(190-camera.y));ctx.scale(2,2);ctx.imageSmoothingEnabled=false;
-    ctx.fillStyle='#3c2517';ctx.fillRect(0,0,15,33);ctx.fillStyle='#ce9454';ctx.fillRect(1,1,13,31);
-    ctx.fillStyle='#ebbb78';ctx.fillRect(1,1,1,31);ctx.fillRect(1,1,13,1);
-    ctx.fillStyle='#79512e';ctx.fillRect(3,4,8,12);ctx.fillRect(3,19,8,10);
-    ctx.fillStyle='#b67d43';ctx.fillRect(4,5,6,10);ctx.fillRect(4,20,6,8);
-    ctx.fillStyle='#4c301c';ctx.fillRect(2,17,2,2);ctx.fillStyle='#efd080';ctx.fillRect(2,17,1,1);
-    ctx.fillStyle='#664025';ctx.fillRect(12,7,2,2);ctx.fillRect(12,24,2,2);
-    ctx.restore();}
   return Object.freeze({createCore,mount,start,roomChanged,interact,tick,draw,openJournal,openAlbum,
     renderPhoto(canvas,id){if(!PHOTO_IDS.includes(id))return false;const paint=()=>drawPhoto(canvas,id,progress.has('anomaly_photo')&&id==='photo_window');paint();for(const source of photoImages.values())if(!source.complete)source.addEventListener('load',()=>{if(canvas.isConnected)paint();},{once:true});return true;},
     onPCopen(){return core?.pcNotice()||null;},onRyonmessage(){return core?.onRyonmessage()||false;},

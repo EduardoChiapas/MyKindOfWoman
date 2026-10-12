@@ -8,7 +8,7 @@ const HOUSE_LORE = {
   entrance: [
     {
       id: 'entrance_basement_door', x: 205, y: 95, width: 15, height: 33,
-      text: '* La puerta está cerrada.\n* No puedes bajar al sótano.\n* Del otro lado no se escucha nada, por ahora.'
+      text: '* Las escaleras descienden hacia la oscuridad.\n* No puedes bajar al sótano.\n* Desde abajo no se escucha nada, por ahora.'
     },
     {
       id: 'entrance_plant', x: 41, y: 18, width: 31, height: 55,

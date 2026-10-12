@@ -124,8 +124,8 @@
     const secondary = mode !== 'conversation';
     const withComposer = composerStarted && mode === 'conversation';
     const small = width < 600;
-    const minimum = secondary ? 210 : withComposer ? (small ? 144 : 134) : (small ? 100 : 106);
-    const desired = secondary ? Math.min(390, vh * .65) : Math.max(minimum, (valid ? rect.height : vh) * .28);
+    const minimum = secondary ? 210 : withComposer ? (touch ? 68 : 62) : (small ? 100 : 106);
+    const desired = secondary ? Math.min(390, vh * .65) : withComposer ? minimum : Math.max(minimum, (valid ? rect.height : vh) * .28);
     const height = Math.max(1, Math.min(desired, vh - 12));
     const bottom = keyboardOpen ? vt + vh - 6 : Math.max(vt + 6 + height, Math.min(vt + vh - 6, valid ? rect.bottom - 6 : vt + vh - 6));
     const top = Math.max(vt + 6, bottom - height);
@@ -163,8 +163,8 @@
     mode = ['menu', 'gifts', 'games', 'settings'].includes(nextMode) ? nextMode : 'conversation';
     root.dataset.mode = mode;
     root.dataset.phase = phase;
-    line.hidden = mode !== 'conversation';
-    form.hidden = mode !== 'conversation' || !composerStarted;
+    line.hidden = mode !== 'conversation' || phase === 'reply';
+    form.hidden = mode !== 'conversation' || !composerStarted || phase !== 'reply';
     tools.hidden = mode !== 'settings';
     actions.replaceChildren();
     if (mode === 'menu') {
@@ -190,7 +190,7 @@
 
   function returnConversation() {
     setMode('conversation');
-    if (composerStarted) input.focus({ preventScroll: true });
+    if (composerStarted && !touchComposer()) input.focus({ preventScroll: true });
     else panel.focus({ preventScroll: true });
   }
 
@@ -225,7 +225,7 @@
   }
 
   function updateNext() {
-    next.hidden = typing || pending || pageIndex + 1 >= pages.length;
+    next.hidden = typing || pending || phase === 'reply';
     next.textContent = '▾';
     next.parentNode.hidden = next.hidden;
   }
@@ -233,16 +233,10 @@
   function completePage() {
     updateNext();
     announce(`Lumo: ${pages[pageIndex]}`);
-    if (pageIndex + 1 < pages.length) return;
-    if (afterSpeech === 'scene') {
-      phase = 'scene'; composerStarted = false;
-      setMode(mode);
-      return;
-    }
-    phase = 'reply'; composerStarted = true;
+    phase = pageIndex + 1 < pages.length ? 'page' : afterSpeech === 'scene' ? 'scene' : 'continue';
+    composerStarted = false;
     setMode(mode);
-    if (mode === 'conversation' && !touchComposer()) input.focus({ preventScroll: true });
-    if (finishSpeech) { const done = finishSpeech; finishSpeech = null; done(true); }
+    updateNext();
   }
 
   function startPage() {
@@ -283,7 +277,11 @@
     } else {
       next.hidden = true;
       if (finishSpeech) { const done = finishSpeech; finishSpeech = null; done(true); }
-      if (afterSpeech !== 'scene') completePage();
+      if (afterSpeech !== 'scene') {
+        phase = 'reply'; composerStarted = true; text.textContent = '';
+        setMode(mode);
+        if (mode === 'conversation' && !touchComposer()) input.focus({ preventScroll: true });
+      }
     }
   }
 
@@ -342,6 +340,7 @@
     drawPortrait(response.emotion);
     react(response);
     setMode(mode);
+    if (mode === 'conversation') panel.focus({ preventScroll: true });
     pages = Array.isArray(response.boxes) && response.boxes.length ? response.boxes.flatMap(paginate) : paginate(response.text);
     pageIndex = 0;
     startPage();
@@ -352,10 +351,11 @@
     root.classList.toggle('lumo-thinking', value);
     root.setAttribute('aria-busy', String(value));
     form.querySelector('button').disabled = value;
-    // The draft remains editable while thinking; Android's keyboard stays open.
+    // A response and the writing field occupy separate turns.
     phase = value ? 'pending' : phase;
     root.dataset.phase = phase;
     if (value) {
+      composerStarted = false; input.blur(); setMode(mode);
       stopTyping();
       text.textContent = '...';
       next.hidden = true;
@@ -391,7 +391,7 @@
   }
 
   async function sendMessage(value) {
-    if (!opened || pending) return null;
+    if (!opened || pending || phase !== 'reply') return null;
     const message = String(value || '').trim().slice(0, 600);
     if (!message) { input.focus({ preventScroll: true }); return null; }
     const settings = state().settings || {};
@@ -530,12 +530,12 @@
       if (!focusable.length) { event.preventDefault(); panel.focus({ preventScroll: true }); }
       else if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
-    } else if (editing && target === input && (event.code === 'Enter' || event.key === 'Enter') && !event.shiftKey && !event.isComposing && !composing && event.keyCode !== 229) {
+    } else if (editing && target === input && phase === 'reply' && (event.code === 'Enter' || event.key === 'Enter') && !event.shiftKey && !event.isComposing && !composing && event.keyCode !== 229) {
       event.preventDefault();
       if (!event.repeat) submit();
     } else if (target?.classList?.contains('lumo-send') && ['Enter', 'Space'].includes(event.code)) {
       event.preventDefault(); if (!event.repeat) submit();
-    } else if (mode === 'conversation' && !editing && ['KeyZ', 'KeyE', 'Enter', 'Space'].includes(event.code)) {
+    } else if (mode === 'conversation' && !editing && (['KeyZ', 'KeyE', 'Enter', 'Space'].includes(event.code) || event.key === 'Enter')) {
       event.preventDefault(); if (!event.repeat) advance();
     } else if (!editing && event.code === 'KeyX') { event.preventDefault(); close(); }
     // Stop all keyboard input reaching movement and house dialogue handlers;

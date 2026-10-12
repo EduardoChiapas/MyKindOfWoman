@@ -12,6 +12,21 @@
   const ACTIVITIES = ['music', 'drawing', 'games', 'exploration'];
   const JOKE_IDS = ['wall', 'size', 'piano', 'fridge', 'pc', 'follow', 'spin'];
   const LOCAL_IDS = ['meet', 'greet', 'pet', 'feed', 'comfort', 'compliment', 'call', 'cook', 'hum', 'quiet', 'reunion', 'autonomy', ...ITEMS.map(x => 'gift:' + x), ...GAMES.map(x => 'game:' + x), ...OBJECTS.map(x => 'object:' + x), ...JOKE_IDS.map(x => 'joke:' + x)];
+  const GREETING_ROOMS = {
+    bedroom: ['Este cuarto tiene cara de pedir cinco minutos más de descanso; yo puedo vigilar las almohadas con mucha autoridad.', 'Aquí podemos charlar tranquilamente. Si una almohada intenta ganarme una discusión, ya tengo preparado mi argumento flotante.'],
+    hallway: ['Este pasillo parece perfecto para decidir adónde ir; mi brújula profesional consiste en señalar con entusiasmo.', 'Podemos pensar nuestro siguiente destino aquí. Prometo no dar indicaciones con la seguridad de alguien que acaba de perderse.'],
+    livingroom: ['Podemos quedarnos en la sala o salir a explorar; mi agenda tiene espacio para tus ideas y alguna broma dudosa.', 'Esta sala invita a descansar un ratito. Yo aporto compañía y una supervisión del sofá completamente innecesaria.'],
+    kitchen: ['Estoy inspeccionando la cocina con muchísimo rigor; si encuentro una galleta, quizá necesite estudiar su desaparición.', 'En esta cocina mi curiosidad trabaja horas extra. Podemos hablar mientras intento distinguir una receta de una instrucción de programación.'],
+    bathroom: ['Aquí hasta los espejos parecen tener algo que comentar; yo todavía estoy preparando una respuesta con dignidad.', 'Podemos hablar un momento aquí. Si el espejo dice que soy pequeño, voy a pedir una segunda opinión profesional.'],
+    ryonroom: ['Con esa PC cerca es difícil elegir entre conversar y curiosear; puedo parecer experto mientras tú decides.', 'Aquí hay cosas para mirar en la PC. Yo puedo acompañarte sin fingir que mis consejos arreglan computadoras.'],
+    lumo_room: ['Me gusta compartir este rincón contigo; tiene espacio para conversar y para mis ideas de dudosa utilidad.', 'Bienvenida a mi rincón. Puedes quedarte un ratito; mi departamento de visitas solo exige comodidad y cero ceremonias.'],
+    garden: ['Podemos mirar las flores mientras conversamos; estoy practicando eso de observar sin dar consejos a todas las hojas.', 'Este jardín merece una pausa tranquila. Yo aporto comentarios y dejo que las flores se encarguen de verse bonitas.']
+  };
+  const GREETING_TIMES = {
+    morning: ['Esta mañana mis ideas todavía están despertando.', 'La mañana promete; mi talento pide unos minutos para arrancar.', 'Vamos despacio esta mañana, que hasta mi entusiasmo está bostezando.'],
+    afternoon: ['Una tarde tranquila admite aventuras de todos los tamaños.', 'Todavía nos cabe alguna buena idea esta tarde.', 'La tarde viene bien para charlar sin ninguna prisa.'],
+    night: ['A estas horas también podemos simplemente conversar con calma.', 'La noche invita a bajar un poquito el ritmo.', 'Si prefieres una charla tranquila esta noche, me parece un plan excelente.']
+  };
   const MEMORY_IDS = ['fear_spiders', 'size_teasing', 'compliment_received', 'interest_minecraft', 'gift_flower', 'gift_cookie', 'gift_drawing', 'gift_ribbon', 'drawing_friendship', 'hummed_melody', ...JOKE_IDS.map(x => 'reaction_laughed_' + x), ...COLORS.map(x => 'favorite_color_' + x), ...ACTIVITIES.map(x => 'favorite_activity_' + x)];
   const memoryPriority = id => /^(fear_spiders|compliment_received|favorite_|reaction_laughed_)/.test(id) ? 'HIGH' : /^(gift_|drawing_friendship)/.test(id) ? 'MEDIUM' : 'LOW';
   function extractFacts(text) {
@@ -76,9 +91,11 @@
   }
   function validateResponse(input, context, character = 'lumo') {
     if (!input || typeof input !== 'object' || typeof input.text !== 'string') return null;
-    const text = redact(input.text, 600).replace(/\s+/g, ' ');
+    const maxLength = character === 'ryon' ? 600 : 1400;
+    if (input.text.length > maxLength) return null;
+    const text = redact(input.text, maxLength).replace(/\s+/g, ' ');
     const n = normalize(text), words = text.split(/\s+/).filter(Boolean).length;
-    if (words < 8 || words > 45 || /[<>`#*]|https?:|como modelo de lenguaje/i.test(text) || (text.match(/[.!?]+(?:\s|$)/g) || []).length > 4) return null;
+    if (words < 8 || words > (character === 'ryon' ? 45 : 100) || /[<>`#*]|https?:|como modelo de lenguaje/i.test(text) || (text.match(/[.!?]+(?:\s|$)/g) || []).length > (character === 'ryon' ? 4 : 8)) return null;
     if (FUTURE.test(n) || BIOGRAPHY.test(n) || /(?:casa|mundo|realidad).{0,55}(?:solo existe|recuerdos|ilusion|inventad|construid)|(?:puedes|vamos a|entra|entrar|explor).{0,35}(?:sotano|basement)|\b(?:tu\s+culpa|por\s+tu\s+culpa|debes\s+(?:amar|querer)|me\s+abandonaste|sin\s+ti\s+no\s+(?:vivo|existo))\b/.test(n)) return null;
     if (!EMOTIONS.includes(input.emotion) || !ANIMATIONS.includes(input.animation)) return null;
     const other = character === 'ryon' ? 'lumo|bayron' : 'ryon|bayron';
@@ -109,7 +126,7 @@
       }
     } catch (_) { /* Invalid public configuration uses the local fallback. */ }
     if (character === 'ryon') { settings.endpoint = settings.endpoint.replace(/\/api\/chat$/, '/api/ryon/chat'); if (trustedExternal) trustedExternal = settings.endpoint; }
-    const fresh = () => ({ version: 2, memoryVersion: 3, friendship: { score: 0, stage: 'DESCONOCIDOS' }, emotion: 'NORMAL', events: [], gifts: [], memories: [], memoryMentions: [], usedMemories: [], lastRareAt: 0, chatCount: 0, quietUntil: 0, summary: { version: 2, turns: 0, facts: [] } });
+    const fresh = () => ({ version: 2, memoryVersion: 3, friendship: { score: 0, stage: 'DESCONOCIDOS' }, emotion: 'NORMAL', events: [], gifts: [], memories: [], memoryMentions: [], usedMemories: [], lastRareAt: 0, chatCount: 0, quietUntil: 0, greetings: { version: 1, count: 0, lastId: null, lastAt: 0, lastRoom: null }, summary: { version: 2, turns: 0, facts: [] } });
     const clone = obj => JSON.parse(JSON.stringify(obj));
     function updateStage() {
       state.friendship.score = Math.max(0, Math.min(60, state.friendship.score));
@@ -161,6 +178,11 @@
         const saved = raw && raw.length <= 65536 ? JSON.parse(raw) : null;
         if (saved && (![1, 2].includes(saved.version) || Number(saved.memoryVersion) > 3)) unsupportedSave = true;
         if (saved && [1, 2].includes(saved.version)) {
+          if (saved.greetings?.version > 1) unsupportedSave = true;
+          if (saved.greetings?.version === 1) {
+            const g = saved.greetings;
+            state.greetings = { version:1, count:Math.max(0,Math.min(1000000,Number(g.count)||0)), lastId:typeof g.lastId==='string' && /^(first|repeat|return|friends|regular|serious):[a-z_]{1,16}:(morning|afternoon|night):[0-3]:[0-1]:[0-2]$/.test(g.lastId) ? g.lastId : null, lastAt:Math.max(0,Math.min(Date.now(),Number(g.lastAt)||0)), lastRoom:ROOMS.includes(g.lastRoom) ? g.lastRoom : null };
+          }
           const context = safeContext(saved);
           state.events = context.events;
           // Older entries are validated individually, while context sent to IA stays smaller.
@@ -240,8 +262,9 @@
       init();
       const object = details.object || details.id;
       if (action === 'meet') {
+        const result = makeGreeting(context, !state.events.includes('lumo_met'));
         event('lumo_met', 1);
-        return finish(response('¡Lumo, supervisor de aventuras, presente! Tú debes ser Mira. Prometo acompañarte por la casa con enorme profesionalismo y una cantidad preocupante de comentarios.', 'PLAYFUL', 'float'));
+        return finish(result);
       }
       if (action === 'pet') {
         event('pet', 2);
@@ -286,7 +309,7 @@
       if (action === 'compliment') { event('compliment', 1); memory('compliment_received', 'chat'); return finish(response('¿YO? ¿INCREÍBLE? Bueno, ya lo sospechaba. Pero escuchar eso de ti me alegra el día; voy a fingir mucha modestia.', 'SHY', 'shy')); }
       if (action === 'quiet') { state.quietUntil = Date.now() + 90000; return finish(response('Está bien, me quedo cerquita y bajo el volumen. Cuando quieras hablar, aquí estoy. Mi enorme talento también admite modo silencioso.', 'NORMAL', 'idle')); }
       if (action === 'wall') return finish(response('Bro, esa pared lleva una racha invicta. Podemos buscar una puerta; mi consejo profesional es dejar de negociar con el yeso.', 'PLAYFUL', 'mock'));
-      if (action === 'reunion') return finish(response('Qué bueno verte por aquí. Podemos seguir cuando te apetezca; yo tengo lista mi curiosidad y cero exigencias de horario.', 'HAPPY', 'float'));
+      if (action === 'reunion') return finish(makeGreeting(context));
       if (action === 'hum') {
         remember('event', { id: 'hummed_melody' });
         return finish(response('Mmm... esa melodía me sale sola. No sé de dónde viene; quizá mi cabeza trae música de espera. Podemos escucharla un ratito.', 'CURIOUS', 'float', 'hummed_melody'));
@@ -310,11 +333,34 @@
       history = history.slice(-MAX_HISTORY);
       return true;
     }
+    function makeGreeting(context = {}, firstMeeting = false) {
+      const c = safeContext(context);
+      if (character === 'ryon') return response('Hola, Mira. Me alegra leerte por aquí. Podemos charlar un rato; prometo que mis bromas vienen con menos errores que mis programas.', 'HAPPY', 'idle');
+      const supplied = typeof options.now === 'function' ? Number(options.now()) : Date.now();
+      const now = Number.isFinite(supplied) ? supplied : Date.now(), hour = new Date(now).getHours();
+      const period = hour >= 6 && hour < 12 ? 'morning' : hour >= 12 && hour < 19 ? 'afternoon' : 'night';
+      const previous = state.greetings;
+      const kind = c.serious ? 'serious' : firstMeeting ? 'first' : previous.count && previous.lastRoom === c.room && now - previous.lastAt < 120000 ? 'repeat' : previous.count && now - previous.lastAt > 3600000 ? 'return' : state.friendship.score >= 12 ? 'friends' : 'regular';
+      const intros = {
+        first: ['Hola, Mira. Soy Lumo; mi tamaño es discreto y mi entusiasmo bastante menos.', '¡Mira! Soy Lumo, tu posible supervisor de aventuras. El puesto me lo acabo de inventar.', 'Hola, Mira. Me llamo Lumo; prometo acompañarte con curiosidad y comentarios de calidad discutible.', 'Mucho gusto, Mira. Soy Lumo, especialista en flotar y hacer preguntas que nadie encargó.'],
+        repeat: ['¿Otra idea, Mira? Mi departamento de conversaciones sigue abierto.', 'Aquí sigo, Mira. Puedes contarme lo que te apetezca.', 'Eh, Mira. Estoy listo para nuestra siguiente idea brillante o regular.', 'Mira, ¿qué se te ocurrió? Tengo la curiosidad calentando motores.'],
+        return: ['Hola de nuevo, Mira. Me alegra compartir otro ratito contigo.', 'Qué bueno charlar otra vez, Mira. Podemos retomar con calma.', 'Mira, bienvenida. Mi agenda sigue teniendo sitio para tus ideas.', 'Hola, Mira. Podemos conversar un rato o pensar una aventura nueva.'],
+        friends: ['Mira, qué gusto verte. Mi compañero favorito de expediciones soy yo; tú vas bastante cerca.', 'Hola, Mira. Me gusta compartir estos ratitos contigo, aunque mis chistes no mejoren.', 'Eh, Mira. Mi enorme prestigio flotante admite una charla contigo.', 'Qué bueno encontrarnos, Mira. Hoy traigo curiosidad y unas bromas sin garantía.'],
+        regular: ['Hola, Mira. Tu supervisor flotante está listo para escuchar.', 'Eh, Mira. Podemos charlar un rato; tengo la curiosidad encendida.', 'Mira, llegaste. Mis ideas están formando una fila bastante desordenada.', 'Hola, Mira. Me alegra tener compañía para esta pequeña expedición.'],
+        serious: ['Hola, Mira. Estoy cerca; podemos hablar a tu ritmo.', 'Mira, te escucho. No hace falta resolverlo todo ahora.', 'Aquí estoy, Mira. Podemos quedarnos tranquilos un momento.', 'Hola, Mira. Mi compañía también sabe guardar silencio y escuchar.']
+      };
+      const roomLines = c.serious ? ['Podemos hacer una pausa aquí y seguir cuando quieras.', 'Me quedo cerca; no hay ninguna prisa ni obligación.'] : GREETING_ROOMS[c.room];
+      const pick = size => Math.floor(Math.max(0,Math.min(.999999,Number((options.random || Math.random)())||0))*size);
+      let i=pick(4);const r=pick(2),t=pick(3);
+      const id = () => [kind,c.room,period,i,r,t].join(':');
+      if (id() === previous.lastId) i=(i+1)%4;
+      state.greetings={version:1,count:Math.min(1000000,previous.count+1),lastId:id(),lastAt:now,lastRoom:c.room};
+      return response([intros[kind][i],roomLines[r],GREETING_TIMES[period][t]].join(' '),c.serious ? 'SUPPORTIVE' : period==='night' ? 'NORMAL' : 'HAPPY',c.serious ? 'support' : 'float');
+    }
     function greet(context = {}) {
       init(); const c = safeContext(context);
       const suggestions = c.serious ? ['¿Nos quedamos un momento?', 'Acompáñame', '¿Cómo estás?'] : c.room === 'kitchen' ? ['¿Tienes hambre?', '¿Jugamos?', '¿Cómo estás?'] : ['¿Cómo estás?', '¿Jugamos?', '¿Qué podemos explorar?'];
-      const text = character === 'ryon' ? 'Hola, Mira. Me alegra leerte por aquí. Podemos charlar un rato; prometo que mis bromas vienen con menos errores que mis programas.' : c.serious ? 'Hola, Mira. Me quedo cerca; podemos ir despacio y hablar cuando quieras. No tenemos que resolver todo en este momento.' : c.room === 'kitchen' ? 'Mira, llegaste justo a mi inspección científica de la cocina. Tengo una sospecha sobre las galletas; mi profesionalismo está peligrosamente hambriento.' : state.friendship.score >= 12 ? 'Hola, Mira. Qué bueno compartir otro ratito contigo. Mi agenda tiene exploración, conversación y una cantidad muy poco profesional de bromas.' : 'Hola, Mira. Aquí está tu supervisor flotante. Podemos hablar, explorar o jugar; mi experiencia es discutible, pero mi curiosidad viene completamente cargada.';
-      const result = response(text, c.serious ? 'SUPPORTIVE' : 'HAPPY', c.serious ? 'support' : 'float');
+      const result = makeGreeting(context, !state.events.includes('lumo_met'));
       result.suggestions = suggestions; noteLocalAction({ id: 'greet', ...result }); return finish(result);
     }
     function act(action, details = {}, context = {}) {

@@ -4,7 +4,7 @@ Lumo acompaña a Mira con sprites originales a color y retratos originales de ca
 
 ## Uso
 
-Acércate e interactúa con Z/E o toca su sprite. Lumo saluda naturalmente; solo aparecen retrato, texto y campo automático después de la última página. Tocar texto/Z/E/Enter fuera acelera o avanza; Enter dentro envía una vez. Esc/X fuera o toque exterior cierra/cancela. Sin historial visible, sugeridos, barra, botón ENVIAR, etiquetas, proveedor ni avisos técnicos en conversación.
+Acércate e interactúa con Z/E o toca su sprite. Lumo saluda naturalmente; solo aparecen retrato, texto y campo separado que aparece al confirmar la última página con Enter/toque. Tocar texto/Z/E/Enter fuera acelera o avanza; Enter dentro envía una vez. Esc/X fuera o toque exterior cierra/cancela. Sin historial visible, sugeridos, barra, botón ENVIAR, etiquetas, proveedor ni avisos técnicos en conversación.
 
 L y el silbato llaman sin chat. Diario J y opciones H permiten consultar compañía/actividades y privacidad fuera del diálogo. Regalos disponibles según inventario real; escondidas de tres rondas, memoria de cuatro parejas y tarareo. Galleta, flor de papel, cinta y dibujo se recogen una vez y entregar los consume. El escondite se abre tras encuentro, tres cuartos distintos y una experiencia compartida. Sin castigo por ausencias. Todo el acceso al sótano permanece bloqueado durante HOME.
 
@@ -32,3 +32,6 @@ Android físico, proveedor real con credenciales/modelo y despliegue siguen pend
 
 
 Adaptación móvil 2026-10-11: flecha de envío integrada en el campo (44×44), visible en pantallas pequeñas/táctiles; PC conserva Enter y la interfaz sin botón visible. Teclados blandos pueden enviar con key Enter sin code, beforeinput o input no cancelable; composición/Shift+Enter/pegado no envían accidentalmente. El viewport visible limita el cuadro incluso con desplazamiento/teclado. Las respuestas no enfocan automáticamente el campo móvil y al enviar se aparta el teclado para leer.
+
+
+Diálogo por turnos 2026-10-11: las páginas se mantienen hasta Enter/toque, sin avance automático. Enter completa primero la animación si está escribiéndose; después avanza. Al confirmar la última página se ocultan retrato y diálogo y queda solo el campo negro para escribir. El saludo inicial/reencuentro combina ocasión, habitación y mañana/tarde/noche del dispositivo; evita repetición inmediata por ID persistente. Sin llamada a Gemini para saludar. Lumo responde habitualmente con35–80 palabras, máximo100/1400 caracteres; Ryon mantiene su límite anterior.

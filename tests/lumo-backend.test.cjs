@@ -169,6 +169,18 @@ test('session cookies are random, HttpOnly and secure in production; consent pre
     assert.equal((await a.send('/api/chat',{message:'hola',requestId:'request-otherorigin'},{Origin:'https://evil.example'})).status,403);
   });
 });
+test('Gemini accepts longer Lumo dialogue and retains its full recent reply under the HOME canon',async()=>{
+  const cfg=configFromEnv({AI_PROVIDER:'gemini',AI_ENABLED:'true',GEMINI_API_KEY:'TEST_ONLY',GEMINI_MODEL:'test-model'});
+  const text=Array(4).fill('Nuestro departamento de exploraciones improvisadas puede observar tranquilamente las habitaciones y compartir comentarios completamente innecesarios.').join(' ');
+  let sent;
+  const result=await complete({message:'Seguimos charlando',character:'lumo',history:[{role:'assistant',content:text}]},cfg,{fetchImpl:async(url,opts)=>{
+    sent=JSON.parse(opts.body);return new Response(JSON.stringify({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({...reply,text})}]}}]}));
+  }});
+  assert.equal(result.source,'ai');assert.equal(result.text,text);assert.ok(text.length>500);
+  assert.equal(sent.contents.find(x=>x.role==='model').parts[0].text,text);
+  assert.ok(sent.systemInstruction.parts[0].text.includes('35 a 80 palabras'));
+  assert.ok(sent.systemInstruction.parts[0].text.includes('8 a 100 palabras'));
+});
 test('three concurrent clients and the two characters never share recent messages or memories',async()=>{
   const captures=[];let completeFirst;const simultaneous=new Promise(resolve=>completeFirst=resolve);let arrived=0;
   await serve(config({maxConcurrency:4}),async(url,opts)=>{const body=JSON.parse(opts.body);captures.push(body.messages);if(++arrived===3) completeFirst();if(arrived<=3) await simultaneous;return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(reply)}}]}));},async({newClient})=>{

@@ -56,6 +56,9 @@ test('unsupported future save is not overwritten and broken storage remains play
   const futureMemory = JSON.stringify({ version: 2, memoryVersion: 99, important: true });
   env.localStorage.setItem('mkw:lumo:v2', futureMemory);
   createMind(env).act('pet'); assert.equal(env.localStorage.getItem('mkw:lumo:v2'), futureMemory);
+  const futureGreeting=JSON.stringify({version:2,memoryVersion:3,greetings:{version:2,extra:'keep'}});
+  env.localStorage.setItem('mkw:lumo:v2',futureGreeting);
+  createMind(env).greet();assert.equal(env.localStorage.getItem('mkw:lumo:v2'),futureGreeting);
   const mind = createMind(environment({ localStorage: { getItem() { throw Error(); }, setItem() { throw Error(); } } }));
   assert.equal(mind.act('pet').emotion, 'HAPPY'); assert.equal(mind.getState().storageAvailable, false);
 });
@@ -222,6 +225,31 @@ test('contextual greeting is local without affinity farming and Ryon has separat
   assert.ok(!ryon.getState().memories.some(m=>m.id==='favorite_color_purple'));assert.ok(!lumo.getState().memories.some(m=>m.id==='fear_spiders'));
   assert.ok(env.localStorage.getItem('mkw:ryon:v2'));assert.ok(!ryon.greet().text.includes('flotante'));
   assert.equal(lumo.act('pet',{}, {serious:true}).emotion,'SUPPORTIVE');
+});
+test('first and returning greetings vary by room and local hour and do not repeat on reload',()=>{
+  const env=environment();let now=new Date(2026,9,11,8).getTime();
+  const opts={now:()=>now,random:()=>0};const mind=createMind(env,opts);
+  const first=mind.act('meet',{}, {room:'kitchen'});
+  assert.match(first.text,/Lumo/);assert.match(first.text,/cocina/);assert.match(first.text,/mañana/);
+  assert.ok(mind.getState().events.includes('lumo_met'));
+  const repeated=mind.greet({room:'kitchen'});assert.notEqual(repeated.text,first.text);
+  const reloaded=createMind(env,opts).greet({room:'kitchen'});assert.notEqual(reloaded.text,repeated.text);
+  now=new Date(2026,9,11,22).getTime();
+  const night=mind.greet({room:'garden'});assert.match(night.text,/flores|jardín/);assert.match(night.text,/horas|noche/);
+  const score=mind.getState().friendship.score;
+  for(let i=0;i<50;i++)mind.greet({room:'garden'});
+  assert.equal(mind.getState().friendship.score,score);
+  const saved=JSON.parse(env.localStorage.getItem('mkw:lumo:v2'));
+  assert.ok(saved.greetings.lastId);assert.ok(!JSON.stringify(saved.greetings).includes(first.text));
+  assert.notEqual(createMind(environment(),{...opts,random:()=>.99}).act('meet',{}, {room:'kitchen'}).text,first.text);
+});
+test('Lumo accepts developed replies while length and spoiler limits still apply',()=>{
+  const developed=Array(8).fill('Podemos explorar la casa con calma y compartir ideas.').join(' ');
+  assert.ok(policy.validateResponse({...good,text:developed},{}));
+  assert.equal(policy.validateResponse({...good,text:developed},{},'ryon'),null);
+  assert.equal(policy.validateResponse({...good,text:developed+' Ryon murió.'},{}),null);
+  assert.equal(policy.validateResponse({...good,text:Array(12).fill('Podemos explorar la casa con calma y compartir ideas.').join(' ')},{}),null);
+  assert.equal(policy.validateResponse({...good,text:'a'.repeat(1401)},{}),null);
 });
 test('new emotions, identity sarcasm and indirect spoilers are validated',async()=>{
   const mind=createMind(environment());for(const text of ['Soy Ryon','Soy Bayron','Soy tu creador']){const result=await mind.chat(text);assert.equal(result.emotion,'MOCKING');assert.ok(result.text.includes('Mira'));}

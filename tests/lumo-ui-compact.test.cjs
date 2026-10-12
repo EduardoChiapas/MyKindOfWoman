@@ -134,6 +134,8 @@ test('clean NPC greeting accelerates into its writing field without extra visibl
   assert.equal(f.get('.lumo-chat-form').hidden, true);
   assert.equal(f.messages.length, 0, 'greeting never contacts the conversational provider');
   const partial = f.get('.lumo-text').textContent;
+  const speechHeight = parseFloat(f.get('#lumo-ui').style['--lumo-height']);
+  assert.ok(speechHeight / f.stage.rect.height >= .25 && speechHeight / f.stage.rect.height <= .30);
   f.ui.advance();
   assert.ok(f.get('.lumo-text').textContent.length > partial.length, 'first press accelerates the text');
   f.ready();
@@ -145,7 +147,9 @@ test('clean NPC greeting accelerates into its writing field without extra visibl
   assert.equal(f.get('.lumo-source'), null);
   assert.equal(f.get('#lumo-ui').querySelectorAll('button').filter(node => !node.classList.contains('sr-only') && !node.closest('[hidden]')).length, 0);
   const height = parseFloat(f.get('#lumo-ui').style['--lumo-height']);
-  assert.ok(height / f.stage.rect.height >= .25 && height / f.stage.rect.height <= .30);
+  assert.ok(height <= 80, 'the writing turn contains only its compact field');
+  assert.equal(f.get('.lumo-line').hidden,true);
+  assert.equal(f.get('.lumo-text').textContent,'');
   assert.ok(f.get('#lumo-ui').getBoundingClientRect().bottom <= f.stage.rect.bottom);
 });
 
@@ -175,6 +179,7 @@ test('externally opened activities retain pending conversation and draft; Escape
   await f.button('VOLVER AL DIÁLOGO').click();
   assert.equal(f.get('.lumo-input').value, 'Borrador siguiente');
   assert.equal(f.get('.lumo-text').textContent, 'Aquí sigo, Mira.');
+  f.ready();
   const cancelled = f.ui.sendMessage('Segunda');
   f.key('Escape', f.get('.lumo-input'));
   assert.equal(f.signal.aborted, true);
@@ -296,10 +301,13 @@ test('phone keyboard handles offset, clipped world and tiny landscape viewport w
   assert.ok(rect.height>0);assert.equal(f.get('.lumo-chat-form').hidden,false);
 });
 
-test('natural typewriter completion opens input only after the final page; scene dialogue awaits a text advance', async () => {
+test('completed speech remains visible until Enter; writing replaces it and every page waits for Enter', async () => {
   const f = fixture({ reducedMotion: false }); f.ui.open();
   f.finishTyping();
-  assert.equal(f.get('.lumo-chat-form').hidden, false, 'no continue click is needed after the greeting finishes');
+  assert.equal(f.get('.lumo-chat-form').hidden, true, 'finishing typing never dismisses speech');
+  const greeting=f.get('.lumo-text').textContent;f.finishTyping();
+  assert.equal(f.get('.lumo-text').textContent,greeting);
+  f.ready();assert.equal(f.get('.lumo-line').hidden,true);
   f.ui.speak({ boxes: ['Primera caja completa.', 'Segunda caja completa.'] }, { awaitClose: false });
   assert.equal(f.get('.lumo-chat-form').hidden, true);
   f.finishTyping();
@@ -307,7 +315,11 @@ test('natural typewriter completion opens input only after the final page; scene
   assert.equal(f.get('.lumo-next').tagName, 'SPAN');
   assert.equal(f.get('.lumo-next').hidden, false);
   f.key('KeyE', f.get('.lumo-panel')); f.finishTyping();
-  assert.equal(f.get('.lumo-chat-form').hidden, false);
+  assert.equal(f.get('.lumo-chat-form').hidden, true, 'the last page also waits for acknowledgement');
+  assert.equal(f.get('.lumo-text').textContent,'Segunda caja completa.');
+  f.key('Enter',f.get('.lumo-panel'));
+  assert.equal(f.get('.lumo-chat-form').hidden,false);assert.equal(f.get('.lumo-line').hidden,true);
+  assert.equal(f.get('.lumo-text').textContent,'');
   let complete = false;
   const scene = f.ui.speak('Una escena tranquila.', { after: 'scene' }).then(() => { complete = true; });
   f.finishTyping(); await Promise.resolve();
@@ -315,4 +327,23 @@ test('natural typewriter completion opens input only after the final page; scene
   assert.equal(complete, false);
   f.key('Enter', f.get('.lumo-panel')); await scene;
   assert.equal(complete, true);
+});
+
+test('long responses paginate without automatic page changes and cannot be interrupted by another message',async()=>{
+  const f=fixture({reducedMotion:false});f.ui.open();f.ready();
+  const long=Array(10).fill('Podemos explorar esta casa con calma y compartir ideas.').join(' ');
+  f.ui.speak({text:long,source:'ai'},{awaitClose:false});f.finishTyping();
+  const first=f.get('.lumo-text').textContent;
+  assert.notEqual(first,long);assert.equal(f.get('.lumo-chat-form').hidden,true);
+  f.finishTyping();assert.equal(f.get('.lumo-text').textContent,first);
+  assert.equal(await f.ui.sendMessage('Todavía no terminé de leer'),null);assert.equal(f.messages.length,0);
+  let pages=1;
+  for(let i=0;i<12 && f.get('#lumo-ui').dataset.phase!=='continue';i++){
+    f.key('Enter',f.get('.lumo-panel'));f.finishTyping();pages++;
+    assert.equal(f.get('.lumo-chat-form').hidden,true);
+  }
+  assert.ok(pages>1);assert.equal(f.get('#lumo-ui').dataset.phase,'continue');
+  f.key('Enter',f.get('.lumo-panel'));
+  assert.equal(f.get('.lumo-line').hidden,true);assert.equal(f.get('.lumo-chat-form').hidden,false);
+  assert.equal(f.messages.length,0,'the acknowledgement Enter never sends an empty message');
 });

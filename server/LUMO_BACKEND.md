@@ -14,7 +14,7 @@ GOOGLE_GEMINI_API_KEY es alias. El adaptador openai-compatible usa LUMO_API_KEY,
 LUMO_MODEL, LUMO_API_BASE_URL y Chat Completions.
 
 Sin credenciales/modelo/habilitación devuelve source:local y motivo not_configured.
-source:ai exige respuesta real del proveedor y validación: 8–45 palabras, emociones/animaciones
+source:ai exige respuesta real del proveedor y validación: Lumo8–100 palabras (normalmente35–80, máximo1400 caracteres), Ryon8–45; emociones/animaciones
 enumeradas, referencias conocidas y narrative_intent:null. El modelo no gobierna puertas,
 inventario o capítulos. Toda la entrada al sótano está cerrada en HOME.
 
@@ -92,3 +92,6 @@ Guardar y desplegar; OPTIONS /api/session debe responder 204 y permitir ese orig
 Origin not allowed significa que la petición no ha llegado al proveedor. No ampliar a wildcard.
 
 La conexión automática migra los bloqueos antiguos con automaticVersion:1, conservando recuerdos y guardados. Las revocaciones internas hechas con esa versión siguen vigentes. El texto escrito usa primero el proveedor, incluidos saludos y preferencias; acciones guionizadas, filtros HOME y respaldo permanecen locales.
+
+
+El cambio de longitud requiere desplegar tanto lumo-mind.js como server/lumo-home.cjs y reiniciar/desplegar el backend. Sus perfiles, sesiones y filtros siguen activos. No hace falta cambiar la clave ni aumentar los límites de gasto.

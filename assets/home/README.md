@@ -1,0 +1,23 @@
+# HOME — mobiliario complementario
+
+Creado el 12 de octubre de 2026 con la herramienta integrada `image_gen.imagegen`.
+Los PNG originales de la casa, Mira y Lumo se conservan intactos. Los dos atlas
+nuevos tienen transparencia y se dibujan con nearest-neighbor sobre una rejilla
+nativa, con marcos recortados solo durante el render. No se reemplazaron los
+recursos ni el motor de FNF.
+
+- `furniture-atlas.png`: piano, sofá, bañera, lavabo/espejo, inodoro, mesa de
+  jardinería, regadera y planta. 1774 × 887; 810.916 bytes.
+- `lumo-furniture-atlas.png`: cama lavanda, escritorio, aplique de vela y librero.
+  1254 × 1254; 493.998 bytes.
+- Marcos, escala, posición, área física e interacción: `home-world.js`.
+- Pisos: piezas originales de living_room.png con origen compartido, periodo
+  vertical de 30 píxeles; continuidad a través de los umbrales. Alfombras,
+  ventanas, banco, maceta/flor, puerta pequeña y dibujo son piezas nativas de
+  canvas con paleta limitada, editables desde código.
+
+Referencias usadas: `assets/source/home_and_new_home_sheet.png` y, para el
+segundo atlas, `assets/home/furniture-atlas.png`. Los atlas complementan el
+estilo; no son sprites oficiales de Undertale. No se editaron las referencias.
+
+Prompts completos y parámetros conservados en GENERATION_PROMPTS.md.

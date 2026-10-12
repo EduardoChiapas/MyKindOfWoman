@@ -21,14 +21,14 @@
         <p class="intro-subtitle">Un lugar al que volver.</p>
         <div class="home-window" aria-hidden="true"><img src="assets/rooms/home_preview.png" alt=""></div>
         <button id="btn-start" type="button">Entrar en casa <span aria-hidden="true">&gt;</span></button>
-        <button id="btn-pc-demo" type="button">Probar la PC de Toriel</button>
+        <button id="btn-pc-demo" type="button">Probar la PC de Ryon</button>
         <p id="loading-status" role="status">Espacio / Enter para comenzar</p>
         <p class="intro-controls">Flechas o WASD para caminar · Z para examinar</p>
       </div>
     </section>
-    <section id="game-container" aria-label="Casa de Toriel">
+    <section id="game-container" aria-label="Casa de HOME">
       <div id="game-stage">
-        <canvas id="gameCanvas" width="640" height="480" tabindex="0" aria-label="Casa de Toriel. Camina con flechas o WASD y examina con Z o Enter."></canvas>
+        <canvas id="gameCanvas" width="640" height="480" tabindex="0" aria-label="Casa de HOME. Camina con flechas o WASD y examina con Z o Enter."></canvas>
         <div id="hud" aria-live="polite"><span id="room-name"></span></div>
         <span id="interaction-hint" class="hidden" aria-hidden="true">Z · Examinar</span>
         <div id="dialog-box" class="hidden" role="dialog" aria-label="Examinar" aria-live="off">
@@ -104,12 +104,14 @@
   <script src="lumo-activities.js"></script>
   <script src="home-progress.js"></script>
   <script src="home-story.js"></script>
+  <script src="home-world.js"></script>
   <script src="script.js"></script>
   <script src="fnf-preload.js"></script>
   <script src="pc-desktop.js"></script>
   <script src="fnf-original-host.js"></script>
   <script src="pc-integration.js"></script>
   <script src="lumo-integration.js"></script>
+  <script src="home-world-integration.js"></script>
   <script src="home-pc-apps.js"></script>
   <script src="home-integration.js"></script>
 </body>

@@ -7,7 +7,7 @@
   const PHOTO_IDS=['photo_window','photo_music','photo_lumo'];
   const ANOMALIES=['anomaly_session','anomaly_photo','anomaly_piano','anomaly_message','anomaly_lumo','anomaly_door'];
   const NOTES=[261.626,329.628,293.665,391.995];
-  const ROOM_KEYS={entrance:'entrance',livingRoom:'livingroom',hallway:'hallway',friskRoom:'friskroom',torielRoom:'torielroom',kitchen:'kitchen',lumoRoom:'lumoroom'};
+  const ROOM_KEYS={entrance:'entrance',livingRoom:'livingroom',hallway:'hallway',friskRoom:'friskroom',torielRoom:'torielroom',kitchen:'kitchen',lumoRoom:'lumoroom',gallery:'gallery',bathroom:'bathroom',readingRoom:'readingroom',gardenHall:'gardenhall',garden:'garden'};
   const PHOTO_TEXT={
     photo_window:{title:'La habitación',text:'Una habitación conocida, con sus libros y sus pequeños rincones. No hay fecha ni personas en la imagen.'},
     photo_music:{title:'Cuatro notas',text:'Una partitura corta: DO · MI · RE · SOL. El papel tiene sitio para más música.'},
@@ -208,10 +208,15 @@
     if(room==='hallway'&&id==='hallway_painting'){openPhoto('photo_lumo');return true;}
     if(room==='kitchen'&&['kitchen_counter','kitchen_stove'].includes(id)){openCooking();return true;}
     if(room==='friskRoom'&&['frisk_little_plant','frisk_corner_plant'].includes(id)||room==='hallway'&&id==='hallway_flowers'){openGarden();return true;}
+    if(room==='garden'&&['garden_flower','garden_watering_can','garden_workbench'].includes(id)){openGarden();return true;}
+    if(room==='readingRoom'&&id==='reading_table'&&progress.has('lumo_met')){global.LumoActivities?.start();return true;}
     if(id==='lumo'&&core.tryAnomaly('anomaly_lumo')){actor()?.setEmotion?.('CONFUSED');actor()?.perform?.('confused',3);
       beginSequence([{speaker:'LUMO',emotion:'CONFUSED',text:'¿Yo ya había escuchado esa melodía aquí?... Qué raro. Se me fue la idea.'}],()=>{});return true;}
     return false;}
   function start(){started=true;core.roomChanged(getContext().roomId);journalButton?.classList.add('is-ready');
+    if(global.HomeWorld&&getContext().roomId==='friskRoom'&&!progress.getState().interactions.home_wake_seen){
+      progress.touch('home_wake_seen');adapter.showDialog?.('* Despiertas en tu habitación.\n* La casa está tranquila.\n* Puedes explorar a tu ritmo.');
+    }
     if(['waiting','dialogue'].includes(core.getState().finalePhase)){actor()?.cancelTask?.('story');actor()?.setEmotion?.('SCARED');actor()?.setFollowing?.(false);}
     if(core.getState().finalePhase==='fade')beginEnding();
     else if(core.getState().finalePhase==='dialogue')beginSequence(DOOR_PAGES,()=>{core.finishDoorDialogue();beginEnding();});}
@@ -223,6 +228,7 @@
   function draw(ctx,camera={x:0,y:0}){if(!started)return;const room=getContext().roomId;
     if(room==='entrance'&&progress.barrier?.('entrance')){drawClosedDoor(ctx,camera);return;}
     if(room!=='livingRoom')return;
+    if(global.HomeWorld){global.HomeWorld.drawPiano(ctx,camera);return;}
     ctx.save();ctx.translate(Math.round(68-camera.x),Math.round(176-camera.y));ctx.scale(2,2);ctx.imageSmoothingEnabled=false;
     // No original piano sprite exists. This explicit code-native placeholder
     // uses the room's wood palette; no original map or bitmap is replaced.

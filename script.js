@@ -1159,16 +1159,16 @@ function startGame(destination = 'entrance') {
   introContainer.style.display = 'none';
   gameContainer.style.display = 'grid';
   gameState = 'PLAYING';
-  currentRoom = destination === 'torielRoom' ? 'torielRoom' : 'entrance';
+  currentRoom = destination === 'torielRoom' ? 'torielRoom' : 'friskRoom';
   resetMovementInput();
   if (currentRoom === 'torielRoom') {
     placePlayerAtFeet(145, 112);
     facePlayer('up');
-  } else placePlayerAtFeet(160, 206);
+  } else { placePlayerAtFeet(108, 120); facePlayer('down'); }
   const saved=destination==='entrance' ? window.HomeProgress?.getState().position : null;
   if(saved && rooms[saved.room] && window.HomeProgress.canEnter(saved.room)){
     const previous=currentRoom;currentRoom=saved.room;
-    if(canOccupy(saved.x,saved.y)){player.x=saved.x;player.y=saved.y;facePlayer(saved.direction);}else{currentRoom=previous;placePlayerAtFeet(160,206);}
+    if(canOccupy(saved.x,saved.y)){player.x=saved.x;player.y=saved.y;facePlayer(saved.direction);}else{currentRoom=previous;placePlayerAtFeet(108,120);facePlayer('down');}
   }
   roomNameLabel.textContent = rooms[currentRoom].label;
   setAudioRoom(currentRoom);
@@ -1295,6 +1295,7 @@ function draw() {
   drawPlayer();
   window.LumoGame?.draw(ctx, camera, 'front');
   HouseAmbience.drawForeground(ctx, currentRoom, camera, getPlayerHitbox(), ambienceOptions);
+  if(currentRoom==='livingRoom')window.HomeWorld?.drawPiano(ctx,camera,true,getPlayerHitbox());
   if (rooms[currentRoom].drawForeground) rooms[currentRoom].drawForeground(ctx, camera);
   drawLighting();
 
@@ -1523,4 +1524,4 @@ function gameLoop(timestamp) {
   requestAnimationFrame(gameLoop);
 }
 
-HouseExperience.boot([playerSprite, gamingPCSprite, torielOriginalArt, ...Object.values(roomImages)], [bgm, bgmDown]);
+HouseExperience.boot([playerSprite, gamingPCSprite, torielOriginalArt, ...Object.values(roomImages), ...(window.HomeWorld?.assets||[])], [bgm, bgmDown]);

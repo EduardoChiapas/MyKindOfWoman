@@ -54,6 +54,7 @@ button:active { transform: translateY(1px); }
 #pause-notice { position: absolute; inset: 0; background: #000a; display: grid; place-items: center; font-size: clamp(12px, 2.5cqw, 20px); }
 #game-tools { position: fixed; display: flex; align-items: center; gap: 6px; right: max(14px, env(safe-area-inset-right)); top: max(12px, env(safe-area-inset-top)); z-index: 110; }
 #game-tools button { display: block; background: #090709bb; border: 1px solid #c7af8b26; padding: 7px 9px; color: #c6b69b; font-size: 16px; min-width: 34px; min-height: 34px; opacity: .65; }
+#game-tools #btn-lumo[hidden] { display: none; }
 #game-tools button:hover, #game-tools button:focus-visible { opacity: 1; border-color: #bc9a67; }
 #game-tools span { font-size: 10px; }
 #mobile-controls { position: fixed; inset: 0; display: none; pointer-events: none; z-index: 100; touch-action: none; }

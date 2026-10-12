@@ -13,7 +13,7 @@ const uiTest=fs.readFileSync(path.join(__dirname,'lumo-ui-compact.test.cjs'),'ut
 const uiFixture=vm.runInNewContext(uiTest.slice(0,uiTest.indexOf("\ntest('"))+'\nfixture;',{
   require,__dirname,console,AbortController,Promise
 });
-function fixture(saved={}){
+function fixture(saved={},options={}){
   const ui=uiFixture(),document=ui.document,create=document.createElement;
   const decorate=node=>{node.classList.add=(...names)=>names.forEach(name=>node.classList.toggle(name,true));return node;};
   document.createElement=tag=>decorate(create(tag));decorate(document.body);
@@ -64,10 +64,13 @@ function fixture(saved={}){
   range('function checkRoomExit(','function worldToScreen(');
   vm.runInContext(source('lumo-actor.js'),context);
   vm.runInContext(source('home-story.js'),context);
+  vm.runInContext(source('home-world.js'),context);
   const actualUI=c.LumoUI;
   c.LumoUI=new Proxy({},{get(_target,key){return key==='mount'?adapter=>actualUI.mount({...adapter,manifest:c.LUMO_ASSETS}):Reflect.get(actualUI,key);}});
   vm.runInContext(source('lumo-integration.js'),context);
+  vm.runInContext(source('home-world-integration.js'),context);
   vm.runInContext(source('home-integration.js'),context);c.startGame();
+  if(options.keepWake!==true&&c.gameState==='DIALOG'){c.closeInteraction();calls.native.length=0;}
   return {c,ui,document,desktop,calls,storage,values,context};
 }
 
@@ -83,14 +86,14 @@ test('real startup restores only an occupiable saved HOME position and preserves
   assert.equal(f.c.player.direction,'left');assert.equal(f.c.canOccupy(f.c.player.x,f.c.player.y),true);
   f.c.HomeGame.checkpoint();assert.equal(JSON.parse(f.storage.getItem(KEY)).position.room,'kitchen');assert.equal(f.values.get('fnf-save'),'original');
   const bad=mounted({[KEY]:JSON.stringify({version:1,position:{room:'kitchen',x:0,y:0,direction:'up'}})});
-  assert.equal(bad.c.currentRoom,'entrance');assert.equal(bad.c.canOccupy(bad.c.player.x,bad.c.player.y),true);
+  assert.equal(bad.c.currentRoom,'friskRoom');assert.equal(bad.c.canOccupy(bad.c.player.x,bad.c.player.y),true);
   const blocked=mounted({[KEY]:JSON.stringify({version:1,basementUnlocked:true,position:{room:'basementHallway',x:50,y:50}})});
-  assert.equal(blocked.c.currentRoom,'entrance');assert.equal(blocked.c.changeRoom({target:'basementHallway'}),false);
+  assert.equal(blocked.c.currentRoom,'friskRoom');assert.equal(blocked.c.changeRoom({target:'basementHallway'}),false);
   blocked.c.HomeProgress.record('home_complete');assert.equal(blocked.c.applyRoomChange({target:'basementHallway',spawn:[100,100]}),false);
 });
 
 test('real toolbar and L recall move the companion without opening chat or awarding a meeting',async()=>{
-  const f=mounted();placeActor(f,160,340);
+  const f=mounted();f.c.applyRoomChange({target:'hallway',spawn:[170,91],facing:'down'});placeActor(f,450,210);
   const before=f.c.LumoGame.actor.getState();await f.document.getElementById('btn-lumo').click();
   assert.equal(f.c.LumoUI.isOpen,false);assert.equal(f.c.gameState,'PLAYING');assert.equal(f.c.HomeProgress.has('lumo_met'),false);
   assert.equal(f.calls.sound.filter(id=>id==='whistle').length,1);
@@ -101,7 +104,7 @@ test('real toolbar and L recall move the companion without opening chat or award
 });
 
 test('actual conversation opening demands physical proximity and records the real meeting only then',()=>{
-  const f=mounted();placeActor(f,160,340);assert.equal(f.c.LumoGame.open(),false);
+  const f=mounted();f.c.applyRoomChange({target:'hallway',spawn:[170,91],facing:'down'});placeActor(f,160,340);assert.equal(f.c.LumoGame.open(),false);
   assert.equal(f.c.LumoUI.isOpen,false);assert.equal(f.c.HomeProgress.has('lumo_met'),false);
   const feet=f.c.getPlayerHitbox();placeActor(f,feet.x+feet.width/2-36,feet.y+feet.height/2);
   assert.equal(f.c.LumoGame.open(),true);assert.equal(f.c.LumoUI.isOpen,true);assert.equal(f.c.gameState,'LUMO');
@@ -109,7 +112,7 @@ test('actual conversation opening demands physical proximity and records the rea
 });
 
 test('HOME activity pauses Mira and Lumo; the third knock moves only Lumo during HOME_ENDING',()=>{
-  const f=mounted();const feet=f.c.getPlayerHitbox();placeActor(f,feet.x-20,feet.y-28);
+  const f=mounted();f.c.LumoMind.act('meet');const feet=f.c.getPlayerHitbox();placeActor(f,feet.x-20,feet.y-28);
   f.c.HomeStory.openJournal();assert.equal(f.c.gameState,'HOME_ACTIVITY');
   const actor=f.c.LumoGame.actor,before=actor.getState(),mira={x:f.c.player.x,y:f.c.player.y};
   f.c.keys.ArrowRight=true;frames(f,20);
@@ -123,7 +126,7 @@ test('HOME activity pauses Mira and Lumo; the third knock moves only Lumo during
 });
 
 test('real interaction dispatch preserves pickups, then records cooking, piano and album facts in both progress and memory',async()=>{
-  const f=mounted();const feet=f.c.getPlayerHitbox();placeActor(f,feet.x+feet.width/2-36,feet.y+feet.height/2);
+  const f=mounted();f.c.applyRoomChange({target:'hallway',spawn:[170,91],facing:'down'});const feet=f.c.getPlayerHitbox();placeActor(f,feet.x+feet.width/2-36,feet.y+feet.height/2);
   f.c.LumoGame.open();closeUI(f);
   const interact=(room,id,spawn)=>{f.c.applyRoomChange({target:room,spawn,facing:'up'});f.c.findInteraction=()=>({id});f.c.checkInteraction();};
   const click=label=>{const item=f.document.querySelector('.home-story-panel').querySelectorAll('button').find(button=>button.textContent===label);assert.ok(item,label);return item.click();};
@@ -147,6 +150,7 @@ test('real interaction dispatch preserves pickups, then records cooking, piano a
 
 test('the actual native and Lumo adapters wait for all seven finale pages before fading and saving',async()=>{
   const f=mounted();f.c.LumoMind.act('meet');f.c.HomeProgress.record('lumo_met');
+  f.c.applyRoomChange({target:'entrance',spawn:[225,136],facing:'up'});
   f.c.HomeProgress.record('ryon_met');f.c.HomeProgress.record('memory_collection');for(const id of ANOMALIES)f.c.HomeProgress.recordAnomaly(id);
   assert.equal(f.c.HomeStory.interact({id:'entrance_basement_door'}),true);f.c.closeInteraction();
   assert.equal(f.c.HomeStory.interact({id:'entrance_basement_door'}),true);

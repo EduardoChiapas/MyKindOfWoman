@@ -5,7 +5,8 @@
 })(typeof window==='object'?window:this,function(){
   'use strict';
   const KEY='mkw:home:progress:v1';
-  const ROOM_IDS=['entrance','livingRoom','hallway','friskRoom','torielRoom','kitchen','lumoRoom'];
+  const SCHEMA_VERSION=2;
+  const ROOM_IDS=['entrance','livingRoom','hallway','friskRoom','torielRoom','kitchen','lumoRoom','gallery','bathroom','readingRoom','gardenHall','garden'];
   const EVENTS=new Set(['lumo_met','pc_found','ryon_met','photo_window','photo_music','photo_lumo','memory_collection',
     'cooked','piano_played','flower_watered','lumo_room_found','lumo_drawing_found','played_memory','played_hide_seek','played_fnf',
     'anomaly_session','anomaly_photo','anomaly_piano','anomaly_message','anomaly_lumo','anomaly_door','investigate_door','home_complete',
@@ -14,11 +15,11 @@
   const PHOTOS=['photo_window','photo_music','photo_lumo'];
   function createProgress(storage,build={chapter:'HOME'}){
     const listeners=new Set(); let readOnly=false;
-    let state={version:1,chapter:build.chapter==='ECHOES'?'ECHOES':'HOME',basementUnlocked:false,events:[],visits:[],photos:[],interactions:{},position:null,recipe:null,flower:{watered:false},updatedAt:0};
+    let state={version:SCHEMA_VERSION,chapter:build.chapter==='ECHOES'?'ECHOES':'HOME',basementUnlocked:false,events:[],visits:[],photos:[],interactions:{},position:null,recipe:null,flower:{watered:false},updatedAt:0};
     try{
       const raw=JSON.parse(storage?.getItem(KEY)||'null');
-      if(raw && Number(raw.version)>1) readOnly=true;
-      if(raw?.version===1){
+      if(raw && Number(raw.version)>SCHEMA_VERSION) readOnly=true;
+      if(raw && [1,SCHEMA_VERSION].includes(raw.version)){
         state.events=[...new Set((Array.isArray(raw.events)?raw.events:[]).filter(id=>EVENTS.has(id)))];
         state.visits=[...new Set((Array.isArray(raw.visits)?raw.visits:[]).filter(id=>ROOM_IDS.includes(id)))];
         state.photos=PHOTOS.filter(id=>state.events.includes(id));
@@ -63,5 +64,5 @@
       onChange(fn){listeners.add(fn);return()=>listeners.delete(fn);}
     });
   }
-  return {createProgress,KEY,ANOMALIES,PHOTOS};
+  return {createProgress,KEY,ANOMALIES,PHOTOS,SCHEMA_VERSION};
 });

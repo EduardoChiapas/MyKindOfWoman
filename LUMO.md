@@ -22,7 +22,7 @@ Archivos: lumo-actor.js, lumo-mind.js, lumo-ui.js/css, lumo-activities.js/css y 
 
 Backend preparado para Gemini nativo, con adaptador alternativo configurable. IA está deshabilitada por defecto hasta habilitarla y configurar modelo/clave exclusivamente en servidor. Con permiso y configuración, la presentación limpia mantiene Gemini; no cambia preferencias para ocultar información. Sin configuración/permiso o ante fallo, Lumo responde localmente sin warnings técnicos.
 
-Privacidad accesible desde opciones externas: consentimiento/revocación, historial reciente privado y acotado, borrado de mensajes o recuerdos personales separado de aventuras/regalos/partida. Sesiones y perfiles separados. No claves frontend ni panel de lectura de conversaciones. Consultar [servidor](server/LUMO_BACKEND.md) y documentos de privacidad; no afirmar privacidad absoluta ante tratamiento externo.
+Privacidad accesible desde opciones externas: información sobre el proveedor, historial reciente privado y acotado, borrado de mensajes o recuerdos personales separado de aventuras/regalos/partida. Sesiones y perfiles separados. No claves frontend ni panel de lectura de conversaciones. Consultar [servidor](server/LUMO_BACKEND.md) y documentos de privacidad; no afirmar privacidad absoluta ante tratamiento externo.
 
 ## Verificación
 

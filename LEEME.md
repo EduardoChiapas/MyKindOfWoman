@@ -10,7 +10,7 @@ Acércate a Lumo y usa Z/E o toca su sprite. Solo verás retrato, texto y campo 
 
 L / silbato llaman a Lumo sin abrir chat. J abre el diario; H abre opciones. Compañía, regalos y actividades se consultan externamente. Las opciones permiten privacidad, borrado de mensajes recientes/recuerdos personales y permiso de IA sin reiniciar la partida. La entrada del sótano sigue cerrada durante HOME.
 
-El backend Gemini requiere habilitación/modelo/clave de servidor; sin ello o sin consentimiento utiliza respuestas locales. La presentación limpia conserva Gemini, sesiones y memoria. Consulta server/LUMO_BACKEND.md para configuración; no se pide una clave dentro del juego.
+El backend Gemini requiere habilitación/modelo/clave de servidor; sin esa configuración utiliza respuestas locales. La conexión se activa automáticamente al conversar, sin controles de autorización o desconexión visibles. La presentación limpia conserva Gemini, sesiones y memoria. Consulta server/LUMO_BACKEND.md para configuración; no se pide una clave dentro del juego.
 
 ## Abrirlo
 

@@ -197,15 +197,13 @@ test('chat stays local without consent and privacy controls are only reached thr
   await f.button('BORRAR MENSAJES RECIENTES').click();
   await f.button('BORRAR RECUERDOS PERSONALES').click();
   assert.deepEqual(f.clearCounts, { personalClears: 1, historyClears: 1, consentRevocations: 0 });
-  const g = fixture({ allowAI: true }); g.ui.openSettings();
-  await g.button('AUTORIZAR CONVERSACIONES EXTERNAS').click();
+  const g = fixture({ allowAI: true, consent: true }); g.ui.openSettings();
+  assert.doesNotMatch(g.get('.lumo-settings').textContent, /AUTORIZAR CONVERSACIONES EXTERNAS|REVOCAR PERMISO|Conversaciones externas|desactivar/i);
   assert.equal(g.modelState.settings.aiConsent, true);
   g.ui.close(); g.ui.open(); g.ready(); await g.ui.sendMessage('Probando');
   assert.deepEqual(g.messages, ['Probando']);
   assert.equal(g.get('.lumo-source'), null, 'provider status is absent from the conversation DOM');
   assert.equal(g.ui.aiConnected, true);
-  g.ui.openSettings(); await g.button('REVOCAR PERMISO').click();
-  assert.equal(g.modelState.settings.aiConsent, false);
 });
 
 test('phone keyboard keeps the composer within its visual viewport and restores stage anchoring', () => {

@@ -53,7 +53,7 @@ preconfigurado en lumo-config.js, LUMO_PUBLIC_ORIGIN y LUMO_ALLOWED_ORIGINS. Nin
 en frontend. El proxy debe preservar host/origin y no registrar cuerpos. Cookies de terceros
 pueden bloquearse: se usa respaldo local, sin sustituirlas por IDs inventados.
 
-La UI solicita consentimiento antes de IA. Revocar cancela petición y borra reciente;
+La UI activa automáticamente la conexión al conversar, sin botones de autorización o desconexión. El mecanismo interno de revocación cancela peticiones y borra reciente;
 borrar personal conserva eventos/regalos; all destruye sesión. Se envían mensaje actual,
 últimos seis mensajes, perfil HOME y hechos relevantes. No se registran textos ni hay panel
 para leer chats. Servidor conserva solo RAM hasta TTL/reinicio; navegador puede conservar

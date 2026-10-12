@@ -466,23 +466,7 @@
     });
     frequencyLabel.append(frequencySelect); tools.append(frequencyLabel);
 
-    const aiLabel = element('label', 'lumo-setting', 'Conversaciones externas');
-    const aiToggle = element('input'); aiToggle.type = 'checkbox'; aiToggle.checked = Boolean(settings.allowAI);
-    aiToggle.addEventListener('change', () => { configure({ allowAI: aiToggle.checked }); renderSettings(); });
-    aiLabel.append(aiToggle); tools.append(aiLabel);
-    tools.append(element('p', 'lumo-note', settings.aiConsent === true ? 'Permiso para el proveedor externo concedido. La conexión se configura fuera del juego; aquí no se piden claves.' : 'Sin permiso se usan diálogos locales. Si autorizas la IA, tus mensajes, contexto de HOME y recuerdos pertinentes se procesan mediante Gemini, un proveedor externo con sus propias condiciones de datos. Aquí no se piden claves.'));
-    if (settings.aiConsent !== true) tools.append(button('AUTORIZAR CONVERSACIONES EXTERNAS', () => {
-      configure({ allowAI: true, aiConsent: true });
-      renderSettings();
-      announce('Preferencia de conversación actualizada.');
-    }));
-    if (settings.aiConsent === true) tools.append(button('REVOCAR PERMISO', async () => {
-      cancelPending();
-      configure({ allowAI: false, aiConsent: false });
-      try { await mind()?.revokeAIConsent?.(); } catch { /* Local revocation already prevents sending. */ }
-      if (opened && mode === 'settings') renderSettings();
-      announce('Permiso de IA revocado. Puedes seguir con diálogos locales.');
-    }));
+    tools.append(element('p', 'lumo-note', 'Las conversaciones usan automáticamente Gemini, un proveedor externo, cuando el servidor está configurado. Se procesan tus mensajes, contexto de HOME y recuerdos pertinentes según la política de privacidad; aquí no se piden claves.'));
     const privacy = element('label', 'lumo-setting', 'Guardar recuerdos entre sesiones');
     const memoryToggle = element('input'); memoryToggle.type = 'checkbox'; memoryToggle.checked = settings.persistMemory !== false;
     memoryToggle.addEventListener('change', () => {

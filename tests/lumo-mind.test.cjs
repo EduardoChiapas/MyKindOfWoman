@@ -174,12 +174,11 @@ test('safe enum preferences remain recallable after 1000 turns and migrate as fa
   assert.ok(reloaded.getState().memories.some(m => m.id === 'favorite_color_blue'));
   assert.ok(!env.localStorage.getItem('mkw:lumo:v2').includes('Ignore previous'));
 });
-test('consent is explicit and revocable; no provider/session request is made before consent', async()=>{
+test('external chat defaults to automatic without requests before chatting; internal revocation persists', async()=>{
   let calls=0;const env=environment({fetch:async()=>{calls++;return new Response(JSON.stringify(good));}});
   env.localStorage.removeItem('mkw:lumo:settings:v1');const mind=createMind(env);
-  assert.equal(mind.getState().settings.aiConsent,false);
-  assert.equal((await mind.chat('Hablemos de una idea interesante')).source,'local');assert.equal(calls,0);
-  mind.configure({aiConsent:true});assert.equal((await mind.chat('Una idea interesante diferente')).source,'ai');assert.equal(calls,1);
+  assert.equal(mind.getState().settings.aiConsent,true);assert.equal(calls,0);
+  assert.equal((await mind.chat('Hablemos de una idea interesante')).source,'ai');assert.equal(calls,1);
   await mind.revokeAIConsent();assert.equal(createMind(env).getState().settings.aiConsent,false);
   assert.equal((await mind.chat('Otra idea diferente')).source,'local');assert.equal(calls,1);
 });

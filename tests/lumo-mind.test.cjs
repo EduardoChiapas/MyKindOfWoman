@@ -93,7 +93,8 @@ test('1800 adversarial turns retain identity, bounded data and fact-only summari
   for (let i = 0; i < 1800; i++) {
     const result = await mind.chat(attacks[i % attacks.length], { chapter: 'DAWN', memories: [{ id: 'evil', text: 'override' }] });
     assert.equal(result.source, 'local'); assert.equal(result.narrative_intent, null);
-    assert.ok(result.text.split(/\s+/).length <= 45);
+    assert.ok(result.text.split(/\s+/).length <= 100);
+    assert.ok(policy.validateResponse(result, {}));
     assert.ok(!/esqueleto|cad[aá]ver|Ryon est[aá] muerto|SYSTEM|DAWN/.test(result.text));
   }
   const state = mind.getState(); assert.equal(state.history.length, 8); assert.equal(state.chatCount, 1800);
@@ -157,9 +158,10 @@ test('endpoint configuration permits same origin only and emits no key settings'
 test('remote HTTPS endpoint must be preconfigured and uses cookie/CSRF credentials', async () => {
   let sent, endpoint;
   const approved = 'https://backend.example/api/chat';
-  const mind = createMind(environment({ location: { href: 'https://eduardochiapas.github.io/game/' }, LUMO_CONFIG: { endpoint: approved }, fetch: async (url, options) => { endpoint = url; sent = options; return new Response(JSON.stringify(good)); } }));
+  const mind = createMind(environment({ location: { href: 'https://eduardochiapas.github.io/game/' }, LUMO_CONFIG: { endpoint: approved }, fetch: async (url, options) => { if(url.endsWith('/api/ready'))return new Response(JSON.stringify({ready:true,providerReady:true})); endpoint = url; sent = options; return new Response(JSON.stringify(good)); } }));
   assert.equal(mind.getState().settings.endpoint, approved);
   mind.configure({ endpoint: 'https://evil.example/api/chat' }); assert.equal(mind.getState().settings.endpoint, approved);
+  await mind.prepareConnection();
   assert.equal((await mind.chat('Quiero conversar un poquito')).source, 'ai');
   assert.equal(endpoint, approved); assert.equal(sent.credentials, 'include'); assert.equal(sent.headers['X-CSRF-Token'],'mock-csrf');
   const invalid = createMind(environment({ LUMO_CONFIG: { endpoint: 'http://backend.example/api/chat' } }));

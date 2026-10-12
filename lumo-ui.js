@@ -102,6 +102,7 @@
 
   function syncViewport() {
     if (!root) return;
+    const previousLayout = layout;
     const viewport = global.visualViewport;
     const vh = viewport?.height || global.innerHeight;
     const vw = viewport?.width || global.innerWidth;
@@ -139,6 +140,20 @@
     root.classList.toggle('lumo-small', small);
     root.classList.toggle('lumo-touch', touch);
     send?.classList.toggle('sr-only', !touch);
+    // A smaller viewport must not crop an already displayed page. Retain every
+    // unread word and keep the same manual acknowledgement between pages.
+    if (opened && mode === 'conversation' && !pending && !composerStarted && pages.length &&
+        (layout.width < previousLayout.width - 1 || layout.textLines < previousLayout.textLines)) {
+      const wasTyping = typing;
+      stopTyping();
+      pages = pages.slice(pageIndex).flatMap(paginate);
+      pageIndex = 0;
+      if (wasTyping) startPage();
+      else {
+        characters = Array.from(pages[0] || ''); characterIndex = characters.length;
+        text.textContent = characters.join(''); completePage();
+      }
+    }
   }
 
   function adoptHistory() {

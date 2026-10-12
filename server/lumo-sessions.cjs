@@ -1,12 +1,13 @@
 'use strict';
 const crypto = require('node:crypto');
 const { policy } = require('./lumo-home.cjs');
-const LAUGH = /(?:\bja(?:ja)+\b|\bha(?:ha)+\b|\bxd\b|me (?:rei|rio)|me hizo reir)/i;
+const Local = require('../lumo-local.js');
+const LAUGH = /(?:\b(?:ja){2,}j?\b|\b(?:ha){2,}h?\b|\bx+d+\b|me (?:rei|rio)|me hizo reir)/i;
 function createSessions(config, now = Date.now) {
   const sessions = new Map();
   const secure = !!config.publicOrigin && config.publicOrigin.startsWith('https:');
   const cookieName = secure ? '__Host-mkw_session' : 'mkw_session';
-  const freshCharacter = () => ({ history:[], memories:[], mentions:[], events:[], gifts:[], inventory:[], localActions:[], lastJokeId:null, turns:0, emotion:'NORMAL', friendship:0, summary:{version:1,facts:[]} });
+  const freshCharacter = () => ({ history:[], memories:[], mentions:[], events:[], gifts:[], inventory:[], localActions:[], lastJokeId:null, localReplies:[], localLaughter:[], localObservedLaughter:[], localTopic:null, localSubject:null, turns:0, emotion:'NORMAL', friendship:0, summary:{version:1,facts:[]} });
   function cookie(id, remove = false) { return cookieName + '=' + id + '; Path=/; HttpOnly; SameSite=' + (secure ? 'None; Secure' : 'Strict') + '; Max-Age=' + (remove ? 0 : Math.floor(config.sessionTtlMs / 1000)); }
   function erase(session) { if (session.active) session.active.controller.abort(); sessions.delete(session.id); }
   function prune() { for (const session of sessions.values()) if (session.expiresAt <= now()) erase(session); }
@@ -45,16 +46,35 @@ function createSessions(config, now = Date.now) {
       data.localActions = context.localActions;
       const last = context.localActions[context.localActions.length - 1]; data.lastJokeId = last.startsWith('joke:') ? last.slice(5) : null;
     }
+    if (character === 'lumo') {
+      const replies = (context.localReplies || []).filter(id => Local.decode(id));
+      const laughter = (context.localLaughter || []).filter(id => Local.decode(id));
+      data.localReplies = [...new Set([...data.localReplies, ...replies])].slice(-6);
+      data.localLaughter = [...new Set([...data.localLaughter, ...laughter])].slice(-16);
+      data.localTopic = context.localTopic || null;
+      data.localSubject = context.localSubject || null;
+      // Only the active local answer can receive a newly observed laugh; old local answers
+      // remain in the catalog report after Gemini resumes, without false attribution.
+      if (Local.decode(context.localLastReply) && replies.includes(context.localLastReply) && LAUGH.test(policy.normalize(message))) {
+        data.localLaughter = [...new Set([...data.localLaughter, context.localLastReply])].slice(-16);
+        data.localObservedLaughter = [...new Set([...data.localObservedLaughter, context.localLastReply])].slice(-16);
+      }
+    }
     if (data.lastJokeId && LAUGH.test(policy.normalize(message))) remember(data, 'reaction_laughed_' + data.lastJokeId, 'observed_reaction');
     const n = policy.normalize(message);
     const relevant = data.memories.filter(m => /recuerd|gusto|prefer|conoces|jaja|chiste|risa/.test(n) || m.id.startsWith('favorite_color_') && /color/.test(n) || m.id === 'fear_spiders' && /arana|miedo/.test(n) || m.id.startsWith('gift_') && /regalo|flor|galleta|dibujo/.test(n) || m.id === 'interest_minecraft' && /minecraft/.test(n) || m.id === 'compliment_received' && /cumplido|increible|guap/.test(n));
     const eligible = relevant.filter(m => !data.mentions.some(x => x.id === m.id && data.turns - x.turn < 16)).slice(-8).map(m => m.id);
     const relevantEvents=data.events.filter(id=> /escond|hide/.test(n)&&['game:hide_seek','played_hide_seek'].includes(id)||/fnf/.test(n)&&['game:fnf','played_fnf'].includes(id)||/memoria|memory/.test(n)&&['game:memory','played_memory'].includes(id));
-    return { message, character, history:data.history.slice(-6), memoryProvenance:Object.fromEntries(data.memories.map(m=>[m.id,m.provenance])), context:{...context, inventory:data.inventory, events:[...new Set([...data.events.slice(-12),...relevantEvents])].slice(-16), gifts:data.gifts, memories:eligible, localActions:character === 'lumo' ? data.localActions : [], lastJokeId:character === 'lumo' ? data.lastJokeId : null, recentMentions:data.mentions.filter(x => data.turns - x.turn < 16).map(x => x.id)} };
+    return { message, character, history:data.history.slice(-6), memoryProvenance:Object.fromEntries(data.memories.map(m=>[m.id,m.provenance])), localObservedLaughter:character === 'lumo' ? data.localObservedLaughter : [], context:{...context, inventory:data.inventory, events:[...new Set([...data.events.slice(-12),...relevantEvents])].slice(-16), gifts:data.gifts, memories:eligible, localActions:character === 'lumo' ? data.localActions : [], lastJokeId:character === 'lumo' ? data.lastJokeId : null, localReplies:character === 'lumo' ? data.localReplies : [], localLaughter:character === 'lumo' ? data.localLaughter : [], localTopic:character === 'lumo' ? data.localTopic : null, localSubject:character === 'lumo' ? data.localSubject : null, localLastReply:character === 'lumo' ? context.localLastReply : null, recentMentions:data.mentions.filter(x => data.turns - x.turn < 16).map(x => x.id)} };
   }
   function finish(session, character, body, result) {
     const data = session.characters[character];
-    data.history.push({role:'user',content:body.message},{role:'assistant',content:result.text}); data.history = data.history.slice(-8);
+    const transientLocal = character === 'lumo' && result.source === 'local' && ['not_configured', 'timeout', 'provider_error', 'rate_limit', 'unavailable'].includes(result.reason);
+    data.history.push({role:'user',content:body.message});
+    // The client replaces a transport fallback with a catalog answer. Its approved ID
+    // arrives on the next request; the undelivered placeholder is never conversation history.
+    if (!transientLocal) data.history.push({role:'assistant',content:result.text});
+    data.history = data.history.slice(-8);
     data.turns = Math.min(1000000, data.turns + 1); data.emotion = result.emotion;
     data.friendship = body.context.friendship;
     if (result.memory_reference) { data.mentions = data.mentions.filter(m => m.id !== result.memory_reference); data.mentions.push({id:result.memory_reference,turn:data.turns}); data.mentions = data.mentions.slice(-32); }
@@ -64,8 +84,8 @@ function createSessions(config, now = Date.now) {
   function clear(session, scope) {
     session.revision++; if (session.active) session.active.controller.abort(); session.cache.clear();
     for (const data of Object.values(session.characters)) {
-      data.history = []; data.localActions = []; data.lastJokeId = null;
-      if (scope === 'personal') { data.memories = data.memories.filter(m => /^(gift_|drawing_friendship|hummed_melody)/.test(m.id)); data.mentions = []; data.summary = {version:1,facts:[...data.events, ...data.memories.map(m => 'memory:' + m.id)].slice(-64)}; }
+      data.history = []; data.localActions = []; data.lastJokeId = null; data.localReplies = []; data.localTopic = null; data.localSubject = null;
+      if (scope === 'personal') { data.localLaughter = []; data.localObservedLaughter = []; data.memories = data.memories.filter(m => /^(gift_|drawing_friendship|hummed_melody)/.test(m.id)); data.mentions = []; data.summary = {version:1,facts:[...data.events, ...data.memories.map(m => 'memory:' + m.id)].slice(-64)}; }
     }
     if (scope === 'all') erase(session);
   }

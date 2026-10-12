@@ -347,3 +347,24 @@ test('long responses paginate without automatic page changes and cannot be inter
   assert.equal(f.get('.lumo-line').hidden,true);assert.equal(f.get('.lumo-chat-form').hidden,false);
   assert.equal(f.messages.length,0,'the acknowledgement Enter never sends an empty message');
 });
+
+test('shrinking a completed speech repaginates unread words without advancing or opening the composer',()=>{
+  const f=fixture();f.ui.open();f.ready();
+  let width=700;const line=f.get('.lumo-text');
+  Object.defineProperty(line,'clientWidth',{get:()=>width});
+  const original='Podemos compartir una aventura tranquila y hablar de nuestras ideas sin ninguna prisa. Mi prestigio flotante sigue intentando organizar un comité imaginario que acepte las pausas como parte del camino.';
+  f.ui.speak({text:original,source:'local'},{awaitClose:false});
+  const before=line.textContent;
+  width=160;f.window.innerWidth=340;f.window.innerHeight=650;
+  Object.assign(f.viewport,{width:340,height:650});
+  for(const handler of f.events['viewport:resize'])handler();
+  assert.ok(line.textContent.length<before.length);
+  assert.equal(f.get('.lumo-chat-form').hidden,true);
+  const chunks=[line.textContent];
+  for(let i=0;i<30&&f.get('#lumo-ui').dataset.phase!=='continue';i++){
+    f.key('Enter',f.get('.lumo-panel'));chunks.push(line.textContent);
+    assert.equal(f.get('.lumo-chat-form').hidden,true);
+  }
+  assert.equal(chunks.join(' ').replace(/\s+/g,' ').trim(),original);
+  f.key('Enter',f.get('.lumo-panel'));assert.equal(f.get('.lumo-line').hidden,true);
+});

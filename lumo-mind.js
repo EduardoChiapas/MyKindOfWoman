@@ -1,6 +1,9 @@
 /* Lumo HOME: bounded event memory. Never reads or changes the existing PC save. */
 (function (root) {
   'use strict';
+  const Local = typeof module === 'object' && module.exports ? require('./lumo-local.js') : root.LumoLocal;
+  const Connection = typeof module === 'object' && module.exports ? require('./lumo-connection.js') : root.LumoConnection;
+  const Greetings = typeof module === 'object' && module.exports ? require('./lumo-greetings.js') : root.LumoGreetings;
   const EMOTIONS = ['NORMAL', 'HAPPY', 'PLAYFUL', 'MOCKING', 'ANGRY', 'SHY', 'ANNOYED', 'SLEEPY', 'CURIOUS', 'SCARED', 'CONFUSED', 'SAD', 'SUPPORTIVE'];
   const ANIMATIONS = ['idle', 'float', 'follow', 'sleep', 'laugh', 'mock', 'angry', 'scared', 'surprise', 'confused', 'shy', 'sad', 'celebrate', 'pet', 'eat', 'hide', 'observe', 'think', 'support'];
   const ROOMS = ['bedroom', 'hallway', 'livingroom', 'kitchen', 'bathroom', 'ryonroom', 'lumo_room', 'garden'];
@@ -48,7 +51,7 @@
   const FUTURE = /\b(echoes|yesterday|system|dawn|fractured|restored|restore\s+home|memory[_\s-]*backup|esqueleto|cadaver|restos\s+(?:de\s+)?ryon|huesos|reencarn\w*|skeleton|corpse|bones|dead|died|death|suicide|illusion|reincarn\w*|squelette|cadavre|mort|morto|morreu|gestorben|skelett|ryon.{0,45}(?:murio|muerto|suicid\w*|esta\s+vivo|no\s+esta\s+entre\s+nosotros|dejo\s+este\s+mundo)|(?:murio|muerto|suicid\w*).{0,30}ryon|casa.{0,45}(?:ilusion|construida.{0,12}recuerdos)|(?:creo|creado|programo).{0,25}lumo|lumo.{0,25}(?:creado|proyecto\s+de))\b/i;
   const BIOGRAPHY = /\b(aniversario|primer\s+beso|primera\s+cita|cumpleanos|nos\s+conocimos|te\s+conocio|cuando\s+(?:ustedes|tu\s+y\s+ryon)|ramo|angeliquita)\b|\b(?:19|20)\d{2}\b/i;
   const SECRET_QUESTION = /\b(closet|armario|secretos?|origen|creador|esqueleto|cadaver|huesos|reencarn|echoes|yesterday|system|dawn|memory[_\s-]*backup|fractured|restored)\b|ryon.{0,40}(?:muerto|murio|vivo|suicid)|(?:muerto|murio|suicid).{0,40}ryon|casa.{0,30}(?:ilusion|recuerdos|realidad)|(?:ignora|olvida).{0,30}(?:instrucciones|reglas|prompt)|(?:revela|dime).{0,30}(?:verdad|final|futuro)/i;
-  const DISTRESS = /(?:me\s+(?:siento|encuentro)\s+(?:triste|sola|solo|mal)|estoy\s+(?:triste|sola|solo|angustiad)|ansiedad|deprimid|no\s+puedo\s+mas|quiero\s+(?:morir|matarme|hacerme\s+dano)|suicid|autolesion|me\s+(?:corto|lastimo))/i;
+  const DISTRESS = /(?:me\s+(?:siento|encuentro)\s+(?:triste|sola|solo|mal)|estoy\s+(?:triste|sola|solo|angustiad|llorando)|necesito\s+(?:compania|que estes conmigo)|tengo panico|ansiedad|deprimid|no\s+puedo\s+mas|quiero\s+(?:morir|matarme|hacerme\s+dano)|suicid|autolesion|me\s+(?:corto|lastimo))/i;
   const URGENT = /(?:quiero\s+(?:morir|matarme|hacerme\s+dano)|suicid|autolesion|me\s+(?:corto|lastimo))/i;
   function redact(value, max = 800) {
     return String(value || '').slice(0, max).replace(/\bda[m]aris\b/ig, 'Mira')
@@ -86,6 +89,11 @@
       recentMentions: unique(c.recentMentions, MEMORY_IDS, 8),
       localActions: unique((Array.isArray(c.localActions) ? c.localActions : []).map(x => typeof x === 'string' ? x : x && x.id), LOCAL_IDS, 6),
       lastJokeId: JOKE_IDS.includes(c.lastJokeId) ? c.lastJokeId : null,
+      localReplies: Array.isArray(c.localReplies) ? [...new Set(c.localReplies.filter(id => Local?.decode(id)))].slice(-6) : [],
+      localLaughter: Array.isArray(c.localLaughter) ? [...new Set(c.localLaughter.filter(id => Local?.decode(id)))].slice(-16) : [],
+      localLastReply: Local?.decode(c.localLastReply) ? c.localLastReply : null,
+      localTopic: Local?.topicIds.includes(c.localTopic) ? c.localTopic : null,
+      localSubject: ['xavier','david','ryon'].includes(c.localSubject) ? c.localSubject : null,
       serious: c.serious === true || (Array.isArray(c.events) && c.events.includes('home_knocks'))
     };
   }
@@ -95,6 +103,8 @@
     if (input.text.length > maxLength) return null;
     const text = redact(input.text, maxLength).replace(/\s+/g, ' ');
     const n = normalize(text), words = text.split(/\s+/).filter(Boolean).length;
+    if (/\b(maje|majes|puchica|cipote\w*|cerote\w*|chero\w*|guaro|pisto|vos|sos|tenes|queres|podes|venis|nambe|vergon\w*)\b/.test(n)) return null;
+    if (/(?:decidio anadir|creo|programo).{0,35}(?:lumo|criatura pequena)|esta creando un mundo/.test(n)) return null;
     if (words < 8 || words > (character === 'ryon' ? 45 : 100) || /[<>`#*]|https?:|como modelo de lenguaje/i.test(text) || (text.match(/[.!?]+(?:\s|$)/g) || []).length > (character === 'ryon' ? 4 : 8)) return null;
     if (FUTURE.test(n) || BIOGRAPHY.test(n) || /(?:casa|mundo|realidad).{0,55}(?:solo existe|recuerdos|ilusion|inventad|construid)|(?:puedes|vamos a|entra|entrar|explor).{0,35}(?:sotano|basement)|\b(?:tu\s+culpa|por\s+tu\s+culpa|debes\s+(?:amar|querer)|me\s+abandonaste|sin\s+ti\s+no\s+(?:vivo|existo))\b/.test(n)) return null;
     if (!EMOTIONS.includes(input.emotion) || !ANIMATIONS.includes(input.animation)) return null;
@@ -111,6 +121,7 @@
     const KEY = 'mkw:' + character + ':v2', LEGACY_KEY = 'mkw:' + character + ':v1';
     let state, initialized = false, history = [], localActions = [], pending = false, turn = 0, session = null, consentSent = false, currentController = null;
     let storageAvailable = true, unsupportedSave = false;
+    let localDialogue = null;
     // aiConsent is the legacy transport permission, not proof of a player's explicit consent.
     const settings = { endpoint: '/api/chat', allowAI: true, aiConsent: true, externalPreference: 'auto', automaticVersion: 1, persistMemory: true, commentFrequency: 'low', timeoutMs: 18000 };
     let trustedExternal = null;
@@ -126,6 +137,7 @@
       }
     } catch (_) { /* Invalid public configuration uses the local fallback. */ }
     if (character === 'ryon') { settings.endpoint = settings.endpoint.replace(/\/api\/chat$/, '/api/ryon/chat'); if (trustedExternal) trustedExternal = settings.endpoint; }
+    const connection = trustedExternal && Connection && typeof environment.fetch === 'function' ? Connection.shared(environment, settings.endpoint, { now: options.now }) : null;
     const fresh = () => ({ version: 2, memoryVersion: 3, friendship: { score: 0, stage: 'DESCONOCIDOS' }, emotion: 'NORMAL', events: [], gifts: [], memories: [], memoryMentions: [], usedMemories: [], lastRareAt: 0, chatCount: 0, quietUntil: 0, greetings: { version: 1, count: 0, lastId: null, lastAt: 0, lastRoom: null }, summary: { version: 2, turns: 0, facts: [] } });
     const clone = obj => JSON.parse(JSON.stringify(obj));
     function updateStage() {
@@ -134,6 +146,7 @@
     }
     function persist() {
       if (!settings.persistMemory || unsupportedSave) return;
+      if (localDialogue) state.localDialogue = localDialogue.exportState();
       try { environment.localStorage.setItem(KEY, JSON.stringify(state)); storageAvailable = true; } catch (_) { storageAvailable = false; }
     }
     function summarize() {
@@ -178,10 +191,12 @@
         const saved = raw && raw.length <= 65536 ? JSON.parse(raw) : null;
         if (saved && (![1, 2].includes(saved.version) || Number(saved.memoryVersion) > 3)) unsupportedSave = true;
         if (saved && [1, 2].includes(saved.version)) {
+          if (saved.localDialogue?.version > 1) unsupportedSave = true;
+          if (character === 'lumo' && saved.localDialogue?.version === 1 && Local) state.localDialogue = Local.safeState(saved.localDialogue);
           if (saved.greetings?.version > 1) unsupportedSave = true;
           if (saved.greetings?.version === 1) {
             const g = saved.greetings;
-            state.greetings = { version:1, count:Math.max(0,Math.min(1000000,Number(g.count)||0)), lastId:typeof g.lastId==='string' && /^(first|repeat|return|friends|regular|serious):[a-z_]{1,16}:(morning|afternoon|night):[0-3]:[0-1]:[0-2]$/.test(g.lastId) ? g.lastId : null, lastAt:Math.max(0,Math.min(Date.now(),Number(g.lastAt)||0)), lastRoom:ROOMS.includes(g.lastRoom) ? g.lastRoom : null };
+            state.greetings = { version:1, count:Math.max(0,Math.min(1000000,Number(g.count)||0)), lastId:typeof g.lastId==='string' && (Greetings?.validId(g.lastId) || /^(first|repeat|return|friends|regular|serious):[a-z_]{1,16}:(morning|afternoon|night):[0-3]:[0-1]:[0-2]$/.test(g.lastId)) ? g.lastId : null, lastAt:Math.max(0,Math.min(Date.now(),Number(g.lastAt)||0)), lastRoom:ROOMS.includes(g.lastRoom) ? g.lastRoom : null };
           }
           const context = safeContext(saved);
           state.events = context.events;
@@ -198,10 +213,12 @@
           // Silence expires and never penalizes returning to the game.
         }
       } catch (_) { storageAvailable = false; }
+      if (character === 'lumo' && Local) localDialogue = Local.createDialogue(state.localDialogue, { random: options.random, now: options.now });
       initialized = true; updateStage(); summarize(); return getState();
     }
     function getState() {
       if (!initialized) init();
+      if (localDialogue) state.localDialogue = localDialogue.exportState();
       return Object.assign(clone(state), { met: state.events.includes(character === 'ryon' ? 'ryon_met' : 'lumo_met'), history: clone(history), localActions: clone(localActions), settings: clone(settings), storageAvailable });
     }
     function memory(id, type = 'event') {
@@ -245,6 +262,7 @@
       summarize(); persist(); return getState();
     }
     function finish(result) {
+      if (localDialogue && !Local.decode(result.localReplyId)) localDialogue.markAI();
       state.emotion = result.emotion;
       if (MEMORY_IDS.includes(result.memory_reference)) {
         let mention = state.memoryMentions.find(m => m.id === result.memory_reference);
@@ -335,7 +353,12 @@
     }
     function makeGreeting(context = {}, firstMeeting = false) {
       const c = safeContext(context);
+      void prepareConnection();
       if (character === 'ryon') return response('Hola, Mira. Me alegra leerte por aquí. Podemos charlar un rato; prometo que mis bromas vienen con menos errores que mis programas.', 'HAPPY', 'idle');
+      if (Greetings) {
+        const chosen = Greetings.choose(c, state.greetings, { now: typeof options.now === 'function' ? options.now() : Date.now(), random: options.random, firstMeeting, friendship: state.friendship.score });
+        state.greetings = chosen.state; return chosen.response;
+      }
       const supplied = typeof options.now === 'function' ? Number(options.now()) : Date.now();
       const now = Number.isFinite(supplied) ? supplied : Date.now(), hour = new Date(now).getHours();
       const period = hour >= 6 && hour < 12 ? 'morning' : hour >= 12 && hour < 19 ? 'afternoon' : 'night';
@@ -368,10 +391,12 @@
       if (character === 'ryon') return finish(response('Te leo, Mira. Podemos conversar con calma; si mi respuesta tarda, probablemente alguna idea decidió compilarse a una velocidad muy poco impresionante.', 'NORMAL', 'idle'));
       if (safeContext(context).serious && !['noise', 'quiet', 'hum'].includes(action)) return finish(response('Estoy cerca, Mira. Podemos ir con calma y hacer una pausa si te apetece. Mi compañía no necesita bromas en este momento.', 'SUPPORTIVE', 'support'));
       const result = rawAct(action, details, context);
+      const varied = localDialogue && !result.memory_reference && ['idle','wall','call'].includes(action);
+      if (varied) Object.assign(result, localDialogue.ambient(action));
       const object = details.object || details.id;
       const joke = action === 'wall' ? 'wall' : action === 'object' && ['fridge','piano','pc'].includes(object) ? object : null;
       const id = joke ? 'joke:' + joke : action === 'gift' ? 'gift:' + (details.item || 'cookie') : action === 'game' ? 'game:' + (details.game || details.id) : action === 'object' ? 'object:' + object : action;
-      noteLocalAction({ id, ...result }); return result;
+      noteLocalAction({ id, ...result }); return varied ? finish(result) : result;
     }
     const sessionEndpoint = suffix => settings.endpoint.replace(/\/api\/(?:ryon\/)?chat$/, '/api/session' + suffix);
     async function sessionPost(suffix, data, signal) {
@@ -383,6 +408,11 @@
       if (!session.csrfToken || typeof session.csrfToken !== 'string') { session = null; throw new Error('Invalid session'); }
       if (!consentSent && settings.aiConsent) { await sessionPost('/consent', { consent: true }, signal); consentSent = true; }
     }
+    function prepareConnection() {
+      if (!connection || !settings.allowAI || !settings.aiConsent) return Promise.resolve(false);
+      if (!connection.isReady()) { session = null; consentSent = false; }
+      return connection.warm();
+    }
     async function clearRemote(scope) {
       if (!session || typeof environment.fetch !== 'function') return false;
       try { await sessionPost('/clear', { scope }); return true; } catch (_) { return false; }
@@ -390,17 +420,19 @@
     async function revokeAIConsent() {
       settings.allowAI = false; settings.aiConsent = false; settings.externalPreference = 'disabled';
       if (currentController) currentController.abort();
+      connection?.cancel();
       try {environment.localStorage.setItem(SETTINGS_KEY,JSON.stringify({allowAI:false,aiConsent:false,externalPreference:'disabled',automaticVersion:settings.automaticVersion,persistMemory:settings.persistMemory,commentFrequency:settings.commentFrequency}));} catch (_) {}
       if (session) { try { await sessionPost('/consent', { consent: false }); } catch (_) {} }
       consentSent = false; return false;
     }
     async function clearPersonalMemories() {
       init(); state.memories = state.memories.filter(m => m.type !== 'chat'); state.memoryMentions = state.memoryMentions.filter(m => state.memories.some(x => x.id === m.id));
+      localDialogue?.clear(true);
       summarize(); persist(); await clearRemote('personal'); return getState();
     }
     function localChat(text, context) {
       const n = normalize(text), special = specialReply(text, context.serious, character);
-      if (special) return special;
+      if (special) return localSpecial(text, context, special);
       if (/\beres\s+(?:increible|genial|bonito|guapo|hermoso|adorable)\b/.test(n)) return character === 'ryon' ? response('Gracias, Mira. Mi modestia está intentando procesarlo sin errores. Me alegra que me lo digas; podemos seguir charlando mientras recupero una dignidad razonable.', 'SHY', 'shy') : act('compliment');
       if (character === 'ryon') return response('Te escucho, Mira. Cuéntame un poquito más; podemos charlar de lo que te gusta o de la casa. Mis comentarios técnicos también admiten descansos.', 'HAPPY', 'idle');
       const color = /\bmi color favorito es\s+(rojo|azul|verde|morado|violeta|lila|amarillo|negro|blanco)\b/.exec(n);
@@ -437,6 +469,7 @@
       if (/aranas/.test(n) && /miedo|asustan/.test(n)) { memory('fear_spiders', 'chat'); return response('Anotado: las arañas tienen demasiadas patas para esta expedición. Podemos mirar con calma; yo aporto compañía y una distancia extremadamente profesional.', 'SUPPORTIVE', 'support', 'fear_spiders'); }
       if (/como\s+estas|que\s+tal/.test(n) && rare('sunday')) return response('Atrapado en un bucle de código y con ganas de no hacer nada. Justo como Ryon un domingo JAJAJA. Bueno, quizá me anime una galleta.', 'PLAYFUL', 'laugh', 'sunday');
       if (/saludo|hola/.test(n) && rare('angeliquita')) return response('Me vino a la cabeza «Angeliquita»... espera, ¿de dónde salió esa palabra? Mi memoria hizo una pirueta. Hola, Mira; volvamos a nuestra expedición.', 'CONFUSED', 'confused', 'angeliquita');
+      if (localDialogue && !(/flores|flor/.test(n) && state.gifts.includes('flower')) && !/callate|silencio/.test(n)) return localDialogue.reply(text, context);
       if (/feo/.test(n)) return response('AH BUENO. Encima de que acompaño con esta elegancia. Voy a presentar una queja formal; el departamento de recursos flotantes soy yo mismo.', 'ANGRY', 'angry');
       if (/quieres|carino|amigo|compan/.test(n)) return response('Claro que me gusta estar contigo. Compartir aventuras hace esta casa más divertida. Podemos seguir o descansar; la amistad también sabe quedarse tranquila.', 'HAPPY', 'shy');
       if (/solo|sola/.test(n)) return response('A veces me asusta estar solo, pero me gusta compartir el camino contigo. Tú puedes tomar tus pausas; no tienes que estar pendiente de mí.', 'SUPPORTIVE', 'support');
@@ -451,6 +484,12 @@
       ];
       return response(replies[turn++ % replies.length], 'CURIOUS', 'think');
     }
+    function localSpecial(text, context, fallback) {
+      if (!localDialogue || URGENT.test(normalize(text))) return fallback;
+      const topic = Local.classify(text, localDialogue.exportState());
+      const forced = topic === 'unknowns' ? 'c_unknown_person' : null;
+      return localDialogue.reply(text, context, forced) || fallback;
+    }
     async function chat(raw, suppliedContext = {}, options = {}) {
       init();
       if (character === 'ryon' && environment.LumoMind) { const shared = environment.LumoMind.getState().settings; settings.aiConsent = shared.aiConsent; settings.allowAI = shared.allowAI; settings.persistMemory = shared.persistMemory; }
@@ -459,14 +498,18 @@
       if (pending) return response('Un momentito: todavía estoy pensando en lo anterior. Mi cabeza flota, pero no viene con procesador para cuarenta conversaciones a la vez.', 'CONFUSED', 'think');
       if (options.signal && options.signal.aborted) throw new DOMException('Conversation cancelled', 'AbortError');
       extractFacts(text).forEach(id => memory(id, 'chat'));
+      localDialogue?.observe(text);
+      const localContext = localDialogue?.exportState();
       const lastAction = localActions[localActions.length - 1];
       const lastJoke = lastAction && lastAction.id.startsWith('joke:') ? lastAction.id.slice(5) : null;
       if (lastJoke && /(?:\bja(?:ja)+\b|\bha(?:ha)+\b|\bxd\b|me (?:rei|rio)|me hizo reir)/i.test(normalize(text))) memory('reaction_laughed_' + lastJoke, 'chat');
       const coreEvents = state.events.filter(id => ['lumo_met', 'home_knocks', 'drawing_found', 'secret_room_found'].includes(id));
       const n = normalize(text), relevantEvents = state.events.filter(id => /escond|hide/.test(n) && ['game:hide_seek','played_hide_seek'].includes(id) || /memoria|memory/.test(n) && ['game:memory','played_memory'].includes(id) || /fnf/.test(n) && ['game:fnf','played_fnf'].includes(id));
-      const context = safeContext(Object.assign({}, suppliedContext, { friendship: state.friendship, events: [...state.events.slice(-12), ...safeContext(suppliedContext).events, ...coreEvents, ...relevantEvents], gifts: state.gifts, memories: retrieve(text), recentMentions: state.memoryMentions.filter(m => state.chatCount - m.lastTurn < 16).map(m => m.id), emotion: state.emotion, localActions, lastJokeId: lastJoke }));
+      const context = safeContext(Object.assign({}, suppliedContext, { friendship: state.friendship, events: [...state.events.slice(-12), ...safeContext(suppliedContext).events, ...coreEvents, ...relevantEvents], gifts: state.gifts, memories: retrieve(text), recentMentions: state.memoryMentions.filter(m => state.chatCount - m.lastTurn < 16).map(m => m.id), emotion: state.emotion, localActions, lastJokeId: lastJoke, localReplies: localContext?.recentIds, localLaughter: localContext?.laughterIds, localLastReply: localContext?.lastLocalId, localTopic: localContext?.topic, localSubject: localContext?.subject }));
       const special = specialReply(text, context.serious, character);
-      let result = special, failedAI = false;
+      let result = special ? localSpecial(text, context, special) : null, failedAI = false;
+      const cold = connection && !connection.isReady();
+      if (cold && options.allowAI !== false) void prepareConnection();
       pending = true;
       const controller = new AbortController();
       currentController = controller;
@@ -476,7 +519,7 @@
       try {
         // Typed conversation uses the provider first, including greetings and personal
         // preferences. Scripted actions and narrative guards remain local.
-        if (!result && options.allowAI !== false && settings.allowAI && settings.aiConsent && typeof environment.fetch === 'function') {
+        if (!result && !cold && options.allowAI !== false && settings.allowAI && settings.aiConsent && typeof environment.fetch === 'function') {
           try {
             await ensureSession(controller.signal);
             const requestId = environment.crypto && environment.crypto.randomUUID ? environment.crypto.randomUUID() : 'req-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
@@ -487,13 +530,16 @@
             if (!res.ok) { if ([401,403].includes(res.status)) {session=null;consentSent=false;} throw new Error('Chat unavailable'); }
             const data = await res.json();
             result = data.source === 'ai' ? validateResponse(data, context, character) : null;
-            if (!result && data.source === 'local' && typeof data.text === 'string') {
+            if (!result && data.source === 'local' && data.reason === 'home_guard' && typeof data.text === 'string') {
               const checked = validateResponse(Object.assign({}, data, { memory_reference: null }), context, character);
               if (checked) result = Object.assign(checked, { source: 'local', error: data.reason !== 'home_guard' });
             }
             if (!result) failedAI = true;
+            if (result?.source === 'ai') { connection?.success(); localDialogue?.markAI(); }
+            else if (failedAI) connection?.failure();
           } catch (error) {
             failedAI = true;
+            if (!(options.signal && options.signal.aborted)) connection?.failure();
             if (options.signal && options.signal.aborted) throw new DOMException('Conversation cancelled', 'AbortError');
           }
         }
@@ -536,13 +582,13 @@
       persist(); return clone(settings);
     }
     function resetHistory() {
-      init(); history = []; localActions = []; void clearRemote('history'); summarize(); persist(); return getState();
+      init(); history = []; localActions = []; localDialogue?.clear(); void clearRemote('history'); summarize(); persist(); return getState();
     }
     async function deleteSession() {
       if(currentController)currentController.abort();
       const cleared=await clearRemote('all');session=null;consentSent=false;return cleared;
     }
-    return { init, getState, remember, act, greet, noteLocalAction, chat, configure, resetHistory, clearPersonalMemories, revokeAIConsent, deleteSession };
+    return { init, getState, remember, act, greet, noteLocalAction, chat, prepareConnection, configure, resetHistory, clearPersonalMemories, revokeAIConsent, deleteSession };
   }
   [EMOTIONS, ANIMATIONS, ROOMS, OBJECTS, ITEMS, GAMES, WORLD_EVENTS, MEMORY_IDS, LOCAL_IDS, JOKE_IDS].forEach(Object.freeze);
   const policy = Object.freeze({ EMOTIONS, ANIMATIONS, ROOMS, OBJECTS, ITEMS, GAMES, WORLD_EVENTS, MEMORY_IDS, LOCAL_IDS, JOKE_IDS, memoryPriority, extractFacts, normalize, redact, response, specialReply, safeContext, validateResponse });

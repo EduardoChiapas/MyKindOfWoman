@@ -20,18 +20,28 @@ Archivos: lumo-actor.js, lumo-mind.js, lumo-ui.js/css, lumo-activities.js/css y 
 
 ## Conexión y privacidad
 
-Backend preparado para Gemini nativo, con adaptador alternativo configurable. IA está deshabilitada por defecto hasta habilitarla y configurar modelo/clave exclusivamente en servidor. Con permiso y configuración, la presentación limpia mantiene Gemini; no cambia preferencias para ocultar información. Sin configuración/permiso o ante fallo, Lumo responde localmente sin warnings técnicos.
+Backend preparado para Gemini nativo, con adaptador alternativo configurable. La conexión del juego es automática; el servidor necesita habilitación y modelo/clave, exclusivamente del lado del servidor. Las opciones de borrado y la política de privacidad permanecen fuera del diálogo. Sin configuración o ante fallo, Lumo responde localmente sin avisos técnicos invasivos.
 
 Privacidad accesible desde opciones externas: información sobre el proveedor, historial reciente privado y acotado, borrado de mensajes o recuerdos personales separado de aventuras/regalos/partida. Sesiones y perfiles separados. No claves frontend ni panel de lectura de conversaciones. Consultar [servidor](server/LUMO_BACKEND.md) y documentos de privacidad; no afirmar privacidad absoluta ante tratamiento externo.
 
 ## Verificación
 
-Mente/backend integrado: 42 pruebas; UI limpia: siete; HomeStory integrado: diez. Puente de llamada/cercanía y actor verificados por sus suites. PC apps registradas con Ryon local y escena HOME en verificación de navegador; estas pruebas no certifican una partida completa.
+Las suites de mente, backend, actor, UI y continuidad HOME verifican contratos de estas funciones. Sus resultados actuales están en el apartado de ampliación local; no certifican una partida completa.
 
-Android físico, proveedor real con credenciales/modelo y despliegue siguen pendientes. No afirmar IA real a partir de mocks ni HOME terminado por integrar funciones. La raíz actualizará evidencia y resultado final de entrega.
+Teléfono físico y despliegue de esta versión siguen pendientes. La integración HTTP real se comprobó en una tarea anterior; las pruebas de esta ampliación usan proveedor simulado. No afirmar IA real a partir de mocks ni HOME terminado por integrar funciones.
 
 
 Adaptación móvil 2026-10-11: flecha de envío integrada en el campo (44×44), visible en pantallas pequeñas/táctiles; PC conserva Enter y la interfaz sin botón visible. Teclados blandos pueden enviar con key Enter sin code, beforeinput o input no cancelable; composición/Shift+Enter/pegado no envían accidentalmente. El viewport visible limita el cuadro incluso con desplazamiento/teclado. Las respuestas no enfocan automáticamente el campo móvil y al enviar se aparta el teclado para leer.
 
 
 Diálogo por turnos 2026-10-11: las páginas se mantienen hasta Enter/toque, sin avance automático. Enter completa primero la animación si está escribiéndose; después avanza. Al confirmar la última página se ocultan retrato y diálogo y queda solo el campo negro para escribir. El saludo inicial/reencuentro combina ocasión, habitación y mañana/tarde/noche del dispositivo; evita repetición inmediata por ID persistente. Sin llamada a Gemini para saludar. Lumo responde habitualmente con35–80 palabras, máximo100/1400 caracteres; Ryon mantiene su límite anterior.
+
+## Conversación local ampliada — 2026-10-12
+
+239 temas producen15.296 variantes completas distintas mediante aperturas y cierres compatibles. Son combinaciones contextuales, no15.296 historias independientes. El catálogo compacto pesa63KB. Preguntas sin datos conocidos reciben una evasiva honesta; los chistes respetan el tema. Hay576 saludos posibles por ocasión, habitación y franja horaria, con frases tranquilas en contexto serio.
+
+Con backend externo, el saludo despierta la conexión en segundo plano con un GET de disponibilidad. Durante el primer arranque o tras15min sin tráfico de conversación, Lumo responde localmente al texto escrito. Gemini vuelve en el siguiente mensaje cuando la disponibilidad se confirma; no se supone que esté listo por cumplirse un minuto. Una petición compartida evita duplicados; no hay heartbeat ni aviso técnico.
+
+Los IDs de respuestas y risas se conservan separados del historial libre y se recuperan como datos seguros para continuar la conversación. No se usan como instrucciones ni acciones de juego. Personalidad, recuerdos, privacidad y orden narrativo se mantienen. Al reducir la pantalla, las páginas pendientes se reajustan sin saltar al cuadro de escritura.
+
+146 pruebas pasan en14 archivos, con catálogo/saludos completos, proveedor y reloj simulados. QA de interfaz en escritorio y390×844 con servidor aislado sin credenciales. Publicación y teléfono físico pendientes; estas pruebas no certifican HOME completo.

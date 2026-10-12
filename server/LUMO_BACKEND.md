@@ -95,3 +95,13 @@ La conexión automática migra los bloqueos antiguos con automaticVersion:1, con
 
 
 El cambio de longitud requiere desplegar tanto lumo-mind.js como server/lumo-home.cjs y reiniciar/desplegar el backend. Sus perfiles, sesiones y filtros siguen activos. No hace falta cambiar la clave ni aumentar los límites de gasto.
+
+## Disponibilidad y recuperación local — 2026-10-12
+
+GET /api/ready responde únicamente ready y providerReady. providerReady confirma configuración habilitada con clave/modelo; la respuesta de chat real todavía debe validarse. Esta ruta no abre sesión, no escribe cookies y no llama al proveedor. Conserva validación de Host y de Origin cuando se envía: sólo orígenes configurados, sin wildcard.
+
+Al comenzar una conversación con backend externo o después de15min sin tráfico, el cliente responde localmente y hace una única comprobación en segundo plano, compartida con Ryon. No usa temporizador de60s para activar Gemini. La siguiente petición usa sesión/CSRF cuando se confirma disponibilidad. Los fallos transitorios no guardan una respuesta local de servidor que el cliente sustituye.
+
+El cliente envía sólo IDs aprobados de diálogos locales y reacciones observadas. El servidor los reconstruye como datos en un mensaje user; jamás se añaden a la personalidad ni autorizan acontecimientos. Se filtran del perfil Ryon. No se permite ningún ID del catálogo en memory_reference. El perfil canónico HOME se recarga en cada petición.
+
+Para publicar esta ampliación, subir lumo-local-data.js, lumo-local.js, lumo-connection.js y lumo-greetings.js junto al cliente y estos archivos de servidor; desplegar Render de nuevo. Sin cambios de clave/variables ni límites de gasto. La integración se prueba con backend simulado; no afirmar Gemini real por esos resultados.

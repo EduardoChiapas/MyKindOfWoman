@@ -27,6 +27,16 @@ function createLumoServer(options = {}) {
     if (!hosts.includes(req.headers.host)) return send(res, 403, { error: 'Host not allowed' });
     let url;
     try { url = new URL(req.url, 'http://127.0.0.1:' + port); } catch (_) { return send(res, 400, { error: 'Invalid URL' }); }
+    if (url.pathname === '/api/ready') {
+      const origin = req.headers.origin;
+      const allowedOrigins = ['http://127.0.0.1:' + port, 'http://localhost:' + port, ...(config.allowedOrigins || []), ...(config.publicOrigin ? [config.publicOrigin] : [])];
+      if (origin !== undefined && !allowedOrigins.includes(origin)) return send(res, 403, { error: 'Origin not allowed' });
+      if (origin !== undefined) res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      if (req.method !== 'GET') return send(res, 405, { error: 'Use GET' }, { Allow: 'GET' });
+      // Readiness is public and read-only: no session, cookie, paid call or private configuration.
+      return send(res, 200, { ready: true, providerReady: Boolean(config.enabled && config.apiKey && config.model) });
+    }
     if (['/api/chat','/api/ryon/chat','/api/session','/api/session/consent','/api/session/clear'].includes(url.pathname)) {
       const origin = req.headers.origin;
       const localOrigins = ['http://127.0.0.1:' + port, 'http://localhost:' + port];

@@ -96,3 +96,7 @@ En dispositivos táctiles, durante las canciones la pantalla tiene cuatro zonas 
 ## Estado de verificación
 
 Mente/backend integrado: 42 pruebas pasan. UI limpia: siete pruebas; HomeStory: diez pruebas. Son suites parciales, no certificado de HOME completo. La prueba de proveedor real con credenciales, Android físico y recorrido final siguen pendientes. La raíz registrará el resultado final en la evidencia de entrega.
+
+## Ampliación del chat local de Lumo — 2026-10-12
+
+Incluye15.296 variantes combinables y saludos variables. El primer chat y los turnos tras15min sin tráfico externo usan respuestas locales mientras el servidor despierta; Gemini retoma en un mensaje posterior cuando está listo. No se añaden avisos al diálogo. Subir la carpeta actual y desplegar también Render: se incorporó /api/ready. El ZIP grande antiguo no contiene esta actualización. Ver LUMO.md para detalles y límites de verificación.

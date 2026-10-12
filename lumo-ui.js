@@ -9,9 +9,14 @@
     SAD: 'sad', SUPPORTIVE: 'supportive'
   };
   let adapter = {};
-  let root, panel, text, portrait, next, status, actions, form, input, history, tools;
+  let root, panel, line, text, portrait, next, actions, form, input, tools;
   let opened = false;
-  let mode = 'menu';
+  let mode = 'conversation';
+  let phase = 'speaking';
+  let afterSpeech = 'reply';
+  let composerStarted = false;
+  let externalPanel = false;
+  let layout = { height: 180, width: 800, textLines: 3 };
   let mounted = false;
   let request = null;
   let epoch = 0;
@@ -84,53 +89,52 @@
   }
 
   function setSource(value, error = false) {
-    source = value === 'ai' || value === 'remote' ? 'ai' : 'local';
-    status.textContent = source === 'ai' ? 'IA conectada' : error ? 'Diálogo local · conexión no disponible' : 'Diálogo local';
-    status.dataset.source = source;
+    source = value === 'ai' && !error ? 'ai' : 'local';
+    root.dataset.aiConnected = String(source === 'ai');
   }
 
   function syncViewport() {
     if (!root) return;
     const viewport = global.visualViewport;
-    root.style.setProperty('--lumo-vh', `${Math.round(viewport?.height || global.innerHeight)}px`);
-    root.style.setProperty('--lumo-vw', `${Math.round(viewport?.width || global.innerWidth)}px`);
-    root.style.setProperty('--lumo-top', `${Math.round(viewport?.offsetTop || 0)}px`);
-    root.style.setProperty('--lumo-left', `${Math.round(viewport?.offsetLeft || 0)}px`);
+    const vh = viewport?.height || global.innerHeight;
+    const vw = viewport?.width || global.innerWidth;
+    const vt = viewport?.offsetTop || 0;
+    const vl = viewport?.offsetLeft || 0;
+    let stage = typeof adapter.stage === 'function' ? adapter.stage() : adapter.stage;
+    if (typeof stage === 'string') stage = document.querySelector(stage);
+    stage ||= document.getElementById('game-stage');
+    const rect = stage?.getBoundingClientRect?.();
+    const valid = rect && rect.width > 0 && rect.height > 0;
+    const left = Math.max(vl + 6, valid ? rect.left + 6 : vl + 6);
+    const right = Math.min(vl + vw - 6, valid ? rect.right - 6 : vl + vw - 6);
+    const width = Math.max(180, right - left);
     const keyboardOpen = Boolean(viewport && global.innerHeight - viewport.height > 150);
+    const secondary = mode !== 'conversation';
+    const withComposer = composerStarted && mode === 'conversation';
+    const small = width < 600;
+    const minimum = secondary ? 210 : withComposer ? (small ? 144 : 134) : (small ? 100 : 106);
+    const desired = secondary ? Math.min(390, vh * .65) : Math.max(minimum, (valid ? rect.height : vh) * .28);
+    const height = Math.max(100, Math.min(desired, vh - 12));
+    const bottom = Math.min(vt + vh - 6, valid ? rect.bottom - 6 : vt + vh - 6);
+    const top = Math.max(vt + 6, bottom - height);
+    layout = { width, height, textLines: Math.max(1, Math.min(4, Math.floor((height - (withComposer ? 64 : 25)) / (small ? 22 : 26)))) };
+    root.style.setProperty('--lumo-left', `${Math.round(left)}px`);
+    root.style.setProperty('--lumo-top', `${Math.round(top)}px`);
+    root.style.setProperty('--lumo-width', `${Math.round(width)}px`);
+    root.style.setProperty('--lumo-height', `${Math.round(Math.min(height, vt + vh - 6 - top))}px`);
+    root.style.setProperty('--lumo-text-lines', layout.textLines);
     root.classList.toggle('lumo-keyboard-open', keyboardOpen);
-    if (keyboardOpen && document.activeElement === input) {
-      // Keep the composer visible as Android changes the visual viewport.
-      // Only the panel scrolls; the world camera does not move.
-      requestAnimationFrame(() => {
-        if (!opened || document.activeElement !== input) return;
-        const fieldRect = input.getBoundingClientRect();
-        const panelRect = panel.getBoundingClientRect();
-        if (fieldRect.bottom > panelRect.bottom - 12) panel.scrollTop += fieldRect.bottom - panelRect.bottom + 12;
-      });
-    }
+    root.classList.toggle('lumo-small', small);
   }
 
   function adoptHistory() {
     recent = (state().history || []).filter(entry => entry && typeof entry.content === 'string')
       .slice(-MAX_HISTORY).map(entry => ({ role: entry.role === 'user' ? 'user' : 'assistant', content: entry.content }));
-    renderHistory();
-  }
-
-  function renderHistory() {
-    history.replaceChildren();
-    for (const entry of recent) {
-      const row = element('p', 'lumo-history-entry');
-      row.append(element('span', 'lumo-history-name', entry.role === 'user' ? 'MIRA' : 'LUMO'), document.createTextNode(entry.content));
-      history.append(row);
-    }
-    if (!recent.length) history.append(element('p', 'lumo-note', 'Todavía no hay mensajes recientes.'));
-    history.scrollTop = history.scrollHeight;
   }
 
   function addHistory(role, content) {
     recent.push({ role, content });
     recent = recent.slice(-MAX_HISTORY);
-    renderHistory();
   }
 
   function giftList() {
@@ -141,44 +145,39 @@
     try { return (adapter.listGames?.() || []).filter(item => item?.id && item.available !== false); } catch { return []; }
   }
 
-  function refreshFriendship() {
-    const stage = state().friendship?.stage;
-    const labels = { strangers: 'Nos estamos conociendo', desconocidos: 'Nos estamos conociendo', companions: 'Compañeros', compañeros: 'Compañeros', companeros: 'Compañeros', friends: 'Amigos', amigos: 'Amigos', best_friends: 'Mejores amigos', mejores_amigos: 'Mejores amigos', adventure_companions: 'Compañeros de aventura' };
-    const named = typeof stage === 'string' ? (labels[stage.toLowerCase()] || stage.replace(/_/g, ' ')) : 'Compañeros';
-    root.querySelector('.lumo-friendship').textContent = named;
-  }
-
   function setMode(nextMode) {
-    mode = nextMode;
+    mode = ['menu', 'gifts', 'games', 'settings'].includes(nextMode) ? nextMode : 'conversation';
     root.dataset.mode = mode;
-    form.hidden = mode !== 'talk';
+    root.dataset.phase = phase;
+    line.hidden = mode !== 'conversation';
+    form.hidden = mode !== 'conversation' || !composerStarted;
     tools.hidden = mode !== 'settings';
-    root.querySelector('.lumo-history').hidden = mode !== 'talk';
     actions.replaceChildren();
     if (mode === 'menu') {
-      actions.append(button('HABLAR', () => {
-        setMode('talk');
-        if (!typing && !pending) showResponse({ text: 'Te escucho. Pero si es un examen, voy a fingir que se cortó la luz.', source: 'local' });
-        input.focus({ preventScroll: true });
-      }));
-      actions.append(button('ACARICIAR', pet));
-      if (adapter.giveGift && giftList().length) actions.append(button('DAR OBJETO', () => setMode('gifts')));
-      if (adapter.startGame && gameList().length) actions.append(button('JUGAR', () => setMode('games')));
+      if (!externalPanel) actions.append(button('VOLVER AL DIÁLOGO', returnConversation));
+      const petButton = button('ACARICIAR', pet); petButton.disabled = pending; actions.append(petButton);
+      if (adapter.giveGift && giftList().length) { const giftButton = button('DAR OBJETO', () => setMode('gifts')); giftButton.disabled = pending; actions.append(giftButton); }
+      if (adapter.startGame && gameList().length) { const gameButton = button('JUGAR', () => setMode('games')); gameButton.disabled = pending; actions.append(gameButton); }
       actions.append(button('CERRAR', close));
     } else if (mode === 'gifts') {
       const gifts = giftList();
-      for (const item of gifts) actions.append(button(`${item.label || item.id} ×${item.count}`, () => give(item.id)));
+      for (const item of gifts) { const giftButton = button(`${item.label || item.id} ×${item.count}`, () => give(item.id)); giftButton.disabled = pending; actions.append(giftButton); }
       if (!gifts.length) actions.append(element('p', 'lumo-note', 'No llevas objetos para darle.'));
       actions.append(button('VOLVER', () => setMode('menu')));
     } else if (mode === 'games') {
-      for (const item of gameList()) actions.append(button(item.label || item.id, () => startGame(item.id)));
+      for (const item of gameList()) { const gameButton = button(item.label || item.id, () => startGame(item.id)); gameButton.disabled = pending; actions.append(gameButton); }
       actions.append(button('VOLVER', () => setMode('menu')));
-    } else {
-      actions.append(button('VOLVER', () => setMode('menu')));
+    } else if (mode !== 'conversation') {
+      actions.append(button(externalPanel ? 'CERRAR' : 'VOLVER AL DIÁLOGO', externalPanel ? close : returnConversation));
     }
     if (mode === 'settings') renderSettings();
-    refreshFriendship();
     syncViewport();
+  }
+
+  function returnConversation() {
+    setMode('conversation');
+    if (composerStarted) input.focus({ preventScroll: true });
+    else panel.focus({ preventScroll: true });
   }
 
   function paginate(message) {
@@ -186,7 +185,7 @@
     const computed = global.getComputedStyle(text);
     if (probe) probe.font = `${computed.fontSize} ${computed.fontFamily}`;
     const width = Math.max(100, text.clientWidth - 10);
-    const maxLines = global.visualViewport?.height < 340 ? 3 : 4;
+    const maxLines = layout.textLines;
     const words = String(message || '').match(/\S+\s*|\n/g) || ['...'];
     const result = [];
     let page = '', line = '', lines = 1;
@@ -212,9 +211,24 @@
   }
 
   function updateNext() {
-    next.hidden = !pages.length || pending;
-    next.textContent = typing ? 'MOSTRAR TODO ▾' : pageIndex + 1 < pages.length ? 'CONTINUAR ▾' : 'LISTO ▾';
-    root.querySelector('.lumo-page').textContent = pages.length > 1 ? `${pageIndex + 1} / ${pages.length}` : '';
+    next.hidden = typing || pending || pageIndex + 1 >= pages.length;
+    next.textContent = '▾';
+    next.parentNode.hidden = next.hidden;
+  }
+
+  function completePage() {
+    updateNext();
+    announce(`Lumo: ${pages[pageIndex]}`);
+    if (pageIndex + 1 < pages.length) return;
+    if (afterSpeech === 'scene') {
+      phase = 'scene'; composerStarted = false;
+      setMode(mode);
+      return;
+    }
+    phase = 'reply'; composerStarted = true;
+    setMode(mode);
+    if (mode === 'conversation') input.focus({ preventScroll: true });
+    if (finishSpeech) { const done = finishSpeech; finishSpeech = null; done(true); }
   }
 
   function startPage() {
@@ -226,7 +240,7 @@
     root.classList.toggle('lumo-reduced-motion', quietEffects);
     typing = !quietEffects;
     updateNext();
-    if (!typing) { text.textContent = characters.join(''); announce(`Lumo: ${pages[pageIndex]}`); return; }
+    if (!typing) { text.textContent = characters.join(''); completePage(); return; }
     function tick() {
       if (!opened || !typing) return;
       const character = characters[characterIndex++];
@@ -234,8 +248,7 @@
       if (character && /\S/.test(character) && characterIndex % 2 === 1) play('text');
       if (characterIndex >= characters.length) {
         stopTyping();
-        updateNext();
-        announce(`Lumo: ${pages[pageIndex]}`);
+        completePage();
         return;
       }
       typingTimer = setTimeout(tick, /[.!?]/.test(character) ? 115 : /[,;:]/.test(character) ? 70 : 25);
@@ -244,21 +257,19 @@
   }
 
   function advance() {
-    if (pending) return;
+    if (pending || mode !== 'conversation' || phase === 'reply') return;
     play('confirm');
     if (typing) {
       stopTyping();
       text.textContent = characters.join('');
-      updateNext();
-      announce(`Lumo: ${pages[pageIndex]}`);
+      completePage();
     } else if (pageIndex + 1 < pages.length) {
       pageIndex += 1;
       startPage();
     } else {
       next.hidden = true;
       if (finishSpeech) { const done = finishSpeech; finishSpeech = null; done(true); }
-      if (mode === 'talk') input.focus({ preventScroll: true });
-      else actions.querySelector('button')?.focus({ preventScroll: true });
+      if (afterSpeech !== 'scene') completePage();
     }
   }
 
@@ -310,27 +321,31 @@
     if (finishSpeech) { const done = finishSpeech; finishSpeech = null; done(false); }
     response = normalize(value);
     response.text = String(response.text || '...');
+    phase = 'speaking';
+    composerStarted = false;
+    afterSpeech = options.after === 'scene' ? 'scene' : 'reply';
     setSource(response.source, Boolean(response.error || response.fallback || options.error));
     drawPortrait(response.emotion);
     react(response);
+    setMode(mode);
     pages = Array.isArray(response.boxes) && response.boxes.length ? response.boxes.flatMap(paginate) : paginate(response.text);
     pageIndex = 0;
     startPage();
-    refreshFriendship();
   }
 
   function setPending(value) {
     pending = value;
     root.classList.toggle('lumo-thinking', value);
     root.setAttribute('aria-busy', String(value));
-    input.disabled = value;
     form.querySelector('button').disabled = value;
-    for (const node of actions.querySelectorAll('button')) node.disabled = value;
+    // The draft remains editable while thinking; Android's keyboard stays open.
+    phase = value ? 'pending' : phase;
+    root.dataset.phase = phase;
     if (value) {
       stopTyping();
       text.textContent = '...';
       next.hidden = true;
-      root.querySelector('.lumo-page').textContent = '';
+      next.parentNode.hidden = true;
       announce('Lumo está pensando.');
       react({ emotion: 'CURIOUS', animation: 'think' });
       drawPortrait('CURIOUS');
@@ -358,34 +373,44 @@
 
   async function submit(event) {
     event?.preventDefault();
-    if (!opened || pending) return;
-    const message = input.value.trim();
-    if (!message) { input.focus({ preventScroll: true }); return; }
+    return sendMessage(input.value);
+  }
+
+  async function sendMessage(value) {
+    if (!opened || pending) return null;
+    const message = String(value || '').trim().slice(0, 600);
+    if (!message) { input.focus({ preventScroll: true }); return null; }
+    const settings = state().settings || {};
+    const allowAI = settings.allowAI === true && settings.aiConsent === true;
     stopTyping();
     input.value = '';
+    composerStarted = true;
+    setMode('conversation');
     addHistory('user', message);
     play('confirm');
-    const result = await runAction(signal => mind()?.chat ? mind().chat(message, context(), { signal }) : { text: 'Mi conexión anda haciendo parkour. Igual puedo acompañarte por la casa, Mira.', emotion: 'CONFUSED', animation: 'confused', source: 'local' });
+    const result = await runAction(signal => mind()?.chat ? mind().chat(message, context(), { signal, allowAI }) : { text: 'Mi conexión anda haciendo parkour. Igual puedo acompañarte por la casa, Mira.', emotion: 'CONFUSED', animation: 'confused', source: 'local' });
     if (result) addHistory('assistant', result.text);
     // Focus belongs to the text field after a reply, without opening a keyboard
     // unexpectedly after a player has switched to another menu.
-    if (opened && mode === 'talk' && !pending) input.focus({ preventScroll: true });
+    return result;
   }
 
   async function pet() {
+    if (pending) return;
     play('confirm');
+    setMode('conversation');
     await runAction(() => mind()?.act ? mind().act('pet', {}, context()) : { text: 'Bueno. Una caricia más. Por motivos científicos.', emotion: 'HAPPY', animation: 'pet', source: 'local' });
   }
 
   async function give(id) {
     if (pending || !giftList().some(item => item.id === id)) return;
+    setMode('conversation');
     await runAction(async () => {
       const accepted = await adapter.giveGift(id);
       if (!accepted) return { text: 'Ese objeto se nos escapó. Tremendo inventario ninja.', emotion: 'CONFUSED', animation: 'confused', source: 'local' };
       const kind = id === 'cookie' ? 'feed' : 'gift';
       return mind()?.act ? mind().act(kind, { item: id, id }, context()) : { text: '¿Para mí? Bueno, ya perdiste el derecho a decir que no eres amable.', emotion: 'HAPPY', animation: kind === 'feed' ? 'eat' : 'celebrate', source: 'local' };
     });
-    if (opened) setMode('menu');
   }
 
   function startGame(id) {
@@ -397,6 +422,27 @@
 
   function configure(settings) {
     try { return mind()?.configure?.(settings) ?? mind()?.config?.(settings); } catch { return false; }
+  }
+
+  function cancelPending() {
+    if (!pending) return;
+    epoch += 1;
+    request?.abort(); request = null;
+    setPending(false);
+    phase = 'reply'; composerStarted = true;
+    root.dataset.phase = phase;
+  }
+
+  function clearVisibleConversation() {
+    cancelPending(); stopTyping();
+    if (finishSpeech) { const done = finishSpeech; finishSpeech = null; done(false); }
+    response = normalize('Aquí estoy, Mira.');
+    text.textContent = response.text;
+    pages = []; next.hidden = true;
+    phase = 'reply'; composerStarted = true;
+    root.dataset.phase = phase;
+    input.value = '';
+    setSource('local');
   }
 
   function renderSettings() {
@@ -420,15 +466,23 @@
     });
     frequencyLabel.append(frequencySelect); tools.append(frequencyLabel);
 
-    const aiLabel = element('label', 'lumo-setting', 'Usar IA conectada');
+    const aiLabel = element('label', 'lumo-setting', 'Conversaciones externas');
     const aiToggle = element('input'); aiToggle.type = 'checkbox'; aiToggle.checked = Boolean(settings.allowAI);
     aiToggle.addEventListener('change', () => { configure({ allowAI: aiToggle.checked }); renderSettings(); });
     aiLabel.append(aiToggle); tools.append(aiLabel);
-    const endpointLabel = element('label', 'lumo-setting lumo-setting-stack', 'Ruta de conversación');
-    const endpoint = element('input'); endpoint.type = 'text'; endpoint.value = settings.endpoint || '/api/chat'; endpoint.readOnly = true;
-    endpoint.setAttribute('aria-label', 'Ruta del servidor de conversación, configurada fuera del juego');
-    endpointLabel.append(endpoint); tools.append(endpointLabel);
-    tools.append(element('p', 'lumo-note', 'La conexión se configura en el servidor. Este juego no pide ni guarda claves de API. Si falla, aparece “Diálogo local”.'));
+    tools.append(element('p', 'lumo-note', settings.aiConsent === true ? 'Permiso para el proveedor externo concedido. La conexión se configura fuera del juego; aquí no se piden claves.' : 'Sin permiso se usan diálogos locales. Si autorizas la IA, tus mensajes, contexto de HOME y recuerdos pertinentes se procesan mediante Gemini, un proveedor externo con sus propias condiciones de datos. Aquí no se piden claves.'));
+    if (settings.aiConsent !== true) tools.append(button('AUTORIZAR CONVERSACIONES EXTERNAS', () => {
+      configure({ allowAI: true, aiConsent: true });
+      renderSettings();
+      announce('Preferencia de conversación actualizada.');
+    }));
+    if (settings.aiConsent === true) tools.append(button('REVOCAR PERMISO', async () => {
+      cancelPending();
+      configure({ allowAI: false, aiConsent: false });
+      try { await mind()?.revokeAIConsent?.(); } catch { /* Local revocation already prevents sending. */ }
+      if (opened && mode === 'settings') renderSettings();
+      announce('Permiso de IA revocado. Puedes seguir con diálogos locales.');
+    }));
     const privacy = element('label', 'lumo-setting', 'Guardar recuerdos entre sesiones');
     const memoryToggle = element('input'); memoryToggle.type = 'checkbox'; memoryToggle.checked = settings.persistMemory !== false;
     memoryToggle.addEventListener('change', () => {
@@ -437,14 +491,29 @@
       play('toggle');
     });
     privacy.append(memoryToggle); tools.append(privacy);
-    tools.append(button('BORRAR HISTORIAL DEL CHAT', () => {
-      mind()?.resetHistory?.(); recent = []; renderHistory();
+    tools.append(button('BORRAR MENSAJES RECIENTES', async () => {
+      clearVisibleConversation();
+      try { await mind()?.resetHistory?.(); } catch { /* The UI's session history is cleared below. */ }
+      recent = [];
       root.dispatchEvent(new CustomEvent('lumo:history-cleared', { bubbles: true }));
-      announce('Historial del chat borrado. Las aventuras y los regalos se conservan.');
-      root.querySelector('.lumo-settings-notice').textContent = 'Historial borrado. Los regalos y las aventuras se conservan.';
+      announce('Mensajes recientes borrados. Los regalos y la partida se conservan.');
+      const notice = root.querySelector('.lumo-settings-notice');
+      if (notice) notice.textContent = 'Mensajes recientes borrados. Los regalos y la partida se conservan.';
       play('confirm');
     }));
-    tools.append(element('p', 'lumo-note lumo-settings-notice', 'Se conserva solo el historial reciente y recuerdos seleccionados.'));
+    const clearPersonal = button('BORRAR RECUERDOS PERSONALES', async () => {
+      cancelPending();
+      try {
+        await mind().clearPersonalMemories();
+        root.dispatchEvent(new CustomEvent('lumo:personal-memories-cleared', { bubbles: true }));
+        const notice = root.querySelector('.lumo-settings-notice');
+        if (notice) notice.textContent = 'Recuerdos personales borrados. Los regalos y las aventuras se conservan.';
+        announce('Recuerdos personales borrados. Los regalos y las aventuras se conservan.');
+      } catch { announce('No se pudieron borrar los recuerdos personales.'); }
+    });
+    clearPersonal.disabled = typeof mind()?.clearPersonalMemories !== 'function';
+    tools.append(clearPersonal);
+    tools.append(element('p', 'lumo-note lumo-settings-notice', 'Se conserva un historial reciente limitado. Borrar mensajes o recuerdos personales no reinicia tu partida.'));
     if (state().storageAvailable === false) tools.append(element('p', 'lumo-note', 'Este navegador no permite guardar recuerdos entre sesiones.'));
   }
 
@@ -458,12 +527,15 @@
       const focusable = [...panel.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), summary, textarea:not(:disabled)')]
         .filter(node => node.getClientRects().length && !node.closest('[hidden]'));
       const first = focusable[0], last = focusable[focusable.length - 1];
-      if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
+      if (!focusable.length) { event.preventDefault(); panel.focus({ preventScroll: true }); }
+      else if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
     } else if (editing && target === input && event.code === 'Enter' && !event.shiftKey && !event.isComposing) {
       event.preventDefault();
       if (!event.repeat) submit();
-    } else if (!editing && (event.code === 'KeyZ' || ['Enter', 'Space'].includes(event.code) && target === next)) {
+    } else if (target?.classList?.contains('lumo-send') && ['Enter', 'Space'].includes(event.code)) {
+      event.preventDefault(); if (!event.repeat) submit();
+    } else if (mode === 'conversation' && !editing && ['KeyZ', 'KeyE', 'Enter', 'Space'].includes(event.code)) {
       event.preventDefault(); if (!event.repeat) advance();
     } else if (!editing && event.code === 'KeyX') { event.preventDefault(); close(); }
     // Stop all keyboard input reaching movement and house dialogue handlers;
@@ -476,64 +548,77 @@
     if (mounted) { loadPortraitManifest(); return api; }
     mounted = true;
     root = element('div', 'lumo-overlay'); root.id = 'lumo-ui'; root.hidden = true;
-    root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-labelledby', 'lumo-title');
+    root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Conversación con Lumo');
     panel = element('section', 'lumo-panel');
-    const header = element('header', 'lumo-header');
-    const heading = element('h2', '', 'LUMO'); heading.id = 'lumo-title';
-    const friendship = element('span', 'lumo-friendship', 'Compañeros');
-    const settingsButton = button('OPCIONES', () => { setMode('settings'); tools.querySelector('select')?.focus(); }, 'lumo-small-button');
-    const closeButton = button('×', close, 'lumo-close'); closeButton.setAttribute('aria-label', 'Cerrar diálogo con Lumo');
-    header.append(heading, friendship, settingsButton, closeButton);
-    const line = element('div', 'lumo-line');
+    panel.tabIndex = -1;
+    line = element('div', 'lumo-line');
     portrait = element('canvas', 'lumo-portrait'); portrait.width = 112; portrait.height = 112; portrait.setAttribute('aria-hidden', 'true');
     const speech = element('div', 'lumo-speech');
     text = element('p', 'lumo-text'); text.setAttribute('aria-hidden', 'true');
     const footer = element('div', 'lumo-speech-footer');
-    const page = element('span', 'lumo-page'); page.setAttribute('aria-hidden', 'true');
-    next = button('CONTINUAR ▾', advance, 'lumo-next'); footer.append(page, next); speech.append(text, footer);
+    next = element('span', 'lumo-next', '▾'); next.setAttribute('aria-hidden', 'true'); footer.append(next); speech.append(text, footer);
     line.append(portrait, speech);
-    status = element('p', 'lumo-source', 'Diálogo local');
-    const details = element('details', 'lumo-history'); details.hidden = true;
-    details.append(element('summary', '', 'MENSAJES RECIENTES'));
-    history = element('div', 'lumo-history-list'); history.setAttribute('role', 'log'); history.setAttribute('aria-label', 'Mensajes recientes de Mira y Lumo'); details.append(history);
+    line.addEventListener('click', advance);
     form = element('form', 'lumo-chat-form'); form.hidden = true;
     const label = element('label', 'sr-only', 'Mensaje de Mira para Lumo'); label.htmlFor = 'lumo-message';
     input = element('textarea', 'lumo-input'); input.id = 'lumo-message'; input.rows = 1; input.maxLength = 600; input.placeholder = 'Habla con Lumo...'; input.autocomplete = 'off'; input.spellcheck = true;
     input.setAttribute('enterkeyhint', 'send'); input.setAttribute('aria-describedby', 'lumo-chat-help');
-    const send = element('button', 'lumo-button', 'ENVIAR'); send.type = 'submit';
-    send.addEventListener('pointerenter', () => play('move'));
+    const send = element('button', 'sr-only lumo-send', 'Enviar mensaje'); send.type = 'submit';
     form.append(label, input, send); form.addEventListener('submit', event => { event.preventDefault(); submit(); });
-    const help = element('p', 'lumo-chat-help', 'Enter · enviar    Shift + Enter · nueva línea    Esc · cerrar'); help.id = 'lumo-chat-help';
+    const help = element('p', 'sr-only lumo-chat-help', 'Enter envía. Shift más Enter crea una línea. Escape cierra. Toca el texto para avanzar.'); help.id = 'lumo-chat-help';
     actions = element('nav', 'lumo-actions'); actions.setAttribute('aria-label', 'Interacciones con Lumo');
     tools = element('div', 'lumo-settings'); tools.hidden = true;
     const announcer = element('span', 'sr-only lumo-announcer'); announcer.setAttribute('role', 'status'); announcer.setAttribute('aria-live', 'polite');
-    panel.append(header, line, status, details, form, help, tools, actions, announcer); root.append(panel); document.body.append(root);
+    panel.append(line, form, help, tools, actions, announcer); root.append(panel); document.body.append(root);
     global.addEventListener('keydown', keydown, true);
     global.addEventListener('keyup', event => { if (opened) event.stopImmediatePropagation(); }, true);
+    global.addEventListener('pointerdown', event => {
+      if (opened && mode === 'conversation' && !panel.contains(event.target)) {
+        event.preventDefault(); event.stopImmediatePropagation(); close();
+      }
+    }, true);
     global.addEventListener('resize', syncViewport);
     global.visualViewport?.addEventListener('resize', syncViewport);
     global.visualViewport?.addEventListener('scroll', syncViewport);
     input.addEventListener('focus', syncViewport);
+    if (global.ResizeObserver) new global.ResizeObserver(syncViewport).observe(typeof adapter.stage === 'object' ? adapter.stage : document.getElementById('game-stage') || document.body);
     root.addEventListener('pointerdown', event => { if (event.target === root) event.preventDefault(); });
     loadPortraitManifest(); syncViewport();
     return api;
   }
 
-  function open() {
+  function greeting() {
+    const current = context();
+    try {
+      const supplied = adapter.greet?.(current) || adapter.getGreeting?.(current) || mind()?.greet?.(current);
+      if (supplied && typeof supplied.then !== 'function') return supplied;
+    } catch { /* Greeting always works locally, without sending a message. */ }
+    const room = String(current.roomId || current.room || '');
+    const message = /kitchen|cocina/i.test(room) ? 'Mira, si algo huele rico, estoy investigando. Con muchísimo rigor.'
+      : /bedroom|dormitorio/i.test(room) ? 'Hola, Mira. Aquí hasta el silencio tiene cara de sueño.'
+      : /lumo|hideout/i.test(room) ? 'Mira, bienvenida. Puedes quedarte un ratito conmigo.'
+      : 'Hola, Mira. ¿Qué te gustaría hacer por aquí?';
+    return { text: message, emotion: state().emotion || 'NORMAL', source: 'local' };
+  }
+
+  function open(options = {}) {
     if (!mounted) mount();
     if (opened) return api;
     epoch += 1;
     opened = true;
     previousFocus = document.activeElement;
     root.hidden = false;
-    root.dataset.mode = 'menu';
+    mode = 'conversation'; phase = 'speaking'; composerStarted = false; externalPanel = false;
+    pages = []; text.textContent = ''; next.hidden = true; next.parentNode.hidden = true;
+    input.value = '';
     toastNode && (toastNode.hidden = true);
     adapter.pause?.(true);
     adoptHistory();
-    setMode('menu');
+    setMode('conversation');
     syncViewport();
-    showResponse({ text: '¿Qué tramamos, Mira?', emotion: state().emotion || 'NORMAL', source: 'local' });
-    actions.querySelector('button')?.focus({ preventScroll: true });
+    if (options.greeting !== false) showResponse(options.greeting || greeting(), options);
+    if (phase === 'reply') input.focus({ preventScroll: true });
+    else panel.focus({ preventScroll: true });
     play('confirm');
     return api;
   }
@@ -560,27 +645,62 @@
 
   function speak(value, options = {}) {
     if (options.bubble || options.modal === false) { toast(value, options); return Promise.resolve(true); }
-    if (!opened) open();
-    if (options.mode) setMode(options.mode);
+    if (!opened) open({ greeting: false });
+    if (pending) { epoch += 1; request?.abort(); request = null; setPending(false); }
+    setMode('conversation');
     showResponse(value, options);
-    if (options.awaitClose === false) return Promise.resolve(true);
-    next.focus({ preventScroll: true });
+    if (options.awaitClose === false || phase === 'reply') return Promise.resolve(true);
+    panel.focus({ preventScroll: true });
     return new Promise(resolve => { finishSpeech = resolve; });
+  }
+
+  function openSettings() {
+    const wasOpen = opened;
+    if (!wasOpen) open({ greeting: false });
+    externalPanel = !wasOpen || externalPanel;
+    setMode('settings');
+    tools.querySelector('select')?.focus({ preventScroll: true });
+    return api;
+  }
+
+  function openActions() {
+    const wasOpen = opened;
+    if (!wasOpen) open({ greeting: false });
+    externalPanel = !wasOpen || externalPanel;
+    setMode('menu');
+    actions.querySelector('button')?.focus({ preventScroll: true });
+    return api;
   }
 
   function toast(value, options = {}) {
     if (!mounted) mount();
-    if (opened || (adapter.getCommentFrequency?.() || state().settings?.commentFrequency || frequency) === 'off') return false;
+    if (opened || !options.force && (adapter.getCommentFrequency?.() || state().settings?.commentFrequency || frequency) === 'off') return false;
     clearTimeout(toastTimer);
     if (!toastNode) { toastNode = element('div', 'lumo-toast'); toastNode.setAttribute('role', 'status'); toastNode.setAttribute('aria-live', 'polite'); document.body.append(toastNode); }
     const item = normalize(value);
     toastNode.replaceChildren(element('span', 'lumo-toast-name', 'LUMO'), element('span', '', item.text));
     toastNode.hidden = false;
+    const anchor = options.anchor || adapter.getBubbleAnchor?.();
+    toastNode.classList.toggle('lumo-bubble', Boolean(anchor));
+    if (anchor) {
+      const viewport = global.visualViewport;
+      const width = Math.min(300, (viewport?.width || global.innerWidth) - 24);
+      const x = Math.max((viewport?.offsetLeft || 0) + 12, Math.min(anchor.x - width / 2, (viewport?.offsetLeft || 0) + (viewport?.width || global.innerWidth) - width - 12));
+      toastNode.style.left = `${Math.round(x)}px`;
+      toastNode.style.top = `${Math.round(Math.max((viewport?.offsetTop || 0) + 12, anchor.y - 90))}px`;
+      toastNode.style.width = `${width}px`;
+    } else { toastNode.style.left = ''; toastNode.style.top = ''; toastNode.style.width = ''; }
     react(item);
     toastTimer = setTimeout(() => { toastNode.hidden = true; }, options.duration || Math.min(8500, Math.max(3800, item.text.length * 55)));
     return true;
   }
 
-  const api = Object.freeze({ mount, open, close, speak, toast, advance, refresh: () => { if (opened) setMode(mode); }, get isOpen() { return opened; }, get isPending() { return pending; } });
+  function bubble(value, options = {}) {
+    // Explicit world reactions remain visible when ambient comments are off.
+    const duration = options.duration && options.duration <= 30 ? options.duration * 1000 : options.duration;
+    return toast(value, { ...options, duration, force: true });
+  }
+
+  const api = Object.freeze({ mount, open, close, speak, toast, bubble, advance, sendMessage, openSettings, openActions, refresh: () => { if (opened) setMode(mode); }, get isOpen() { return opened; }, get isPending() { return pending; }, get aiConnected() { return source === 'ai'; } });
   global.LumoUI = api;
 })(window);

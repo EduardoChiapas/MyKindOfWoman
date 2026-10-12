@@ -55,6 +55,7 @@
       this._gameActive = false;
       this._open = false;
       this._windows = new Map();
+      this._apps = new Map(); this._appCleanup = new Map();
       this._z = 12;
       this._timers = [];
       this._volume = this._readNumber('pc-room-volume', 1, 0, 1);
@@ -78,6 +79,7 @@
     }
 
     disconnectedCallback() {
+      this._disposeCustomApps();
       this._closeHtmlApp(false);
       document.removeEventListener('keydown', this._onKey, true);
       window.removeEventListener('fnf:preload', this._onPreload);
@@ -110,6 +112,7 @@
 
     close() {
       if (this._gameActive) return;
+      this._disposeCustomApps();
       this._closeHtmlApp(false);
       this._open = false;
       this.hidden = true;
@@ -178,7 +181,7 @@
             <div class="desktop"><div class="wallpaper-shape"></div><div class="desktop-word"><strong>STAY DETERMINED.</strong><span>UN MUNDO DENTRO DE OTRO</span></div>
               <div class="icons">${icons}</div><div class="song-progress"><i class="dot"></i><span class="progress-label">Biblioteca de canciones</span></div>
               <div class="fnf-download" role="status" style="position:absolute;left:12px;bottom:48px;color:#c1d6ef;font-size:clamp(7px,1vw,11px);pointer-events:none" hidden></div><div class="window-layer"></div>
-              <div class="quick-panel" hidden><h3>Hola, Frisk.</h3><p>Tu escritorio está listo. Pulsa una app para abrirla.</p><div class="quick-apps">${['fnf','determination','files','notes','calculator','settings'].map(id => `<button data-app="${id}"><span class="small-icon">${ICONS[id]}</span>${id === 'fnf' ? 'Jugar FNF' : appNames[id]}</button>`).join('')}</div><div class="quick-power"><button data-power>${ICONS.power} Apagar · volver a la habitación</button></div></div>
+              <div class="quick-panel" hidden><h3>Hola, Mira.</h3><p>Tu escritorio está listo. Pulsa una app para abrirla.</p><div class="quick-apps">${['fnf','determination','files','notes','calculator','settings'].map(id => `<button data-app="${id}"><span class="small-icon">${ICONS[id]}</span>${id === 'fnf' ? 'Jugar FNF' : appNames[id]}</button>`).join('')}</div><div class="quick-power"><button data-power>${ICONS.power} Apagar · volver a la habitación</button></div></div>
               <div class="taskbar"><div class="system-name"><b></b>DETERMINATION OS</div><button class="task-icon start" title="Inicio" aria-label="Abrir Inicio" aria-expanded="false">${ICONS.windows}</button>${taskIcons}<div class="tray"><span class="tray-volume" title="Volumen">♫</span><div class="tray-time"><div class="clock"></div><div class="date"></div></div></div></div>
               <div class="loading-banner" hidden><i class="loading-spinner"></i><span class="loading-label">Abriendo FNF original…</span></div>
             </div>
@@ -251,6 +254,7 @@
     }
 
     _launchGame() {
+      this._disposeCustomApps();
       if (this._gameActive || !this.shadowRoot.querySelector('.loading-banner').hidden) return;
       this._closeStart();
       this.setNowPlaying('Friday Night Funkin’');
@@ -279,7 +283,37 @@
       this._toastTimer = setTimeout(() => toast.remove(), 4500);
     }
 
+    registerApp(id,definition) {
+      if(!/^[a-z][a-z-]{1,30}$/.test(id)||!definition||typeof definition.fill!=='function'||this._apps.has(id))return false;
+      this._apps.set(id,definition);
+      const icon=ICONS[definition.icon]||ICONS.notes;
+      for(const [selector,klass] of [['.icons','app-icon'],['.quick-apps','']]) {
+        const b=document.createElement('button');b.type='button';b.className=klass;b.dataset.app=id;
+        b.setAttribute('aria-label','Abrir '+definition.title);b.title=definition.title;
+        const art=document.createElement('span');art.className=klass?'icon-art':'small-icon';art.innerHTML=icon;
+        const label=document.createElement('span');label.textContent=definition.title;b.append(art,label);this.shadowRoot.querySelector(selector).append(b);
+      }
+      return true;
+    }
+    _disposeCustomApp(id) {
+      try{this._appCleanup.get(id)?.();}catch{}
+      this._appCleanup.delete(id);this._windows.get(id)?.remove();this._windows.delete(id);
+    }
+    _disposeCustomApps(){for(const id of this._apps.keys())this._disposeCustomApp(id);}
+    _openCustomApp(id){
+      const def=this._apps.get(id);if(!def)return false;
+      if(this._windows.has(id)){const w=this._windows.get(id);w.style.zIndex=++this._z;w.querySelector('input,button')?.focus({preventScroll:true});return true;}
+      const win=document.createElement('section');win.className='app-window home-pc-window';win.setAttribute('role','dialog');win.setAttribute('aria-label',def.title);win.style.zIndex=++this._z;
+      const header=document.createElement('header');header.className='window-header';
+      const title=document.createElement('span');title.className='window-title';title.textContent=def.title;
+      const close=document.createElement('button');close.className='window-close';close.textContent='×';close.setAttribute('aria-label','Cerrar '+def.title);
+      header.append(title,close);const body=document.createElement('div');body.className='window-body home-pc-body';win.append(header,body);
+      close.addEventListener('click',()=>this._disposeCustomApp(id));win.addEventListener('pointerdown',()=>{win.style.zIndex=++this._z;});this._enableDrag(win);
+      this.shadowRoot.querySelector('.window-layer').append(win);this._windows.set(id,win);
+      this._appCleanup.set(id,def.fill(body,{desktop:this,window:win})||(()=>{}));win.querySelector('input,button')?.focus({preventScroll:true});return true;
+    }
     _openApp(id) {
+      if(this._openCustomApp(id))return;
       if (id === 'determination') { this._openHtmlApp(); return; }
       const titles = {notes:'Notas · Guardado automático',calculator:'Calculadora',files:'Biblioteca de canciones',settings:'Configuración'};
       if (!(id in titles)) return;
@@ -316,6 +350,7 @@
     }
 
     _openHtmlApp() {
+      this._disposeCustomApps();
       if (this._htmlFrame) { this._htmlFrame.focus(); return; }
       const overlay=this.shadowRoot.querySelector('.html-app');
       const stage=overlay.querySelector('.html-app-stage');
@@ -417,7 +452,7 @@
     }
 
     _fillSettings(body) {
-      body.innerHTML = `<div class="settings-body"><div class="setting-row"><label class="setting-title" for="pc-volume">Volumen del juego <output>${Math.round(this._volume*100)}%</output></label><input id="pc-volume" aria-label="Volumen del juego" type="range" min="0" max="100" value="${Math.round(this._volume*100)}"></div><div class="setting-row"><label class="setting-title" for="pc-brightness">Brillo del monitor <output>${Math.round(this._brightness*100)}%</output></label><input id="pc-brightness" aria-label="Brillo del monitor" type="range" min="50" max="130" value="${Math.round(this._brightness*100)}"></div><div class="settings-about"><strong>DETERMINATION OS</strong><br>Tu escritorio personal · RGB activado<br><br>FNF abre el motor original con sus menús. Al ganar vuelves a este escritorio.<br>Las notas y los ajustes se guardan en este navegador.</div></div>`;
+      body.innerHTML = `<div class="settings-body"><div class="setting-row"><label class="setting-title" for="pc-volume">Volumen del juego <output>${Math.round(this._volume*100)}%</output></label><input id="pc-volume" aria-label="Volumen del juego" type="range" min="0" max="100" value="${Math.round(this._volume*100)}"></div><div class="setting-row"><label class="setting-title" for="pc-brightness">Brillo del monitor <output>${Math.round(this._brightness*100)}%</output></label><input id="pc-brightness" aria-label="Brillo del monitor" type="range" min="50" max="130" value="${Math.round(this._brightness*100)}"></div><div class="settings-about"><strong>DETERMINATION OS</strong><br>Tu escritorio personal · RGB activado<br><br>FNF abre el motor original con sus menús. La semana conserva su menú original al terminar.<br>Las notas y los ajustes se guardan en este navegador.</div></div>`;
       const volume = body.querySelector('#pc-volume');
       const brightness = body.querySelector('#pc-brightness');
       volume.addEventListener('input', () => {

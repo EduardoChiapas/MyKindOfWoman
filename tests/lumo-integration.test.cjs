@@ -8,7 +8,7 @@ function fixture(saved={}){
   const env={localStorage:storage,location:{href:'http://localhost/'},fetch:undefined};const mind=createMind(env);
   const room={label:'Room',walkable:[{x:0,y:0,width:640,height:480}],solids:[],exits:[],interactives:[]};
   const context={console,localStorage:storage,LumoMind:mind,LumoUI:{mount(a){this.adapter=a;},open(){},speak(){},toast(){}},LumoActivities:{mount(a){this.adapter=a;},active:false,start(){}},
-    LumoActor:class{constructor({adapter}){this.adapter=adapter;this.x=50;this.y=50;}react(){}setFollowing(){}onRoomChange(){}perform(){}setEmotion(){}update(){}draw(){}getState(){return {x:this.x,y:this.y};}getInteraction(){return null;}beginHide(p){this.x=p.x;this.y=p.y;return true;}endHide(){}},
+    LumoActor:class{constructor({adapter}){this.adapter=adapter;this.x=160;this.y=206;}react(){}setFollowing(){}onRoomChange(){}perform(){}setEmotion(){}update(){}draw(){}getState(){return {x:this.x,y:this.y};}getInteraction(){return null;}beginHide(p){this.x=p.x;this.y=p.y;return true;}endHide(){}call(){return {accepted:true,nearby:true};}},
     UndertaleAudio:{hum(){}},HouseExperience:{play(){},reducedMotion:false},currentRoom:'entrance',gameState:'PLAYING',ROOM_SCALE:2,
     player:{isMoving:false},keys:{},joystickData:{active:false},camera:{x:0,y:0},roomImages:{friskRoom:{complete:false}},
     rooms:Object.fromEntries(['entrance','hallway','kitchen','friskRoom','torielRoom','basementHallway'].map(k=>[k,{...room,interactives:[{id:'base',text:'base'}]}])),

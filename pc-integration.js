@@ -57,6 +57,9 @@
     HouseExperience.setExternalScreen(true);
     syncSongs();
     desktop.open();
+    window.HomeProgress?.record('pc_found');
+    const notice=window.HomeStory?.onPCopen();if(notice)desktop.notify(notice);
+    window.FnfPreload?.enable();
     game.setVolume(desktop.volume);
   }
 

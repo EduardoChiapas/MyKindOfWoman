@@ -2,32 +2,42 @@
   "date": "2026-10-11",
   "chapter": "HOME",
   "automated_tests": {
-    "passed": 36,
-    "failed": 0
+    "passed": 76,
+    "failed": 0,
+    "portable_suites": 9
   },
   "stress_tests": {
     "local_adversarial_chat_turns": 1800,
     "hostile_contexts": 2000,
-    "preference_recall_after_turns": 1000
+    "preference_recall_after_turns": 1000,
+    "server_session_turns": 1200,
+    "simultaneous_clients": 3
   },
   "browser_checks": [
-    "home_start",
-    "original_sprites_and_bw_portraits",
-    "meeting_and_pet",
-    "free_text_and_local_label",
-    "typing_does_not_move_player_or_toggle_help",
-    "memory_game_completed_and_recorded",
-    "cookie_pickup_consumption",
-    "hideout_unlock_and_drawing_scene",
-    "closed_closet_evasive_dialogue",
-    "save_reload",
-    "responsive_390x844",
-    "composer_visible_390x430",
-    "pc_desktop_unchanged"
+    "clean_npc_no_header_history_buttons_provider_status_or_consent_popup",
+    "typewriter_then_composer",
+    "local_reply_enter_and_escape",
+    "original_bw_portrait",
+    "piano_four_notes_and_sheet_album",
+    "cooking_extra_cinnamon",
+    "continue_after_reload",
+    "pc_existing_apps_and_five_new_apps",
+    "ryon_local_reply_and_story_event",
+    "album_locked_slots_and_native_sheet",
+    "fnf_waiting_zero_bytes_before_pc_then_background_cache_ready",
+    "seven_finale_pages_confirmed_then_HOME_complete_in_disposable_fixture",
+    "continue_exploring_HOME_after_finale",
+    "responsive_390x844_no_horizontal_overflow"
   ],
   "tested_live_model": false,
   "android_physical_device_tested": false,
   "published": false,
-  "notes": "Provider tests use mocks. Requires private server key/model for real AI. Browser responsive checks do not replace Android device validation. Generative consistency is not guaranteed.",
-  "original_fnf_files_unchanged": 1649
+  "story_test_scope": "Ordered anomaly prerequisites/timing/reload verified by core and real-engine integration tests. Browser finale used disposable QA flags, not a full natural-duration playthrough.",
+  "art_limitations": [
+    "Code-native piano remains provisional; supplied original bitmaps unchanged."
+  ],
+  "optional_visual_runner": "Old external Playwright launcher cannot spawn Edge in this sandbox (EPERM); browser QA was performed through CUA.",
+  "notes": "Gemini wire-format/provider tests use mocks. Real credentials/model/HTTPS hosting and physical Android remain pending. No generative model guarantees perfect consistency.",
+  "original_fnf_files_unchanged": 1649,
+  "proof": "lumo-dialogo-limpio.png"
 }

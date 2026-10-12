@@ -3,11 +3,12 @@
 
   const EMOTION_ANIMATION = Object.freeze({ NORMAL: 'idle', HAPPY: 'float', PLAYFUL: 'mock',
     ANNOYED: 'angry', SLEEPY: 'sleep', CURIOUS: 'observe', SCARED: 'scared',
-    CONFUSED: 'confused', SAD: 'sad', SUPPORTIVE: 'support' });
+    CONFUSED: 'confused', SAD: 'sad', SUPPORTIVE: 'support', MOCKING: 'mock', ANGRY: 'angry', SHY: 'shy' });
   const ANIMATION_ALIASES = Object.freeze({ floating: 'float', following: 'follow',
     laughing: 'laugh', mocking: 'mock', sleeping: 'sleep', surprised: 'surprise',
     scared: 'scared', celebrating: 'celebrate', petting: 'pet', eating: 'eat',
-    hiding: 'hide', thinking: 'think', supportive: 'support', happy: 'celebrate' });
+    hiding: 'hide', thinking: 'think', supportive: 'support', happy: 'celebrate',
+    call: 'surprise', turn: 'observe', hurry: 'follow', brake: 'float', tired: 'angry' });
   const EMOTION_ALIASES = Object.freeze({ neutral: 'NORMAL', normal: 'NORMAL', happy: 'HAPPY',
     playful: 'PLAYFUL', mocking: 'PLAYFUL', annoyed: 'ANNOYED', angry: 'ANNOYED',
     sleepy: 'SLEEPY', curious: 'CURIOUS', scared: 'SCARED', confused: 'CONFUSED',
@@ -15,6 +16,9 @@
   const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const overlaps = (a, b) => a && b && a.x < b.x + b.width && a.x + a.width > b.x &&
     a.y < b.y + b.height && a.y + a.height > b.y;
+  const BEHAVIOR_ANIMATION = Object.freeze({ photo: 'observe', pc: 'observe', window: 'observe',
+    perch: 'idle', hum: 'celebrate', sleep: 'sleep', cower: 'hide', freeze: 'scared', observe: 'observe' });
+  const clamp = (number, min, max) => Math.max(min, Math.min(max, number));
 
   // The heap keeps path planning bounded even in the long HOME corridor.
   class MinHeap {
@@ -66,7 +70,12 @@
       this.planElapsed = 1; this.lastGoal = null; this.stuckElapsed = 0;
       this.fade = 1; this.fadePhase = 'in'; this.pendingPlacement = null;
       this.hiding = false; this.hideTarget = null;
-      this.diagnostics = { plans: 0, recoveries: 0 };
+      this.placed = false; this.velocity = { x:0, y:0 };
+      this.task = null; this.lastCall = -100; this.taskCounter = 0;
+      // Phase 7 is opt-in. Phase 4 can ship recall without enabling the agenda.
+      this.autonomyEnabled = false; this.interests = []; this.behaviorCursor = 0;
+      this.behaviorElapsed = 0; this.behaviorWait = 18; this.behaviorCooldowns = new Map();
+      this.diagnostics = { plans: 0, recoveries: 0, failedPlans: 0 };
       Object.values(this.assets.sources || {}).forEach(src => this.loadImage(src));
       this.onRoomChange(adapter.getContext());
     }
@@ -103,25 +112,36 @@
       return true;
     }
 
-    safeNear(point, radius = 96, anchor = null) {
-      if (this.canStand(point.x, point.y) && (!anchor || this.lineClear(anchor, point))) return { ...point };
+    awayFromDoor(point) {
+      return !(this.context?.room?.exits || []).some(exit => overlaps(
+        { x:point.x-12, y:point.y-10, width:24, height:20 }, exit));
+    }
+
+    safeNear(point, radius = 96, anchor = null, options = {}) {
+      const player = this.playerPoint(this.context);
+      const valid = candidate => this.canStand(candidate.x, candidate.y) &&
+        (!anchor || this.lineClear(anchor, candidate)) &&
+        (!options.minDistance || distance(candidate, player) >= options.minDistance) &&
+        (!options.avoidDoors || this.awayFromDoor(candidate));
+      if (valid(point)) return { ...point };
       for (let r = 8; r <= radius; r += 8) {
         const count = Math.max(12, Math.ceil(r * Math.PI / 6));
         for (let i = 0; i < count; i++) {
           const candidate = { x: point.x + Math.cos(i * Math.PI * 2 / count) * r,
             y: point.y + Math.sin(i * Math.PI * 2 / count) * r };
-          if (this.canStand(candidate.x, candidate.y) && (!anchor || this.lineClear(anchor, candidate))) return candidate;
+          if (valid(candidate)) return candidate;
         }
       }
       return null;
     }
 
-    companionSpot(context) {
+    companionSpot(context, minDistance = 32) {
       const player = this.playerPoint(context);
       const direction = context.player && context.player.direction || 'down';
       const behind = { down: [34, -36], up: [-34, 36], left: [42, -20], right: [-42, -20] }[direction] || [34, -36];
-      const candidate = this.safeNear({ x: player.x + behind[0], y: player.y + behind[1] }, 80, player);
-      return candidate || this.safeNear(player, 96) || player;
+      const options = { minDistance, avoidDoors:true };
+      const candidate = this.safeNear({ x: player.x + behind[0], y: player.y + behind[1] }, 80, player, options);
+      return candidate || this.safeNear(player, 96, player, options);
     }
 
     onRoomChange(context = this.adapter.getContext()) {
@@ -129,16 +149,103 @@
       this.context = context;
       this.roomId = context.roomId;
       const position = this.companionSpot(context);
-      this.x = position.x; this.y = position.y;
+      this.placed = !!position;
+      if (position) { this.x = position.x; this.y = position.y; }
       this.path = []; this.trail = [this.playerPoint(context)];
       this.lastPlayer = this.playerPoint(context);
       this.lastGoal = null; this.planElapsed = 1; this.stuckElapsed = 0;
       this.hiding = false; this.hideTarget = null; this.pendingPlacement = null;
-      this.fade = context.reducedMotion ? 1 : 0;
+      this.task = null; this.velocity = {x:0,y:0}; this.behaviorElapsed = 0;
+      this.fade = this.placed && context.reducedMotion ? 1 : 0;
       this.fadePhase = 'in'; this.moving = false;
     }
 
     setFollowing(enabled) { this.followingOverride = !!enabled; }
+
+    isPaused() {
+      return !!this.context?.paused || ['INTRO', 'VIDEO', 'PAUSED', 'DIALOG', 'BOOK', 'TRANSITION',
+        'LUMO', 'LUMO_GAME', 'PC'].includes(this.context?.state);
+    }
+
+    emitEvent(event) {
+      if (typeof this.adapter.onActorEvent === 'function') {
+        this.adapter.onActorEvent({ ...event, roomId:this.roomId, x:this.x, y:this.y });
+      }
+    }
+
+    faceToward(point) {
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return false;
+      const dx = point.x-this.x, dy = point.y-this.y;
+      if (Math.hypot(dx,dy) < 1) return true;
+      this.direction = Math.abs(dx)>Math.abs(dy)*1.15 ? (dx<0?'left':'right') : (dy<0?'up':'down');
+      return true;
+    }
+
+    cancelTask(reason = 'cancelled') {
+      if (this.task) this.emitEvent({type:'behavior-end',kind:this.task.kind,id:this.task.id,reason});
+      this.task = null; this.path = []; this.lastGoal = null; this.planElapsed = 0.35;
+      this.velocity = {x:0,y:0}; this.behaviorElapsed = 0;
+    }
+
+    call({hurry=true} = {}) {
+      const context = this.adapter.getContext();
+      if (!context) return {accepted:false,reason:'no-context'};
+      if (context.roomId!==this.roomId) this.onRoomChange(context);
+      this.context=context;
+      if (this.isPaused() || this.hiding) return {accepted:false,reason:this.hiding?'hiding':'busy'};
+      if (this.elapsed-this.lastCall<0.7) return {accepted:false,reason:'cooldown'};
+      const point=this.companionSpot(context,36);
+      if (!point) return {accepted:false,reason:'no-safe-spot'};
+      this.lastCall=this.elapsed; this.cancelTask('called'); this.faceToward(this.playerPoint(context));
+      const nearby=this.placed && distance(this,this.playerPoint(context))<=62;
+      this.task={id:`call-${++this.taskCounter}`,kind:'recall',priority:80,phase:nearby?'settle':'react',
+        remaining:nearby?0.5:0.24,target:point,hurry:!!hurry,animation:nearby?'mock':'surprise'};
+      this.animationElapsed=0;
+      return {accepted:true,nearby,id:this.task.id};
+    }
+
+    goTo(point, {kind='observe', duration=6, lookAt=null, priority=20, id=null} = {}) {
+      if (!point || point.roomId && point.roomId!==this.roomId || !this.placed || this.hiding ||
+          !Number.isFinite(point.x) || !Number.isFinite(point.y) || !this.canStand(point.x,point.y) ||
+          !this.awayFromDoor(point) || !Object.hasOwn(BEHAVIOR_ANIMATION,kind)) return false;
+      if (this.task && this.task.priority>priority) return false;
+      this.cancelTask('replaced');
+      this.task={id:String(id || `behavior-${++this.taskCounter}`).slice(0,64),kind,priority:clamp(priority,0,80),
+        phase:'approach',target:{x:point.x,y:point.y},duration:clamp(Number(duration)||6,0.4,15),
+        lookAt:lookAt && Number.isFinite(lookAt.x) && Number.isFinite(lookAt.y)?{...lookAt}:null,
+        animation:BEHAVIOR_ANIMATION[kind],remaining:0,hurry:false};
+      return true;
+    }
+
+    setInterests(points) {
+      this.interests=(Array.isArray(points)?points:[]).filter(point => point && Object.hasOwn(BEHAVIOR_ANIMATION,point.kind)
+        && Number.isFinite(point.x) && Number.isFinite(point.y)).slice(0,24).map(point=>({...point}));
+    }
+
+    setAutonomy(enabled) {
+      this.autonomyEnabled=!!enabled; this.behaviorElapsed=0;
+      if (!this.autonomyEnabled && this.task?.priority<70) this.cancelTask('autonomy-disabled');
+    }
+
+    scheduleBehavior(dt) {
+      if (!this.autonomyEnabled || this.task || this.hiding || !this.shouldFollow() || this.context.serious ||
+          this.idleElapsed<6 || distance(this,this.playerPoint(this.context))>120) return;
+      this.behaviorElapsed+=dt;
+      if (this.behaviorElapsed<this.behaviorWait) return;
+      this.behaviorElapsed=0;
+      const supplied=typeof this.adapter.getBehaviorPoints==='function'?this.adapter.getBehaviorPoints(this.context):this.interests;
+      const candidates=(Array.isArray(supplied)?supplied:[]).slice(0,24).filter(point =>
+        point && (!point.roomId || point.roomId===this.roomId) && Object.hasOwn(BEHAVIOR_ANIMATION,point.kind) &&
+        Number.isFinite(point.x) && Number.isFinite(point.y) && this.canStand(point.x,point.y) && this.awayFromDoor(point) &&
+        distance(point,this.playerPoint(this.context))<=150 &&
+        this.elapsed-(this.behaviorCooldowns.get(point.id)||-1000)>=90);
+      this.behaviorWait=18+(this.behaviorCursor%4)*7;
+      if (!candidates.length) return;
+      const point=candidates[this.behaviorCursor++%candidates.length];
+      if (this.goTo(point,{kind:point.kind,id:point.id,duration:point.duration,lookAt:point.lookAt,priority:20})) {
+        this.behaviorCooldowns.set(point.id,this.elapsed);
+      }
+    }
 
     shouldFollow() {
       if (this.followingOverride !== null) return this.followingOverride;
@@ -172,6 +279,7 @@
       if (roomId !== this.roomId || !Number.isFinite(x) || !Number.isFinite(y)) return false;
       const target = this.safeNear({ x, y }, 40);
       if (!target) return false;
+      this.cancelTask('hide');
       this.hiding = true; this.hideTarget = target;
       this.path = []; this.lastGoal = null;
       this.setEmotion('PLAYFUL');
@@ -271,7 +379,9 @@
 
     recoverNearPlayer() {
       const candidate = this.companionSpot(this.context);
+      if (!candidate) { this.placed=false; this.fade=0; return; }
       if (!this.canStand(candidate.x, candidate.y)) return;
+      this.placed=true;
       this.pendingPlacement = candidate; this.fadePhase = 'out';
       // A stale save or changed room geometry can invalidate the old point.
       // Hide it immediately; only valid floor points may ever be rendered.
@@ -280,6 +390,7 @@
         this.fade = 0; this.pendingPlacement = null; this.fadePhase = 'in';
       }
       this.stuckElapsed = 0; this.path = []; this.lastGoal = null;
+      this.velocity={x:0,y:0};
       this.diagnostics.recoveries++;
     }
 
@@ -293,7 +404,7 @@
           }
           this.pendingPlacement = null; this.fadePhase = 'in';
         }
-      } else this.fade = Math.min(1, this.fade + dt * speed);
+      } else this.fade = this.placed ? Math.min(1, this.fade + dt * speed) : 0;
     }
 
     update(dt) {
@@ -309,13 +420,96 @@
       }
     }
 
+    moveToGoal(goal, dt, hurry=false) {
+      if (!goal) return false;
+      const gap=distance(this,goal);
+      this.planElapsed+=dt;
+      // A failed route gets the same retry limit as a successful route.
+      if (gap>5 && this.planElapsed>=0.35 && (!this.path.length || !this.lastGoal || distance(goal,this.lastGoal)>16)) {
+        this.path=this.planRoute(goal); this.lastGoal={...goal}; this.planElapsed=0;
+        if (!this.path.length) this.diagnostics.failedPlans++;
+      }
+      while (this.path.length && distance(this.path[0],this)<3) this.path.shift();
+      const target=this.path[0];
+      if (target && gap>4) {
+        const dx=target.x-this.x,dy=target.y-this.y,length=Math.hypot(dx,dy);
+        const moodSpeed=['SAD','SLEEPY'].includes(this.emotion)?0.72:1;
+        const cruise=Math.min(hurry?280:245,130+Math.max(0,distance(this,this.playerPoint(this.context))-56)*1.2)*moodSpeed;
+        const desired=Math.min(cruise,length*8,Math.sqrt(800*length));
+        const blend=1-Math.exp(-dt/0.10);
+        this.velocity.x+=(dx/Math.max(0.001,length)*desired-this.velocity.x)*blend;
+        this.velocity.y+=(dy/Math.max(0.001,length)*desired-this.velocity.y)*blend;
+        const speed=Math.hypot(this.velocity.x,this.velocity.y),amount=Math.min(length,speed*dt);
+        let next={x:this.x+this.velocity.x/Math.max(0.001,speed)*amount,y:this.y+this.velocity.y/Math.max(0.001,speed)*amount};
+        // At a sharp corner, discard lateral momentum before touching a wall.
+        if (!this.lineClear(this,next)) {
+          next={x:this.x+dx/Math.max(0.001,length)*amount,y:this.y+dy/Math.max(0.001,length)*amount};
+          this.velocity={x:dx/Math.max(0.001,length)*speed,y:dy/Math.max(0.001,length)*speed};
+        }
+        if (this.lineClear(this,next)) {
+          this.x=next.x;this.y=next.y;this.moving=amount>0.02;
+          if (this.moving) this.faceToward(target);
+        } else { this.path=[];this.velocity={x:0,y:0}; }
+      } else this.velocity={x:0,y:0};
+      if (!this.moving && gap>50) this.stuckElapsed+=dt;
+      else this.stuckElapsed=0;
+      if (this.stuckElapsed>2.5 || !this.canStand(this.x,this.y)) {
+        if (this.task && this.task.priority<70) this.cancelTask('unreachable');
+        this.recoverNearPlayer();
+      }
+      return gap<=5;
+    }
+
+    updateTask(dt) {
+      const task=this.task;
+      if (!task) return null;
+      if (task.kind==='recall') {
+        if (task.phase==='react') {
+          this.faceToward(this.playerPoint(this.context));task.remaining-=dt;
+          if (task.remaining<=0) task.phase='approach';
+          return 'surprise';
+        }
+        if (task.phase==='approach') {
+          const point=this.companionSpot(this.context,36);
+          if (!point) { this.cancelTask('no-safe-spot');return null; }
+          task.target=point;
+          if (this.moveToGoal(task.target,dt,task.hurry)) {
+            task.phase='settle';task.remaining=0.5;task.animation='angry';
+            this.faceToward(this.playerPoint(this.context));
+          }
+          return this.moving?'follow':'float';
+        }
+        task.remaining-=dt;this.faceToward(this.playerPoint(this.context));
+        if (task.remaining<=0) {
+          this.emitEvent({type:'call-arrived',id:task.id,kind:'recall'});
+          this.task=null;this.path=[];this.lastGoal=null;this.behaviorElapsed=0;
+        }
+        return task.animation;
+      }
+      if (task.phase==='approach') {
+        if (this.moveToGoal(task.target,dt)) {
+          task.phase='dwell';task.remaining=task.duration;
+          if (task.lookAt) this.faceToward(task.lookAt);
+          this.emitEvent({type:'behavior-start',kind:task.kind,id:task.id});
+        }
+        return this.moving?'follow':task.animation;
+      }
+      if (task.lookAt) this.faceToward(task.lookAt);
+      task.remaining-=dt;
+      if (task.remaining<=0) this.cancelTask('completed');
+      return task.animation;
+    }
+
     step(dt) {
       this.elapsed += dt; this.animationElapsed += dt;
       this.advanceFade(dt);
       const player = this.playerPoint(this.context);
       const playerTravel = this.lastPlayer ? distance(player, this.lastPlayer) : 0;
-      if (playerTravel > 1) this.idleElapsed = 0;
-      else this.idleElapsed += dt;
+      const paused=this.isPaused();
+      if (!paused) {
+        if (playerTravel>1 || this.context.player?.isMoving) {this.idleElapsed=0;this.behaviorElapsed=0;}
+        else this.idleElapsed+=dt;
+      }
       this.lastPlayer = player;
       const last = this.trail[this.trail.length - 1];
       if (!last || distance(player, last) >= 6) {
@@ -325,35 +519,20 @@
       if (this.forcedRemaining > 0) this.forcedRemaining = Math.max(0, this.forcedRemaining - dt);
       if (this.forcedRemaining === 0) this.forcedAnimation = null;
       this.moving = false;
-      const paused = ['INTRO', 'VIDEO', 'PAUSED'].includes(this.context.state) || this.context.paused;
-      if (!paused && this.shouldFollow() && !this.hiding && this.fadePhase !== 'out') {
-        const goal = this.followGoal(player);
-        const gap = distance({ x: this.x, y: this.y }, goal);
-        this.planElapsed += dt;
-        if (gap > 7 && (this.path.length === 0 || this.planElapsed >= 0.35 &&
-            (!this.lastGoal || distance(goal, this.lastGoal) > 16))) {
-          this.path = this.planRoute(goal); this.lastGoal = { ...goal }; this.planElapsed = 0;
-        }
-        while (this.path.length && distance(this.path[0], this) < 3) this.path.shift();
-        const target = this.path[0];
-        if (target && gap > 5) {
-          const dx = target.x - this.x, dy = target.y - this.y, length = Math.hypot(dx, dy);
-          const moodSpeed = this.emotion === 'SAD' || this.emotion === 'SLEEPY' ? 0.72 : 1;
-          const speed = Math.min(250, 130 + Math.max(0, distance(this, player) - 56) * 1.2) * moodSpeed;
-          const amount = Math.min(length, speed * dt);
-          const next = { x: this.x + dx / Math.max(0.001, length) * amount,
-            y: this.y + dy / Math.max(0.001, length) * amount };
-          if (this.lineClear(this, next)) {
-            this.x = next.x; this.y = next.y; this.moving = amount > 0.02;
-            if (Math.abs(dx) > Math.abs(dy) * 1.2) this.direction = dx < 0 ? 'left' : 'right';
-            else this.direction = dy < 0 ? 'up' : 'down';
-          } else { this.path = []; this.planElapsed = 1; }
-        }
-        if (!this.moving && gap > 50) this.stuckElapsed += dt;
-        else this.stuckElapsed = 0;
-        if (this.stuckElapsed > 2.5 || !this.canStand(this.x, this.y)) this.recoverNearPlayer();
+      if (!this.placed) {
+        if (!paused) {this.planElapsed+=dt;if(this.planElapsed>=0.35){this.planElapsed=0;this.recoverNearPlayer();}}
+        return;
       }
-      let animation = this.forcedAnimation || (this.hiding ? 'hide' : null);
+      let taskAnimation=null;
+      if (!paused && !this.hiding && this.fadePhase!=='out') {
+        if (this.task && this.task.priority<70 && (playerTravel>1 || this.context.player?.isMoving || this.context.serious)) {
+          this.cancelTask(this.context.serious?'serious':'player-moving');
+        }
+        this.scheduleBehavior(dt);
+        if (this.task) taskAnimation=this.updateTask(dt);
+        else if (this.shouldFollow()) this.moveToGoal(this.followGoal(player),dt);
+      }
+      let animation = taskAnimation || this.forcedAnimation || (this.hiding ? 'hide' : null);
       if (!animation) {
         if (this.moving) animation = this.emotion === 'SCARED' ? 'scared' : 'follow';
         else if (this.idleElapsed > 45 && ['NORMAL', 'HAPPY'].includes(this.emotion)) animation = 'sleep';
@@ -364,10 +543,11 @@
 
     frameForDrawing() {
       const assets = this.assets;
-      const directional = this.animation === 'follow' || this.animation === 'float';
+      const directional = ['follow','float','idle'].includes(this.animation);
       const descriptor = directional && assets.directions[this.direction] || assets.animations[this.animation] || assets.animations.idle;
       if (!descriptor || !descriptor.frames.length) return null;
-      const index = Math.floor(this.animationElapsed * descriptor.fps) % descriptor.frames.length;
+      const fps=this.task?.kind==='recall' && this.moving?Math.min(12,descriptor.fps*1.25):descriptor.fps;
+      const index = Math.floor(this.animationElapsed * fps) % descriptor.frames.length;
       return descriptor.frames[index];
     }
 
@@ -393,7 +573,7 @@
     draw(ctx, camera = { x: 0, y: 0 }) {
       const frame = this.frameForDrawing();
       const sample = frame && this.sampleFor(frame);
-      if (!sample || this.fade <= 0) return;
+      if (!sample || !this.placed || this.fade <= 0) return;
       const reduced = this.context && this.context.reducedMotion;
       const sleep = this.animation === 'sleep';
       const bob = reduced ? 0 : Math.round(Math.sin(this.elapsed * (sleep ? 1.3 : 3.4)) * (sleep ? 1 : 2));
@@ -404,14 +584,14 @@
       ctx.fillStyle = 'rgba(31, 22, 46, 0.24)';
       ctx.beginPath(); ctx.ellipse(x, y, sleep ? 10 : 9, 3, 0, 0, Math.PI * 2); ctx.fill();
       if (!reduced && ['laugh', 'mock'].includes(this.animation)) {
-        ctx.translate(x, y - 26 + bob);
-        ctx.rotate(Math.sin(this.animationElapsed * 12) * 0.07);
-        ctx.drawImage(sample, -18, -26, 36, 48);
+        const wiggle=Math.round(Math.sin(this.animationElapsed*12))*2;
+        ctx.drawImage(sample,x-18+wiggle,y-52+bob,36,48);
       } else ctx.drawImage(sample, x - 18, y - 52 + bob, 36, 48);
       ctx.restore();
     }
 
     getInteraction(probe, feet) {
+      if (!this.placed || this.fade<0.5) return null;
       const rectangle = { x: this.x - 12, y: this.y - 10, width: 24, height: 16,
         id: 'lumo', action: 'lumo', label: this.hiding ? 'Encontrar a Lumo' : 'Lumo' };
       // Examining follows Mira's direction. Lumo's floating body and proximity
@@ -423,6 +603,8 @@
       return { x: this.x, y: this.y, roomId: this.roomId, emotion: this.emotion,
         animation: this.animation, direction: this.direction, moving: this.moving,
         hiding: this.hiding, fade: this.fade, following: this.shouldFollow(),
+        placed:this.placed,calling:this.task?.kind==='recall',mode:this.task?.kind || (this.hiding?'hide':'follow'),
+        taskPhase:this.task?.phase || null, speed:Math.hypot(this.velocity.x,this.velocity.y),
         idleSeconds: this.idleElapsed, diagnostics: { ...this.diagnostics } };
     }
   }

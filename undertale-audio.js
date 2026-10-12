@@ -17,6 +17,7 @@
   let preparation = null;
   let muted = false;
   let paused = false;
+  let effectVolume = 1, textVolume = 1;
 
   function removeVoice(voice) {
     const index = voices.indexOf(voice);
@@ -98,7 +99,7 @@
     const source = context.createBufferSource();
     const gain = context.createGain();
     source.buffer = buffer;
-    gain.gain.value = volumes[kind] || 0.3;
+    gain.gain.value = (volumes[kind] || 0.3) * (kind==='text' ? textVolume : effectVolume);
     source.connect(gain).connect(output);
     const voice = { source, gain, kind };
     voices.push(voice);
@@ -127,23 +128,38 @@
     syncOutput();
   }
 
-  function hum() {
-    if (!context || !output || context.state !== 'running' || muted || paused || document.hidden) return false;
+  function hum(options = {}) {
+    if (!context || !output || context.state !== 'running' || muted || (paused && !options.ui) || document.hidden) return false;
     stop('hum');
     // Original four-note motif; reused unchanged by later authorized chapters.
     [261.626, 329.628, 293.665, 391.995].forEach((frequency,index) => {
       const source=context.createOscillator(), gain=context.createGain();
       source.type='sine'; source.frequency.value=frequency;
       const at=context.currentTime+index*.3;
-      gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.035,at+.045);
+      gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.035*effectVolume*Math.max(0,Math.min(1,options.volume??1)),at+.045);
       gain.gain.linearRampToValueAtTime(0,at+.26);source.connect(gain).connect(output);
       const voice={source,gain,kind:'hum'};voices.push(voice);source.onended=()=>removeVoice(voice);
       source.start(at);source.stop(at+.29);
     });
     return true;
   }
+  function tone(frequency,kind,duration,options={}){
+    if(!context||!output||context.state!=='running'||muted||(paused&&!options.ui)||document.hidden)return false;
+    while(voices.length>=8)stopVoice(voices[0]);
+    const source=context.createOscillator(), gain=context.createGain(), at=context.currentTime;
+    source.type=kind==='knock'?'triangle':'sine';source.frequency.setValueAtTime(frequency,at);
+    if(kind==='whistle')source.frequency.linearRampToValueAtTime(1050,at+.12);
+    const level=(kind==='knock'?.045:.035)*effectVolume*Math.max(0,Math.min(1,options.volume??1));
+    gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(level,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
+    source.connect(gain).connect(output);const voice={source,gain,kind};voices.push(voice);source.onended=()=>removeVoice(voice);
+    source.start(at);source.stop(at+duration+.015);return true;
+  }
+  function note(index,options={}){const notes=[261.626,329.628,293.665,391.995];return tone(options.odd?277.183:notes[Math.max(0,Math.min(3,Math.floor(index)))],'piano',.38,options);}
+  function whistle(){return tone(740,'whistle',.22);}
+  function knock(){return tone(92,'knock',.16);}
   global.UndertaleAudio = Object.freeze({
-    prepare, play, hum, stop, setMuted, setPaused,
+    prepare, play, hum, note, whistle, knock, stop, setMuted, setPaused,
+    setVolumes({effects=effectVolume,text=textVolume}={}){effectVolume=Math.max(0,Math.min(1,Number(effects)||0));textVolume=Math.max(0,Math.min(1,Number(text)||0));},
     get activeVoices() { return voices.length; },
     get sampleStatus() { return { ...sampleStatus }; }
   });

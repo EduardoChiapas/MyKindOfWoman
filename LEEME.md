@@ -1,8 +1,16 @@
-# La PC de Toriel · FNF original
+# HOME · casa, Lumo y PC/FNF
 
 La habitación abre un escritorio con monitor, torre y ventiladores RGB. El icono de FNF abre el motor oficial **Friday Night Funkin’ 0.8.6**, compilado para HTML5, con sus menús y gameplay originales. La web aloja esa compilación en un iframe; el ejecutable de Windows no se ejecuta en el navegador y no se usa un emulador.
 
 El orden del catálogo es **Tutorial → The Date Week → feat. Bad Bunny**. The Date Week contiene **Whitroll → Perfume → Heartbass**, con Easy, Normal y Hard. Bad Bunny conserva **Celoso → Palmas → Amarre**. El juego original controla la selección, las notas y los menús. The Date Week se adapta desde el código original de Kade Engine a este motor HTML5: se reutilizan sus imágenes, flechas, audio, charts y cameos, sin redibujar el arte.
+
+## Controles de HOME y privacidad
+
+Acércate a Lumo y usa Z/E o toca su sprite. Solo verás retrato, texto y campo de escritura; el campo aparece al terminar la última página. Toca el texto para acelerar/avanzar; Enter envía, Esc/X fuera del campo o toque exterior cierra. No hay historial visible, botones extra, etiquetas ni avisos técnicos dentro del chat.
+
+L / silbato llaman a Lumo sin abrir chat. J abre el diario; H abre opciones. Compañía, regalos y actividades se consultan externamente. Las opciones permiten privacidad, borrado de mensajes recientes/recuerdos personales y permiso de IA sin reiniciar la partida. La entrada del sótano sigue cerrada durante HOME.
+
+El backend Gemini requiere habilitación/modelo/clave de servidor; sin ello o sin consentimiento utiliza respuestas locales. La presentación limpia conserva Gemini, sesiones y memoria. Consulta server/LUMO_BACKEND.md para configuración; no se pide una clave dentro del juego.
 
 ## Abrirlo
 
@@ -11,19 +19,19 @@ El orden del catálogo es **Tutorial → The Date Week → feat. Bad Bunny**. Th
 3. Abre la dirección que indica el servidor en **Chrome o Edge de escritorio**.
 4. Pulsa **Probar la PC de Toriel**, mira hacia la mesa y pulsa **Z / Enter**. También puedes llegar recorriendo la casa.
 
-La compilación original necesita un servidor HTTP/HTTPS. Abrir `index.html` por doble clic con `file://` no carga FNF. La primera carga puede tardar: el motor y sus imágenes, fuentes, música y voces tienen un tamaño considerable. Conserva todos los assets y sus rutas; los audios OGG originales están destinados a los navegadores indicados.
+La compilación original necesita un servidor HTTP/HTTPS. Abrir `index.html` por doble clic con `file://` no carga FNF. La preparación del motor se difiere hasta abrir la PC por primera vez. La primera carga puede tardar: el motor y sus imágenes, fuentes, música y voces tienen un tamaño considerable. Conserva todos los assets y sus rutas; los audios OGG originales están destinados a los navegadores indicados.
 
 ## Usar la PC
 
-Al examinar la mesa aparece la vista cercana de la computadora. El escritorio incluye notas con guardado local, calculadora, catálogo del mod y ajustes de volumen/brillo.
+Al examinar la mesa aparece la vista cercana de la computadora. El escritorio conserva notas con guardado local, calculadora, catálogo del mod y ajustes de volumen/brillo. Añade Fotos, Mensajes con Ryon, Música, Archivos y Papelera; su integración actual está en verificación.
 
 Pulsa **FNF · Jugar** para abrir el juego original a tamaño de la ventana. Se solicita también pantalla completa al navegador. En la pantalla de título, usa **Enter** para continuar. En **Story Mode** puedes elegir Tutorial, The Date Week o Bad Bunny; en **Freeplay** puedes elegir una canción individual. Las tarjetas de **Canciones** también abren el juego con sus menús; no saltan a un chart ni sustituyen la selección original. El propio juego conserva sus controles y opciones.
 
-Al terminar **Tutorial** o una canción elegida en **Freeplay**, FNF sigue abierto y vuelve al **menú original de semanas**, sin mostrar la animación del porcentaje de resultados. En **Story Mode**, cada Week mantiene su secuencia. The Date Week vuelve directamente al menú al terminar Heartbass, sin mostrar su escena final ni los créditos; Bad Bunny vuelve al menú al completar Amarre. La entrega de la **tercera llave** queda pendiente para más adelante.
+Al terminar **Tutorial** o una canción elegida en **Freeplay**, FNF sigue abierto y vuelve al **menú original de semanas**, sin mostrar la animación del porcentaje de resultados. En **Story Mode**, cada Week mantiene su secuencia. The Date Week vuelve directamente al menú al terminar Heartbass, sin mostrar su escena final ni los créditos; Bad Bunny vuelve al menú al completar Amarre. Las victorias no conceden llaves ni abren puertas de HOME.
 
 El botón exterior **Volver al escritorio** permite salir manualmente del juego en cualquier momento. Esa salida elimina el iframe para detener el audio y el motor; ganar conserva la sesión de FNF abierta.
 
-Desde el escritorio, **Volver a la habitación / Esc** devuelve los controles a Frisk y reanuda el audio de la casa. Mientras la PC está abierta, la habitación mantiene bloqueados su movimiento y sus atajos.
+Desde el escritorio, **Volver a la habitación / Esc** devuelve los controles a Mira y reanuda el audio de la casa. Mientras la PC está abierta, la habitación mantiene bloqueados su movimiento y sus atajos.
 
 El progreso se guarda en este navegador mediante `localStorage`, en `toriel.pc.original.bad-bunny.progress.v1`. Las notas y los ajustes también son locales. El progreso del port anterior no se usa como victoria del motor original.
 
@@ -83,3 +91,8 @@ Si copias la PC a otro proyecto, incluye también `apps/determination/` junto a 
 ## Controles de FNF en celular
 
 En dispositivos táctiles, durante las canciones la pantalla tiene cuatro zonas verticales invisibles: **← ↓ ↑ →**, de izquierda a derecha. Toca cualquier altura de la zona correspondiente; mantén el dedo para notas largas y usa varios dedos para acordes. No se añaden botones, flechas, líneas ni efectos visuales sobre el juego. En los menús originales, desliza arriba/abajo para seleccionar y a los lados para cambiar dificultad; toca para confirmar y toca con dos dedos para volver. Los controles envían las teclas al motor original y se liberan al levantar/cancelar el toque, pausar, ocultar la página o cerrar FNF. Se puede jugar en ambas orientaciones; horizontal deja más espacio al juego. En escritorio permanecen los controles de teclado habituales.
+
+
+## Estado de verificación
+
+Mente/backend integrado: 42 pruebas pasan. UI limpia: siete pruebas; HomeStory: diez pruebas. Son suites parciales, no certificado de HOME completo. La prueba de proveedor real con credenciales, Android físico y recorrido final siguen pendientes. La raíz registrará el resultado final en la evidencia de entrega.

@@ -35,21 +35,24 @@
   function context() {
     const state = mind.getState();
     return { chapter:'HOME', room:roomIds[currentRoom] || 'livingroom', roomName:rooms[currentRoom].label,
-      emotion:state.emotion, friendship:state.friendship, events:state.events, memories:state.memories,
+      emotion:state.emotion, friendship:state.friendship, events:[...new Set([...state.events,...(global.HomeProgress?.getState().events||[])])], memories:state.memories,
       gifts:state.gifts, activity:hide ? 'hide_seek' : global.LumoActivities.active ? 'memory' : null,
-      serious:state.events.includes('home_knocks') };
+      serious:state.events.includes('home_knocks') || global.HomeProgress?.has('home_knock_first') };
   }
   function canStand(x,y,roomId = currentRoom) {
     const room = rooms[roomId];
     if (!room) return false;
     const feet = { x:x-4, y:y-3, width:8, height:6 };
-    return hitboxInsideWalkable(feet,room) && !room.solids.some(solid => rectsOverlap(feet,solid));
+    const barrier=global.HomeProgress?.barrier(roomId);
+    return hitboxInsideWalkable(feet,room) && !room.solids.some(solid => rectsOverlap(feet,solid)) && !(barrier && rectsOverlap(feet,barrier));
   }
   const actor = new global.LumoActor({ mind, adapter:{ canStand, getContext:() => ({
     roomId:currentRoom, room:rooms[currentRoom], player, feet:getPlayerHitbox(), state:gameState,
-    paused:document.hidden || ['DIALOG','BOOK','TRANSITION','LUMO','LUMO_GAME','PC'].includes(gameState),
+    paused:document.hidden || ['DIALOG','BOOK','TRANSITION','LUMO','LUMO_GAME','PC','HOME_ACTIVITY'].includes(gameState),
+    serious:global.HomeProgress?.has('home_knock_first'),
     reducedMotion:HouseExperience.reducedMotion
   }) }});
+  actor.setAutonomy?.(true);
   function pause(value) {
     resetMovementInput(); resetJoystick();
     if (value && gameState === 'PLAYING') gameState = 'LUMO';
@@ -65,11 +68,50 @@
   }
   function open() {
     if (!started || gameState !== 'PLAYING') return;
+    const feet=getPlayerHitbox(), a=actor.getState();
+    const target={x:feet.x+feet.width/2,y:feet.y+feet.height/2};
+    if (Math.hypot(a.x-target.x,a.y-target.y)>64) return false;
     cancelHide();
+    actor.cancelTask?.('conversation'); actor.faceToward?.(target);
     if (!met()) {
       const result = mind.act('meet',{},context());
-      actor.setFollowing(true); rememberVisit(); actor.react(result); global.LumoUI.speak(result);
+      actor.setFollowing(true); global.HomeProgress?.record('lumo_met'); rememberVisit(); actor.react(result); global.LumoUI.speak(result);
     } else global.LumoUI.open();
+    return true;
+  }
+  let callIndex=0,lastBehavior='';
+  function getBubbleAnchor(){
+    const a=actor.getState(), rect=canvas.getBoundingClientRect?.() || {left:0,top:0,width:640,height:480};
+    return {x:rect.left+(a.x-camera.x)*rect.width/canvas.width,y:rect.top+(a.y-camera.y-48)*rect.height/canvas.height};
+  }
+  function callLumo(){
+    if(!started||gameState!=='PLAYING')return false;
+    cancelHide();
+    const result=actor.call({hurry:true}); if(!result.accepted)return false;
+    global.UndertaleAudio.whistle?.();
+    const lines=result.nearby?['¿QUÉ? ¡SI ESTOY A TU LADO, BRO!','¿Me llamaste para comprobar que sigo midiendo tres píxeles? JAJAJA.']:
+      ['¡YAAA VOY! NO TENGO PATAS, TENME PACIENCIA.','¿QUÉ PASÓ? ¿SE QUEMÓ LA COCINA OTRA VEZ?','¿Me estás llamando como a un perro? Qué falta de respeto... GUAU.','¡VOY, VOY! Qué exigente salió mi humana.'];
+    const response={text:lines[callIndex++%lines.length],emotion:'PLAYFUL',animation:'mock',source:'local',narrativeIntent:null,memoryReference:null};
+    mind.noteLocalAction?.({id:'call',...response});
+    global.LumoUI.bubble(response,{anchor:getBubbleAnchor(),duration:3}); return true;
+  }
+  function updateInterests(){
+    const kinds={living_sofa:'sleep',living_books:'observe',home_piano:'hum',toriel_pc:'pc',frisk_bookshelf:'photo',hallway_painting:'photo',hallway_flowers:'window',kitchen_fridge:'observe'};
+    const points=[];
+    for(const object of rooms[currentRoom].interactives){if(!kinds[object.id])continue;
+      const center={x:object.x+object.width/2,y:object.y+object.height/2};
+      for(const [dx,dy] of [[0,object.height/2+20],[-object.width/2-20,0],[object.width/2+20,0]]){
+        const point={x:center.x+dx,y:center.y+dy,roomId:currentRoom,id:'object:'+object.id,kind:kinds[object.id],duration:4,lookAt:center};
+        if(canStand(point.x,point.y)){points.push(point);break;}
+      }
+    }
+    actor.setInterests?.(points);
+  }
+  function callForStory(){
+    cancelHide();actor.cancelTask?.('story');actor.setFollowing(true);
+    const feet=getPlayerHitbox(),center={x:feet.x+feet.width/2,y:feet.y+feet.height/2};
+    for(const [dx,dy] of [[-34,0],[34,0],[0,34],[0,-34]])if(actor.goTo?.({x:center.x+dx,y:center.y+dy,roomId:currentRoom},{kind:'perch',priority:80,duration:12,lookAt:center}))return true;
+    actor.setEmotion('SCARED');actor.faceToward?.(center);return false;
   }
   function listGifts() { return Object.entries(labels).map(([id,label]) => ({id,label,count:world.inventory[id] || 0})); }
   function giveGift(id) {
@@ -85,7 +127,7 @@
     if (!world.visits.includes(currentRoom)) world.visits.push(currentRoom);
     mind.remember('room',{id:roomIds[currentRoom]}); save();
   }
-  global.LumoUI.mount({ mind, actor, getContext:context, pause, play:kind => HouseExperience.play(kind,{ui:true}),
+  global.LumoUI.mount({ mind, actor, getContext:context, getBubbleAnchor, stage:document.getElementById('game-stage'), pause, play:kind => HouseExperience.play(kind,{ui:true}),
     resumeFocus:focus, listGifts, giveGift,
     listGames:() => [{id:'hide_seek',label:'ESCONDIDAS'},{id:'memory',label:'MEMORIA'},{id:'melody',label:'ESCUCHAR SU TARAREO'}],
     startGame:startActivity, getCommentFrequency:() => world.frequency,
@@ -95,6 +137,7 @@
     pause:value => { pause(value); if (value) gameState = 'LUMO_GAME'; }, resumeFocus:focus,
     play:kind => HouseExperience.play(kind,{ui:true}),
     complete:(id,details) => {
+      global.HomeProgress?.record('played_'+id);
       const result = mind.act('game',{game:id,result:'win',...details},context());
       actor.react(result); global.LumoUI.speak(result); save();
     }
@@ -138,7 +181,7 @@
   function findHidden() {
     if (!hide) return false;
     if (hide.round >= 3) {
-      cancelHide(); const result=mind.act('game',{game:'hide_seek',result:'win'},context()); actor.react(result); global.LumoUI.speak(result); return true;
+      cancelHide(); global.HomeProgress?.record('played_hide_seek'); const result=mind.act('game',{game:'hide_seek',result:'win'},context()); actor.react(result); global.LumoUI.speak(result); return true;
     }
     hide.round++; const point=hidePlace();
     if (!point || !actor.beginHide(point)) { cancelHide(); return true; }
@@ -156,12 +199,12 @@
     if (object.id==='lumo') { if (hide) return findHidden(); open(); return true; }
     if (object.id==='hallway_locked_door') {
       if (!hasHideout()) { showDialog('* La puerta está cerrada.\n* En la madera hay una estrella diminuta.'); return true; }
-      world.hideout=true; save(); mind.remember('event',{id:'secret_room_found'});
+      world.hideout=true; save(); mind.remember('event',{id:'secret_room_found'}); global.HomeProgress?.record('lumo_room_found');
       changeRoom({target:'lumoRoom',spawn:[120,158],facing:'up'}); return true;
     }
     if (currentRoom==='lumoRoom') {
       if (object.id==='lumo_drawing') {
-        const result=mind.act('drawing',{},context()); actor.react(result);
+        const result=mind.act('drawing',{},context()); actor.react(result); global.HomeProgress?.record('lumo_drawing_found');
         global.LumoUI.speak({ ...result,text:'Hay dos figuras dibujadas. Una parece ser Mira; la otra es Lumo. Debajo dice: MI MEJOR AMIGA.\n\n'+result.text }); return true;
       }
       if (object.id==='lumo_box') {
@@ -189,6 +232,9 @@
   function tick(dt) {
     if (!started) return;
     actor.update(dt);
+    const behavior=actor.getState();
+    if(behavior.taskPhase==='dwell' && behavior.mode!=='recall' && lastBehavior!==behavior.mode){lastBehavior=behavior.mode;mind.noteLocalAction?.({id:'autonomy'});if(behavior.mode==='hum')global.UndertaleAudio.hum();}
+    else if(!behavior.taskPhase)lastBehavior='';
     if (gameState==='PC') {
       if (!pcWasOpen && met()) { mind.remember('object',{id:'pc'}); actor.perform('observe',3); }
       pcWasOpen=true; return;
@@ -216,12 +262,14 @@
   }
   function roomChanged() {
     cancelHide(); actor.onRoomChange({roomId:currentRoom,room:rooms[currentRoom],player,feet:getPlayerHitbox(),state:gameState});
+    updateInterests();
     const first=!world.visits.includes(currentRoom); rememberVisit(); idle=blocked=0;
     if (met() && first) actor.perform(currentRoom==='basementHallway' ? 'scared' : 'observe',2);
   }
   function start() {
     started=true; actor.setFollowing(met()); actor.onRoomChange({roomId:currentRoom,room:rooms[currentRoom],player,feet:getPlayerHitbox(),state:gameState}); rememberVisit();
-    if (met()) comment(mind.act('reunion',{},context()),true);
+    updateInterests();
+    if (met()) {global.HomeProgress?.record('lumo_met');comment(mind.act('reunion',{},context()),true);}
   }
   // An optional side room, using the existing house's pixel furniture and palette.
   rooms.lumoRoom={ label:'El escondite de Lumo',nativeWidth:240,nativeHeight:180,
@@ -256,7 +304,7 @@
     rooms.basementHallway.interactives[0].id='basement_closet';
     rooms.basementHallway.interactives[0].text='* El clóset permanece cerrado.\n* Por ahora no puedes abrirlo.';
   }
-  document.getElementById('btn-lumo').addEventListener('click',open);
+  document.getElementById('btn-lumo').addEventListener('click',callLumo);
   document.addEventListener('lumo:privacy',event => {
     if (event.detail?.persistMemory === false) {
       try { localStorage.removeItem(KEY); } catch {}
@@ -264,19 +312,20 @@
   });
   global.addEventListener('keydown',event=>{
     if (event.target?.closest?.('input,textarea,[contenteditable="true"]')) return;
-    if (event.code==='KeyL' && gameState==='PLAYING') {event.preventDefault();open();}
+    if (event.code==='KeyL' && gameState==='PLAYING' && !event.repeat) {event.preventDefault();callLumo();}
     if (event.code==='Escape' && hide && gameState==='PLAYING') {event.preventDefault();cancelHide();}
   });
   canvas.addEventListener('pointerup',event=>{
     if (gameState!=='PLAYING' || event.button!==0) return;
     const rect=canvas.getBoundingClientRect(), x=(event.clientX-rect.left)*canvas.width/rect.width+camera.x, y=(event.clientY-rect.top)*canvas.height/rect.height+camera.y;
     const a=actor.getState(), feet=getPlayerHitbox();
-    if (Math.abs(x-a.x)<25 && y>a.y-52 && y<a.y+4 && (!hide || Math.hypot(a.x-feet.x,a.y-feet.y)<72)) { hide ? findHidden() : open(); }
+    if (Math.abs(x-a.x)<25 && y>a.y-52 && y<a.y+4 && Math.hypot(a.x-(feet.x+feet.width/2),a.y-(feet.y+feet.height/2))<64) { hide ? findHidden() : open(); }
   });
   document.querySelector('gaming-desktop').addEventListener('fnf-original:win',()=>{
-    if (met()) { mind.act('game',{game:'fnf',result:'win'},context()); actor.perform('celebrate',3); }
+    if (met()) { global.HomeProgress?.record('played_fnf'); mind.act('game',{game:'fnf',result:'win'},context()); actor.perform('celebrate',3); }
   });
-  global.LumoGame=Object.freeze({start,tick,draw,roomChanged,interact,observe,open,
+  global.LumoGame=Object.freeze({start,tick,draw,roomChanged,interact,observe,open,call:callLumo,callForStory,
+    get mind(){return mind;},
     getInteraction:(probe,feet)=>actor.getInteraction(probe,feet),
     getState:()=>({chapter:'HOME',world:clone(world),actor:actor.getState(),mind:mind.getState(),activity:hide ? clone(hide) : global.LumoActivities.active ? 'memory' : null}),
     get actor(){return actor;}

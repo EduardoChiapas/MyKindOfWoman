@@ -25,6 +25,8 @@
   let lastMenuTarget = null;
   let lastMenuTime = -Infinity;
   const dialogue = { pages: [], index: 0, shown: 0, time: 0 };
+  let ending = false;
+  let musicVolume = 1;
 
   function syncAudioButton() {
     const button = byId('btn-audio');
@@ -251,11 +253,11 @@
     byId('hud').classList.toggle('visible', roomSeconds < 2.8 && gameState === 'PLAYING');
     const damping = 1 - Math.exp(-dt * 4);
     const lowerVolume = gameState === 'PAUSED' ? 0.45 : gameState === 'DIALOG' || gameState === 'BOOK' ? 0.8 : 1;
-    const target = muted ? [0, 0] : room === 'basementHallway' ? [0, 0.38 * lowerVolume] : [0.48 * lowerVolume, 0];
+    const target = muted || ending ? [0, 0] : room === 'basementHallway' ? [0, 0.38 * lowerVolume * musicVolume] : [0.48 * lowerVolume * musicVolume, 0];
     tracks.forEach((track, index) => { track.volume += (target[index] - track.volume) * damping; });
     if (fireGain && soundContext) {
       let gain = 0;
-      if (!muted && room === 'livingRoom' && gameState !== 'PAUSED') {
+      if (!muted && !ending && room === 'livingRoom' && gameState !== 'PAUSED') {
         const feet = getPlayerHitbox();
         const distance = Math.hypot(feet.x + feet.width / 2 - 336, feet.y + feet.height / 2 - 130);
         gain = Math.max(0, 1 - distance / 400) * 0.07;
@@ -344,7 +346,7 @@
     });
     syncAudioButton();
     global.addEventListener('keydown', event => {
-      if (event.repeat || !started || externalScreen || ['LUMO','LUMO_GAME'].includes(gameState)) return;
+      if (event.repeat || !started || externalScreen || ['LUMO','LUMO_GAME','HOME_ACTIVITY','HOME_ENDING'].includes(gameState)) return;
       if (event.target && (event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))) return;
       if (event.code === 'KeyM') { event.preventDefault(); toggleMute(); }
       if (event.code === 'KeyF') {
@@ -391,6 +393,8 @@
   global.HouseExperience = Object.freeze({
     boot, tick, startAudio, setRoom, setExternalScreen, openDialog, advanceDialog, closeDialog, wrapText, play,
     sound: play,
+    setEnding(value){ending=Boolean(value);if(ending){tracks.forEach(track=>track.pause());global.UndertaleAudio?.stop();}else if(started&&!externalScreen)playTracks();},
+    setVolumes(levels={}){musicVolume=Math.max(0,Math.min(1,Number(levels.music??musicVolume)||0));global.UndertaleAudio?.setVolumes(levels);},
     canStart: () => ready,
     get elapsedSeconds() { return elapsed; },
     get reducedMotion() { return reducedMotion; }

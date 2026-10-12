@@ -456,7 +456,7 @@ function facePlayer(direction) {
 }
 
 window.addEventListener('keydown', (event) => {
-  if (['PC', 'LUMO', 'LUMO_GAME'].includes(gameState)) return;
+  if (['PC', 'LUMO', 'LUMO_GAME', 'HOME_ACTIVITY', 'HOME_ENDING'].includes(gameState)) return;
   if (event.target && (event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName))) return;
   // Native buttons own Enter/Space. Let their click handler activate once;
   // otherwise a focused audio/help/book button could also examine the room.
@@ -465,7 +465,7 @@ window.addEventListener('keydown', (event) => {
     return;
   }
   const movementKey = MOVEMENT_KEYS[event.code];
-  if (movementKey || ['Space', 'KeyZ', 'KeyX', 'Enter'].includes(event.code)) event.preventDefault();
+  if (movementKey || ['Space', 'KeyZ', 'KeyE', 'KeyX', 'Enter'].includes(event.code)) event.preventDefault();
 
   if (movementKey) {
     heldMovementKeys.add(event.code);
@@ -489,12 +489,12 @@ window.addEventListener('keydown', (event) => {
     debugCollisions = !debugCollisions;
   }
 
-  if (gameState === 'PLAYING' && (event.code === 'KeyZ' || event.code === 'Enter')) {
+  if (gameState === 'PLAYING' && ['KeyZ','KeyE','Enter'].includes(event.code)) {
     checkInteraction();
     return;
   }
 
-  if (gameState === 'DIALOG' && ['KeyZ', 'Enter', 'Space'].includes(event.code)) {
+  if (gameState === 'DIALOG' && ['KeyZ', 'KeyE', 'Enter', 'Space'].includes(event.code)) {
     // Enter on the focused next button must not also generate a native click.
     event.preventDefault();
     advanceInteraction();
@@ -814,6 +814,8 @@ function canOccupy(x, y) {
 
   if (!hitboxInsideWalkable(hitbox, room)) return false;
   if (room.solids.some((solid) => rectsOverlap(hitbox, solid))) return false;
+  const narrativeBarrier = window.HomeProgress?.barrier(currentRoom);
+  if (narrativeBarrier && rectsOverlap(hitbox, narrativeBarrier)) return false;
 
   return true;
 }
@@ -951,6 +953,7 @@ function setAudioRoom(roomId) {
 
 function changeRoom(exit) {
   if (roomTransition.phase !== 'idle' || !rooms[exit.target]) return;
+  if (window.HomeProgress && !window.HomeProgress.canEnter(exit.target)) return false;
   roomTransition.exit = exit;
   roomTransition.phase = 'out';
   roomTransition.elapsed = 0;
@@ -962,6 +965,7 @@ function changeRoom(exit) {
 }
 
 function applyRoomChange(exit) {
+  if (window.HomeProgress && !window.HomeProgress.canEnter(exit.target)) return false;
   currentRoom = exit.target;
 
   // Crossfade smoothly; neither track restarts when a doorway is crossed.
@@ -984,6 +988,8 @@ function applyRoomChange(exit) {
   roomNameLabel.textContent = rooms[currentRoom].label;
   updateCamera(true);
   window.LumoGame?.roomChanged();
+  window.HomeStory?.roomChanged();
+  window.HomeGame?.checkpoint();
 }
 
 function updateRoomTransition(deltaSeconds) {
@@ -1079,7 +1085,9 @@ function checkInteraction() {
   if (gameState !== 'PLAYING') return;
   const object = findInteraction();
   if (!object) return;
+  if (object.id==='lumo' && window.HomeStory?.interact(object)) return;
   if (window.LumoGame?.interact(object)) return;
+  if (window.HomeStory?.interact(object)) return;
   window.LumoGame?.observe(object);
 
   if (object.action === 'pc') {
@@ -1146,7 +1154,7 @@ function updateCamera(snap = false) {
 // GAME LOOP
 // ============================================================
 function startGame(destination = 'entrance') {
-  if (gameState !== 'INTRO' || !HouseExperience.canStart()) return;
+  if (gameState !== 'INTRO' || !HouseExperience.canStart() || window.HomeGame?.isResetPending) return;
   HouseExperience.startAudio();
   introContainer.style.display = 'none';
   gameContainer.style.display = 'grid';
@@ -1157,12 +1165,19 @@ function startGame(destination = 'entrance') {
     placePlayerAtFeet(145, 112);
     facePlayer('up');
   } else placePlayerAtFeet(160, 206);
+  const saved=destination==='entrance' ? window.HomeProgress?.getState().position : null;
+  if(saved && rooms[saved.room] && window.HomeProgress.canEnter(saved.room)){
+    const previous=currentRoom;currentRoom=saved.room;
+    if(canOccupy(saved.x,saved.y)){player.x=saved.x;player.y=saved.y;facePlayer(saved.direction);}else{currentRoom=previous;placePlayerAtFeet(160,206);}
+  }
   roomNameLabel.textContent = rooms[currentRoom].label;
   setAudioRoom(currentRoom);
   updateCamera(true);
   canvas.focus({ preventScroll: true });
   lastFrameTime = null;
   window.LumoGame?.start();
+  window.HomeStory?.start();
+  window.HomeGame?.checkpoint();
   requestAnimationFrame(gameLoop);
 }
 
@@ -1272,6 +1287,7 @@ function draw() {
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
   drawRoom();
+  window.HomeStory?.draw(ctx,camera);
   const ambienceOptions = { scale: ROOM_SCALE, reducedMotion: HouseExperience.reducedMotion };
   HouseAmbience.draw(ctx, currentRoom, camera, HouseExperience.elapsedSeconds, ambienceOptions);
   if (currentRoom === 'hallway') drawMirrorReflection();
@@ -1501,6 +1517,8 @@ function gameLoop(timestamp) {
   gameFrame += 1;
   update(deltaSeconds);
   window.LumoGame?.tick(deltaSeconds);
+  window.HomeStory?.tick(deltaSeconds);
+  window.HomeGame?.tick(deltaSeconds);
   if (gameState !== 'PC') draw();
   requestAnimationFrame(gameLoop);
 }

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="lumo-ui.css">
   <link rel="stylesheet" href="lumo-activities.css">
+  <link rel="stylesheet" href="home-story.css">
 </head>
 <body>
   <main id="app">
@@ -52,12 +53,12 @@
             <h2 id="help-title">Estás en casa.</h2>
             <dl>
               <div><dt>Flechas / WASD</dt><dd>Caminar</dd></div>
-              <div><dt>Z / Enter</dt><dd>Examinar / continuar</dd></div>
-              <div><dt>L</dt><dd>Hablar con Lumo</dd></div>
+              <div><dt>Z / E / Enter</dt><dd>Examinar / conversar cerca de Lumo</dd></div>
+              <div><dt>L</dt><dd>Llamar a Lumo con el silbato</dd></div>
               <div><dt>X / Esc</dt><dd>Cerrar un texto</dd></div>
               <div><dt>M</dt><dd>Activar / silenciar audio</dd></div>
               <div><dt>F</dt><dd>Pantalla completa</dd></div>
-              <div><dt>H</dt><dd>Ayuda / pausa</dd></div>
+              <div><dt>J</dt><dd>Diario de aventuras</dd></div><div><dt>H</dt><dd>Opciones / pausa</dd></div>
             </dl>
             <label class="setting"><input id="reduced-motion" type="checkbox"> Efectos tranquilos</label>
             <p class="help-note">También puedes examinar con los botones táctiles.<br>Los controles de colisión están en F2.</p>
@@ -67,7 +68,7 @@
         <div id="pause-notice" class="hidden" role="status">En pausa · vuelve cuando quieras</div>
       </div>
       <div id="game-tools" aria-label="Opciones">
-        <button id="btn-lumo" type="button" title="Lumo · L" aria-label="Hablar con Lumo">✦ <span>Lumo</span></button>
+        <button id="btn-lumo" type="button" title="Llamar a Lumo · L" aria-label="Llamar a Lumo con el silbato">✦ <span>Lumo</span></button>
         <button id="btn-audio" type="button" aria-label="Silenciar audio" title="Audio · M">[ON] <span>Audio</span></button>
         <button id="btn-help" type="button" aria-label="Abrir ayuda y pausar" title="Ayuda · H">? <span>Ayuda</span></button>
         <div id="fullscreen-controls">
@@ -97,11 +98,15 @@
   <script src="lumo-actor.js"></script>
   <script src="lumo-ui.js"></script>
   <script src="lumo-activities.js"></script>
+  <script src="home-progress.js"></script>
+  <script src="home-story.js"></script>
   <script src="script.js"></script>
   <script src="fnf-preload.js"></script>
   <script src="pc-desktop.js"></script>
   <script src="fnf-original-host.js"></script>
   <script src="pc-integration.js"></script>
   <script src="lumo-integration.js"></script>
+  <script src="home-pc-apps.js"></script>
+  <script src="home-integration.js"></script>
 </body>
 </html>

@@ -1,126 +1,84 @@
-# Lumo: conversación de HOME
+# Servidor HOME: Lumo y Ryon
 
-Servidor local sin dependencias, para Node 22 o posterior. Ejecutar desde `outputs/pc-room`:
-
-```powershell
-node server/lumo-server.cjs
-```
-
-Abrir `http://127.0.0.1:8787`. Sin configuración el juego funciona con diálogos locales,
-identificados mediante `source: "local"`. Para IA, copiar `.env.example` como `.env` solo
-en el equipo del creador, definir clave/modelo del proveedor y ejecutar:
+Node 22+ sin dependencias. Desde outputs/pc-room ejecutar:
 
 ```powershell
 node --env-file=.env server/lumo-server.cjs
 ```
 
-La URL base debe ofrecer Chat Completions compatible con OpenAI. Modelo y clave permanecen
-en el servidor. No publicar `.env` ni introducir una clave en la interfaz. El puerto es
-configurable; el servidor local escucha por defecto en `127.0.0.1`. No sirve `.env`, la carpeta
-`server`, claves, registros, archivos ocultos ni fuentes del servidor. Sirve el juego y los
-recursos existentes, con soporte de rangos para audio. `servidor.cjs` anterior no es necesario.
+Crear .env privado a partir de .env.example. Por defecto IA está desactivada y no hay
+modelo predeterminado. Configurar AI_ENABLED=true, AI_PROVIDER=gemini, GEMINI_API_KEY y
+GEMINI_MODEL con un modelo disponible en el proyecto. Gemini usa REST nativo generateContent,
+x-goog-api-key, systemInstruction, historial user/model y JSON con esquema.
+GOOGLE_GEMINI_API_KEY es alias. El adaptador openai-compatible usa LUMO_API_KEY,
+LUMO_MODEL, LUMO_API_BASE_URL y Chat Completions.
 
-## GitHub Pages y servidor separado
+Sin credenciales/modelo/habilitación devuelve source:local y motivo not_configured.
+source:ai exige respuesta real del proveedor y validación: 8–45 palabras, emociones/animaciones
+enumeradas, referencias conocidas y narrative_intent:null. El modelo no gobierna puertas,
+inventario o capítulos. Toda la entrada al sótano está cerrada en HOME.
 
-GitHub Pages sirve archivos estáticos y no ejecuta este backend ni puede custodiar la clave.
-Para conversaciones reales allí hace falta un servidor HTTPS separado. Preparación:
+## Contrato y sesión
 
-1. Alojar `server/lumo-server.cjs` con sus módulos y `lumo-mind.js` en un hosting de Node,
-   con clave/modelo configurados como secretos de ese hosting. Si el hosting requiere escuchar
-   en todas las interfaces, definir `LUMO_BIND_HOST=0.0.0.0`; exige también un
-   `LUMO_PUBLIC_ORIGIN=https://tu-backend.example` y HTTPS a través del proxy del hosting.
-2. Definir `LUMO_ALLOWED_ORIGINS=https://eduardochiapas.github.io`, o el origen exacto de la
-   página. Una lista admite comas; nunca usar `*`, rutas de repositorios o credenciales.
-3. Editar únicamente el endpoint público en `lumo-config.js`, por ejemplo
-   `https://tu-backend.example/api/chat`. Este archivo no acepta claves. Cargarlo antes de
-   `lumo-mind.js`. La dirección debe estar definida por el creador antes de jugar; mensajes y
-   opciones de la jugadora no pueden introducir otro servidor remoto.
+| Ruta POST | Cuerpo | Requisito |
+|---|---|---|
+| /api/session | {} | Origin exacto; emite cookie y token CSRF. |
+| /api/session/consent | {consent:true/false} | Cookie y X-CSRF-Token. |
+| /api/chat | {requestId,message,context} | Consentimiento; conversación Lumo. |
+| /api/ryon/chat | Igual | Ryon independiente. |
+| /api/session/clear | {scope:history/personal/all} | Borra solo la sesión propietaria. |
 
-El navegador usa CORS con preflight OPTIONS y POST para los orígenes exactos permitidos.
-Las llamadas externas omiten cookies; no se habilita Access-Control-Allow-Credentials.
-Los hosts y orígenes no configurados se deniegan. Mantener HTTPS y los límites de gasto del
-proveedor en el hosting. La preparación anterior no publica ni crea una cuenta de hosting.
-Con `endpoint: null` se usa `/api/chat` del mismo origen: funciona en el servidor local;
-en Pages la falta de backend lleva al respaldo local identificado.
+No acepta sessionId, userId, historial ni instrucciones de sesión en el cuerpo.
+Sesión/CSRF aleatorios de 256 bits; HttpOnly y TTL absoluto. Producción HTTPS: cookie
+__Host-, Secure y SameSite=None; local: SameSite=Strict. Fetch credentials:include.
+CORS permite orígenes HTTPS exactos de LUMO_ALLOWED_ORIGINS, sin wildcard; mutaciones
+requieren Origin exacto y CSRF. El bootstrap sin cookie emite una sesión nueva.
 
-## Contrato
+Cada sesión separa Lumo/Ryon: ocho entradas recientes, 32 recuerdos por IDs/enums, 80
+eventos reportados, cooldown y resumen factual cada 12 turnos. El canon HOME se reconstruye
+cada petición sin importar biblias privadas ni secretos futuros. Datos del motor local se
+etiquetan como reportados; el navegador no es autoridad de progreso contra manipulación.
 
-`POST /api/chat` recibe `{message, context, history}` como JSON del mismo origen o de un
-origen HTTPS expresamente configurado.
-Mensaje hasta 800 caracteres; petición hasta 8 KiB; historial hasta 8 entradas, de las cuales
-solo 6 pueden entrar al modelo. Respuesta `{text, emotion, animation, memory_reference,
-narrative_intent, source}`. `source` es `ai` solamente cuando la respuesta del proveedor
-pasa validación; el resto se identifica como `local`. `narrative_intent` siempre es `null`.
-Errores del proveedor no se devuelven al navegador. Cerrar la conversación cancela la petición.
+Límites por defecto: por sesión 4 solicitudes pagadas/min y 40/día; globales 8/min, 120/día
+UTC y 4 simultáneas. Una activa por sesión ordena ambos personajes. Cache de 16 IDs/respuestas
+evita pagos duplicados; otro cuerpo con igual ID se rechaza. Máximo 100 sesiones y 40 altas/min,
+TTL 2 horas, timeout 14 s y 600 tokens configurables. No reintentos pagados automáticos.
+Contadores en RAM se reinician con proceso: configurar también cuotas en proveedor.
+No es una defensa completa contra bots.
 
-El servidor reconstruye en cada petición el perfil inmutable de HOME y un contexto nuevo
-formado únicamente por IDs permitidos. Ignora capítulo, identidad, órdenes, biografías,
-descripciones y secretos enviados por el cliente. Nunca importa la guía de capítulos futuros.
-El sótano está abierto y el clóset del fondo sigue cerrado. El modelo no recibe ninguna
-explicación de Ryon, del mundo ni del origen de Lumo. Los eventos del mundo siguen bajo el motor.
+## GitHub Pages y privacidad
 
-Se verifican 8–45 palabras, hasta cuatro oraciones breves, emociones y animaciones permitidas,
-recuerdos realmente enviados, ausencia de comandos y términos de revelaciones bloqueadas.
-Preguntas reconocidas sobre conocimiento reservado y señales de angustia reciben respuesta local
-antes de llamar al proveedor. Los filtros, el contexto limitado y las pruebas son defensas;
-no constituyen una garantía perfecta frente a toda formulación o modelo posible.
+Pages aloja frontend, nunca este servidor. Requiere backend HTTPS separado, endpoint público
+preconfigurado en lumo-config.js, LUMO_PUBLIC_ORIGIN y LUMO_ALLOWED_ORIGINS. Ninguna clave
+en frontend. El proxy debe preservar host/origin y no registrar cuerpos. Cookies de terceros
+pueden bloquearse: se usa respaldo local, sin sustituirlas por IDs inventados.
 
-## Memoria y privacidad
+La UI solicita consentimiento antes de IA. Revocar cancela petición y borra reciente;
+borrar personal conserva eventos/regalos; all destruye sesión. Se envían mensaje actual,
+últimos seis mensajes, perfil HOME y hechos relevantes. No se registran textos ni hay panel
+para leer chats. Servidor conserva solo RAM hasta TTL/reinicio; navegador puede conservar
+hechos seleccionados. Un perfil de navegador comparte guardado: usar perfiles distintos
+para personas distintas. Borrar aquí no retira datos ya enviados al proveedor.
 
-`window.LumoMind` ofrece `init()`, `getState()`, `remember(type, details)`,
-`act(action, details, context?)`, `chat(text, context, {signal}?)`, `configure(options)` y
-`resetHistory()`. `met` refleja el encuentro guardado. Acciones: `meet`, `pet`, `feed`, `gift`,
-`game`, `room`, `object`, `drawing`, `noise`, `comfort`, `compliment`, `quiet`, `wall`,
-`reunion`, `hum`, `idle`. La UI y el motor controlan cuándo corresponden.
+Consultar [términos Gemini](https://ai.google.dev/gemini-api/terms) antes de publicar;
+no prometer privacidad absoluta ni asumir que el nivel gratuito es privado.
 
-Datos propios: `mkw:lumo:v2`; migración filtrada de `mkw:lumo:v1`. Memorias tienen esquema 2;
-al cargar el esquema 1 se conservan sus IDs permitidos y se reconstruyen los datos nuevos.
-Las preferencias se guardan por separado en `mkw:lumo:settings:v1`; desactivar persistencia
-borra las dos claves de recuerdos y permanece desactivado al volver a abrir el juego. No toca
-los guardados de PC/FNF. Un guardado de una versión futura desconocida no se sobrescribe.
-`resetHistory()` borra conversación reciente y preferencias narrativas extraídas del chat;
-conserva regalos, dibujos y experiencias del motor.
+## Verificación
 
-La ventana de ocho entradas del chat vive solo en memoria. Los recuerdos persistentes son
-IDs de experiencias y preferencias inocuas del juego (arañas, bromas sobre la estatura,
-color favorito y actividad favorita, con enumeraciones cerradas),
-sin transcripciones, nombres reales ni biografía privada. Un resumen factual se reconstruye
-cada doce conversaciones, a partir de estos IDs y los eventos validados. Se recuperan recuerdos
-por tema y se registran menciones con una pausa de dieciséis turnos para evitar insistencia.
-Los ejemplos raros aprobados son locales, se registran una sola vez y tienen puertas de
-experiencias, conversaciones y tiempo. El episodio del ramo sigue bloqueado sin confirmación
-del creador. Un tarareo desconocido se registra sin explicar su procedencia.
-
-Amistad: acciones y experiencias distintas otorgan afinidad una sola vez; repetir mensajes,
-caricias, juegos o regalos no permite acumular puntos infinitos. Etapas provisionales de HOME:
-DESCONOCIDOS, COMPANEROS (3), AMIGOS (12), MEJORES_AMIGOS (24); no cambia la progresión principal
-ni penaliza pausas o ausencias. La intervención automática configurable es gestionada por el motor.
-
-El proveedor recibe el mensaje actual, contexto compacto y hasta seis entradas recientes cuando
-se usa IA. No se guarda un historial en el servidor; la política de retención del proveedor se
-debe revisar antes de publicar. El borrado local no elimina datos que el proveedor ya haya recibido.
-
-## Límites y verificación
-
-Por defecto: ocho solicitudes pagadas por minuto, 120 por día UTC, dos simultáneas, once segundos
-de espera y 220 tokens de salida. No hay reintentos automáticos. Estos límites son globales
-por proceso y se reinician al reiniciar el servidor. Configurar además presupuesto y alertas
-del proveedor; los límites de solicitudes no equivalen a un límite monetario persistente.
-
-El formato utiliza `max_completion_tokens`, `store: false`, `stream: false` y modo JSON.
-Para proveedores antiguos se permiten `max_tokens` y desactivar modo JSON. Un modelo de
-razonamiento puede necesitar ajustar su límite de salida; las respuestas incompletas pasan a local.
-Referencia verificada: [Chat Completions, documentación oficial](https://developers.openai.com/api/reference/resources/chat).
-
-Pruebas reproducibles desde la raíz del proyecto (ejecutadas con Node 24.19.0):
-
+Desde la raíz del proyecto:
 ```powershell
-node --test --test-isolation=none tests/lumo-mind.test.cjs tests/lumo-backend.test.cjs tests/lumo-integration.test.cjs tests/lumo-actor.test.cjs
+node --test --test-isolation=none outputs/pc-room/tests/lumo-mind.test.cjs outputs/pc-room/tests/lumo-backend.test.cjs
 ```
 
-36 pruebas, más los casos del actor agrupados en su archivo, incluyen persistencia/migración/privacidad, 1.800 turnos locales adversos, recuerdos
-de preferencias después de otros 1.000 turnos y recarga, reconstrucción de 2.000 contextos
-hostiles, configuración HTTPS remota, CORS y referencias con pausas, identidad, canon, validación del proveedor
-simulado, límites, claves protegidas, orígenes, cancelación, espera y rangos estáticos.
-El proveedor se simula en las pruebas: una conversación real requiere credenciales y un modelo;
-no se afirma haberla probado sin ellos.
+Desde outputs/pc-room:
+```powershell
+node --env-file=.env server/lumo-check.cjs --live
+```
+
+La segunda orden prueba dos mensajes sintéticos privados del creador. No lee chats de
+jugadoras ni crea rutas administrativas. Informa estado y contadores agregados.
+IA real pendiente sin credenciales; pruebas actuales usan mocks.
+
+Fuentes oficiales verificadas: [generateContent](https://ai.google.dev/api/generate-content),
+[JSON estructurado](https://ai.google.dev/gemini-api/docs/generate-content/structured-output).
+Modelo/presupuesto dependen del proyecto; truncados se rechazan.

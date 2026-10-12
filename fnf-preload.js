@@ -68,8 +68,9 @@
     });
   }
 
+  let enabled=false;
   async function start() {
-    if (running) return;
+    if (!enabled || running) return;
     running = true;
     const registration = await prepare();
     if (!registration?.active) { state.phase = 'unavailable'; publish(); running = false; return; }
@@ -98,7 +99,7 @@
     finally { running = false; }
   }
 
-  window.FnfPreload = Object.freeze({prepare, start, getState:snapshot, setGameActive(value){gameActive=Boolean(value); updateIndicator();}});
+  window.FnfPreload = Object.freeze({prepare, start, enable(){enabled=true;enteredHouse=true;start();}, getState:snapshot, setGameActive(value){gameActive=Boolean(value); updateIndicator();}});
   const schedule = () => {
     // Give the first house frames and its audio time to start before fetching FNF.
     setTimeout(() => {
@@ -111,9 +112,9 @@
     // Observe the existing entry UI; do not alter rooms or the house game loop.
     const observer = new MutationObserver(() => {
       if (house.style.display !== 'grid') return;
-      enteredHouse = true; observer.disconnect(); schedule();
+      enteredHouse = true; observer.disconnect();
     });
-    if (house.style.display === 'grid') { enteredHouse = true; schedule(); }
+    if (house.style.display === 'grid') { enteredHouse = true; }
     else observer.observe(house, {attributes:true, attributeFilter:['style']});
   }
   window.addEventListener('online', () => { if (state.phase === 'paused') start(); });

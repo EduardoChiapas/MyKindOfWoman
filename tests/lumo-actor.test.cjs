@@ -83,6 +83,7 @@ assert.equal(hide.actor.trail.length, 1, 'Changing rooms discards old world posi
 // A companion immediately behind Mira must not take the examine action from
 // a drawing ahead, even when the floating body overlaps her visual silhouette.
 const examining = makeWorld();
+advance(examining, 0.2); // Place the actor as the real game does before allowing interaction.
 examining.actor.x = 100; examining.actor.y = 225;
 const miraFeet = { x:90, y:194, width:20, height:12 };
 const lookingUp = { x:84, y:158, width:32, height:42 };

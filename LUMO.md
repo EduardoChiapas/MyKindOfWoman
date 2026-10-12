@@ -1,64 +1,31 @@
 # Lumo en HOME
 
-Lumo acompaña a Mira por las habitaciones y usa los sprites originales de mundo a color.
-Sus retratos de conversación son cabezas originales en blanco y negro, dibujadas desde
-assets/lumo/manifest.js/json con escalado sin suavizado. La interfaz conserva la fuente local
-y las cajas negras con borde blanco; PC/FNF y sus diálogos siguen separados.
+Lumo acompaña a Mira con sprites originales a color y retratos originales de cabeza B/W. Fuente local, marco negro/blanco y escalado sin suavizado. Los originales de assets/lumo permanecen intactos.
 
-## Uso y actividades
+## Uso
 
-Acércate y examina con Z, toca el sprite o usa el botón Lumo/tecla L. El primer encuentro
-inicia el acompañamiento. HABLAR abre un campo libre; ACARICIAR muestra su reacción.
-DAR OBJETO aparece cuando hay un regalo en inventario. JUGAR ofrece actividades existentes:
-escondidas de tres rondas, memoria de cuatro parejas y escuchar un tarareo de cuatro notas.
-Puedes cerrar o dejar una actividad para después, sin penalización.
+Acércate e interactúa con Z/E o toca su sprite. Lumo saluda naturalmente; solo aparecen retrato, texto y campo automático después de la última página. Tocar texto/Z/E/Enter fuera acelera o avanza; Enter dentro envía una vez. Esc/X fuera o toque exterior cierra/cancela. Sin historial visible, sugeridos, barra, botón ENVIAR, etiquetas, proveedor ni avisos técnicos en conversación.
 
-La cocina ofrece una galleta; el pasillo, una flor de papel; el dormitorio, una cinta.
-El escondite permite dibujar una estrellita para regalar. Cada objeto se recoge una vez.
-El escondite se abre tras conocer a Lumo, visitar tres habitaciones distintas y compartir
-una caricia, regalo o juego. Su dibujo y caja recuerdan experiencias compartidas.
-El sótano existente continúa accesible y el clóset del fondo permanece cerrado.
+L y el silbato llaman sin chat. Diario J y opciones H permiten consultar compañía/actividades y privacidad fuera del diálogo. Regalos disponibles según inventario real; escondidas de tres rondas, memoria de cuatro parejas y tarareo. Galleta, flor de papel, cinta y dibujo se recogen una vez y entregar los consume. El escondite se abre tras encuentro, tres cuartos distintos y una experiencia compartida. Sin castigo por ausencias. Todo el acceso al sótano permanece bloqueado durante HOME.
 
-## Archivos y contratos
+## Contratos de interfaz
 
-- lumo-actor.js: seguimiento, rutas sobre suelo, recuperación, emociones y animaciones.
-- lumo-mind.js: diálogo local, memoria por IDs, amistad, contexto permitido y cliente de IA.
-- lumo-ui.js/css: modal, historial reciente, escritura/audio, retratos, foco y teclado móvil.
-- lumo-activities.js/css: juego de parejas.
-- lumo-integration.js: interacción, regalos, escondidas, escondite y puente al motor.
-- lumo-config.js: configuración pública del endpoint; nunca contiene una clave del proveedor.
-- server/: proveedor, reglas HOME y endpoint. Ver server/LUMO_BACKEND.md para instalación.
-- assets/lumo/: originales, manifiestos y procedencia.
+LumoUI.mount(adapter) recibe contexto, stage opcional, pausa, audio, actor, mente y actividades. API: open/close/speak/toast/bubble/advance/sendMessage/openSettings/openActions/refresh; isOpen/isPending/aiConnected.
 
-LumoUI.mount(adapter) enlaza contexto, pausa, audio, actor, mente, regalos y actividades.
-open/close/speak/toast/advance controlan su interfaz; isOpen/isPending exponen estado.
-La UI emite lumo:frequency, lumo:privacy y lumo:history-cleared.
-LumoMind expone init/getState/remember/act/chat/configure/resetHistory.
-Los resultados solo contienen texto, emoción/animación permitidas, referencia de recuerdo,
-source y narrative_intent:null. El motor controla todas las acciones y progresión.
+speak(response,{after:'scene'}) reserva texto guionado sin campo y espera un avance final. La respuesta normal abre el campo sola. bubble(response,{anchor:{x,y},duration:3}) muestra reacción local durante tres segundos sin foco/pausa/API. toast ambiental respeta frecuencia.
 
-## Conexión, memoria y pruebas
+Eventos de privacidad: lumo:frequency, lumo:privacy, lumo:history-cleared y lumo:personal-memories-cleared. Borrador y solicitud sobreviven al panel externo; cerrar/borrar/revocar cancela pendientes e ignora respuestas tardías.
 
-El backend usa credenciales solo de servidor y un proveedor configurable.
-Con frontend estático, se necesita un backend accesible según server/LUMO_BACKEND.md.
-“IA conectada” aparece solo tras una respuesta validada del proveedor; el respaldo se llama
-“Diálogo local”. La llamada real está pendiente de credenciales y verificación del despliegue.
+Archivos: lumo-actor.js, lumo-mind.js, lumo-ui.js/css, lumo-activities.js/css y lumo-integration.js. HomeProgress/HomeStory añaden progreso/actividades. server/ implementa perfiles independientes de Lumo/Ryon, proveedor, sesiones y validación. lumo-config.js solo contiene configuración pública, nunca claves.
 
-El historial conversacional es breve y volátil. Solo se guardan recuerdos seleccionados,
-eventos e inventario con versiones propias, separados del guardado de PC/FNF.
-Borrar chat conserva aventuras y regalos. Los ajustes permiten reducir/apagar comentarios
-y controlar la persistencia entre sesiones. No hay presión por un contador de amistad.
+## Conexión y privacidad
 
-Pasaron 36 pruebas automatizadas, sin fallas, además de comprobaciones en navegador de chat,
-regalos, memoria, escondite, retratos y PC. La emulación móvil 390×844/390×430 mantuvo el campo
-visible sin desbordamiento horizontal. Las pruebas extensas verifican memoria y migraciones
-tras 1,800 turnos locales, 2,000 contextos y otras 1,000 conversaciones antes de recarga.
-No sustituyen una conversación real de IA ni una prueba de Android físico, todavía pendientes.
-Ver verificacion-lumo.json para evidencia y ejecutar, desde esta carpeta:
+Backend preparado para Gemini nativo, con adaptador alternativo configurable. IA está deshabilitada por defecto hasta habilitarla y configurar modelo/clave exclusivamente en servidor. Con permiso y configuración, la presentación limpia mantiene Gemini; no cambia preferencias para ocultar información. Sin configuración/permiso o ante fallo, Lumo responde localmente sin warnings técnicos.
 
-```powershell
-node --test --test-isolation=none tests/lumo-mind.test.cjs tests/lumo-backend.test.cjs tests/lumo-integration.test.cjs tests/lumo-actor.test.cjs
-```
+Privacidad accesible desde opciones externas: consentimiento/revocación, historial reciente privado y acotado, borrado de mensajes o recuerdos personales separado de aventuras/regalos/partida. Sesiones y perfiles separados. No claves frontend ni panel de lectura de conversaciones. Consultar [servidor](server/LUMO_BACKEND.md) y documentos de privacidad; no afirmar privacidad absoluta ante tratamiento externo.
 
-Esta integración de Lumo no certifica que el argumento completo de HOME esté terminado.
+## Verificación
 
+Mente/backend integrado: 42 pruebas; UI limpia: siete; HomeStory integrado: diez. Puente de llamada/cercanía y actor verificados por sus suites. PC apps registradas con Ryon local y escena HOME en verificación de navegador; estas pruebas no certifican una partida completa.
+
+Android físico, proveedor real con credenciales/modelo y despliegue siguen pendientes. No afirmar IA real a partir de mocks ni HOME terminado por integrar funciones. La raíz actualizará evidencia y resultado final de entrega.

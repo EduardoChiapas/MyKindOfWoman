@@ -937,6 +937,7 @@ function clearSpawnFromExitTriggers() {
 // PUERTAS / HABITACIONES
 // ============================================================
 function showDialog(text) {
+  window.LumoUI?.dismissAmbient?.();
   gameState = 'DIALOG';
   resetMovementInput();
   resetJoystick();
@@ -1086,16 +1087,18 @@ function checkInteraction() {
   const object = findInteraction();
   if (!object) return;
   if (object.id==='lumo' && window.HomeStory?.interact(object)) return;
-  if (window.LumoGame?.interact(object)) { window.HomeObjectsState?.interact(object); return; }
-  if (window.HomeStory?.interact(object)) { window.HomeObjectsState?.interact(object); return; }
+  if (window.LumoGame?.interact(object)) { notifyHomeObject(object); return; }
+  if (window.HomeStory?.interact(object)) { notifyHomeObject(object); return; }
   window.LumoGame?.observe(object);
 
   if (object.action === 'pc') {
+    window.UndertaleAudio?.stop?.('world');
     window.GamingPC.open();
     return;
   }
 
   if (object.action === 'book') {
+    notifyHomeObject(object);window.HomeBook?.open();
     gameState = 'BOOK';
     resetMovementInput();
     resetJoystick();
@@ -1105,13 +1108,18 @@ function checkInteraction() {
     return;
   }
 
-  window.HomeObjectsState?.interact(object);
-  window.HomeWorld?.feedback(object);
-  showDialog(window.HomeWorld?.description(object) || object.text);
+  notifyHomeObject(object);
+  showDialog(window.HomeRoomDetails?.description(object) || window.HomeWorld?.description(object) || object.text);
+}
+
+function notifyHomeObject(object) {
+  if(gameState==='HOME_ACTIVITY'&&['garden_flower','garden_watering_can'].includes(object.id))return;
+  if(window.HomeObjectsState?.interact(object))window.HomeWorld?.feedback(object);
 }
 
 function closeInteraction(reason = 'cancel') {
   if (gameState !== 'DIALOG' && gameState !== 'BOOK') return;
+  window.HomeBook?.close();
   HouseExperience.closeDialog(reason);
   dialogBox.classList.add('hidden');
   interactiveBook.classList.add('hidden');
@@ -1292,11 +1300,13 @@ function draw() {
   window.HomeStory?.draw(ctx,camera);
   const ambienceOptions = { scale: ROOM_SCALE, reducedMotion: HouseExperience.reducedMotion };
   HouseAmbience.draw(ctx, currentRoom, camera, HouseExperience.elapsedSeconds, ambienceOptions);
+  window.HomeRoomDetails?.draw(ctx,currentRoom,camera);
   if (currentRoom === 'hallway') drawMirrorReflection();
   window.LumoGame?.draw(ctx, camera, 'back');
   drawPlayer();
   window.LumoGame?.draw(ctx, camera, 'front');
   HouseAmbience.drawForeground(ctx, currentRoom, camera, getPlayerHitbox(), ambienceOptions);
+  window.HomeRoomDetails?.draw(ctx,currentRoom,camera,true,getPlayerHitbox());
   if(currentRoom==='livingRoom')window.HomeWorld?.drawPiano(ctx,camera,true,getPlayerHitbox());
   if (rooms[currentRoom].drawForeground) rooms[currentRoom].drawForeground(ctx, camera);
   drawLighting();
@@ -1408,6 +1418,7 @@ function drawMirrorReflection() {
 }
 
 function drawSpriteFrame(frameX, frameY, screenX, screenY) {
+  if(window.HomeCharacterRender?.drawPlayer(ctx,playerSprite,{frameX,frameY,x:screenX,y:screenY,width:player.width,height:player.height}))return;
   const sourceWidth = playerSprite.naturalWidth / 4;
   const sourceHeight = playerSprite.naturalHeight / 4;
   ctx.drawImage(playerSprite, frameX * sourceWidth, frameY * sourceHeight,
@@ -1418,6 +1429,7 @@ function drawPlayer() {
   const { x: screenX, y: screenY } = playerScreenPosition();
 
   if (playerSprite.complete && playerSprite.naturalWidth > 0) {
+    if(window.HomeCharacterRender?.drawPlayer(ctx,playerSprite,{frameX:player.frameX,frameY:player.frameY,x:screenX,y:screenY,width:player.width,height:player.height,shadow:true}))return;
     drawSpriteFrame(player.frameX, player.frameY, screenX, screenY);
     return;
   }

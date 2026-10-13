@@ -32,3 +32,10 @@ Las muestras se reproducen a su tono original, con volumen controlado por el jue
 Las tres hojas de referencia aportadas por el creador se conservan sin modificaciones en `assets/lumo/`: mundo blanco/lavanda y retratos en blanco y negro. El manifiesto recorta y alinea los cuadros al reproducirlos. Dos cuadros de la animación de comer se generaron a partir de esas referencias; el prompt, procedencia y comprobaciones de las hojas originales están en esa carpeta. El resto utiliza el arte suministrado. El tarareo de cuatro notas es una melodía original de esta implementación.
 
 La habitación opcional de Lumo reutiliza los muebles del dormitorio original. La protagonista se llama Mira en los textos del juego y la app Determination; la fuente histórica de esa app se conserva fuera de los archivos publicados.
+
+
+## Sprites, coherencia, sonido y minijuegos HOME — 2026-10-12
+
+Mobiliario ampliado de código propio: home-pixel-art.js/home-room-details.js; personajes derivados en render de sus hojas aportadas, sin reemplazar archivos. Los atlas antiguos quedan históricos y no se cargan. El escondite vigente usa mobiliario propio, no clones del dormitorio.
+
+Nueveefectos originales de Undertale extraídos del catálogo públicoTheSoundsResource: https://sounds.spriters-resource.com/pc_computer/undertale/asset/399803/ . Archivos, nombres exactos, SHA256 y corroboración de espejo en assets/sfx/home/SOURCES.json/README.md. Se incorporan los mismos bytes al reproductor local; no se incluyen el ZIP completo ni otros recursos del catálogo. Las asociaciones nuevas con muebles/minijuegos son decisiones del proyecto, no afirmación de sus usos originales. Derechos de muestras Undertale corresponden a sus autores; no se presenta la licencia del mirror/motor como licencia de las muestras. Los tonos del piano/tarareo propios y las cuatro muestras anteriores se conservan.

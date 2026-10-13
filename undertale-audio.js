@@ -9,12 +9,34 @@
   });
   const volumes = Object.freeze({ text: 0.26, move: 0.3, confirm: 0.36, cancel: 0.32,
     page: 0.32, book: 0.32, toggle: 0.28, room: 0.3 });
+  // HOME cues use selected original Undertale samples, at their original pitch.
+  // Short texture windows keep paper and water from overpowering the dialogue.
+  const effects = Object.freeze({
+    water: { sample: 'water', volume: .13, duration: .66, cooldown: .18 },
+    bell: { sample: 'bell', volume: .12, cooldown: .14 },
+    open: { sample: 'open', volume: .2, cooldown: .1 },
+    close: { sample: 'close', volume: .16, cooldown: .1 },
+    box: { sample: 'box', volume: .13, cooldown: .1 },
+    switch: { sample: 'switch', volume: .13, cooldown: .09 },
+    lever: { sample: 'lever', volume: .1, cooldown: .1 },
+    paper: { sample: 'paper', volume: .07, duration: .17, cooldown: .09 },
+    card: { sample: 'paper', volume: .075, duration: .13, cooldown: .065 },
+    cloth: { sample: 'paper', volume: .055, duration: .11, cooldown: .12 },
+    clock: { sample: 'switch', volume: .07, duration: .085, cooldown: .18 },
+    squeak: { sample: 'squeak', volume: .22, cooldown: .09 },
+    match: { sample: 'bell', volume: .095, duration: .31, cooldown: .16 },
+    miss: { sample: 'menu_move', volume: .18, cooldown: .1 },
+    success: { sample: 'confirm', volume: .22, cooldown: .25 }
+  });
   const buffers = new Map();
+  const lastEffects = new Map();
   const sampleStatus = {};
   const voices = [];
   let context = null;
   let output = null;
+  let effectOutput = null, textOutput = null;
   let preparation = null;
+  let preparationGeneration = 0;
   let muted = false;
   let paused = false;
   let effectVolume = 1, textVolume = 1;
@@ -31,7 +53,8 @@
   }
 
   function stop(kind) {
-    for (const voice of [...voices]) if (!kind || voice.kind === kind) stopVoice(voice);
+    for (const voice of [...voices]) if (!kind || voice.kind === kind || (kind === 'world' && voice.kind.startsWith('world:'))) stopVoice(voice);
+    if (!kind || kind === 'world') lastEffects.clear();
   }
 
   function embeddedBytes(entry) {
@@ -63,24 +86,37 @@
 
   function prepare(audioContext) {
     if (context === audioContext && preparation) return preparation;
+    const generation = ++preparationGeneration;
     stop();
     if (output) try { output.disconnect(); } catch { /* Old context. */ }
+    if (effectOutput) try { effectOutput.disconnect(); textOutput.disconnect(); } catch { /* Old context. */ }
     context = audioContext;
     buffers.clear();
-    if (!context) return Promise.resolve();
+    for (const name of Object.keys(sampleStatus)) delete sampleStatus[name];
+    if (!context) { output = effectOutput = textOutput = null; preparation = null; return Promise.resolve(); }
     output = context.createGain();
     output.gain.value = muted ? 0 : 1;
     output.connect(context.destination);
+    effectOutput = context.createGain(); textOutput = context.createGain();
+    effectOutput.gain.value = effectVolume; textOutput.gain.value = textVolume;
+    effectOutput.connect(output); textOutput.connect(output);
     const data = global.UndertaleSfxData || {};
-    preparation = Promise.all(['text', 'menu_move', 'confirm', 'cancel'].map(async name => {
+    const names = [...new Set(['text', 'menu_move', 'confirm', 'cancel', ...Object.values(effects).map(spec => spec.sample)])];
+    preparation = Promise.all(names.map(async name => {
+      let timer;
       try {
-        const buffer = await context.decodeAudioData(embeddedBytes(data[name]));
+        const buffer = await Promise.race([
+          audioContext.decodeAudioData(embeddedBytes(data[name])),
+          new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Sample decode timeout')), 1800); })
+        ]);
+        if (generation !== preparationGeneration || context !== audioContext) return;
         buffers.set(name, buffer);
         sampleStatus[name] = 'original';
       } catch {
+        if (generation !== preparationGeneration || context !== audioContext) return;
         buffers.set(name, fallbackBuffer(name));
         sampleStatus[name] = 'fallback';
-      }
+      } finally { clearTimeout(timer); }
     })).then(() => undefined);
     return preparation;
   }
@@ -99,13 +135,48 @@
     const source = context.createBufferSource();
     const gain = context.createGain();
     source.buffer = buffer;
-    gain.gain.value = (volumes[kind] || 0.3) * (kind==='text' ? textVolume : effectVolume);
-    source.connect(gain).connect(output);
+    gain.gain.value = (volumes[kind] || 0.3) * unit(options.volume, 1);
+    source.connect(gain).connect(kind === 'text' ? textOutput : effectOutput);
     const voice = { source, gain, kind };
     voices.push(voice);
     source.onended = () => removeVoice(voice);
     const delay = Math.min(0.08, Math.max(0, Number(options.delay) || 0));
     try { source.start(context.currentTime + delay); }
+    catch { removeVoice(voice); return false; }
+    return true;
+  }
+
+  function unit(value, fallback = 0) {
+    const number = value === undefined ? fallback : Number(value);
+    return Number.isFinite(number) ? Math.max(0, Math.min(1, number)) : fallback;
+  }
+
+  function effect(name, options = {}) {
+    const spec = effects[name];
+    if (!spec || !context || !output || context.state !== 'running' || muted ||
+      (paused && !options.ui) || document.hidden || !effectVolume || !unit(options.volume, 1)) return false;
+    const buffer = buffers.get(spec.sample);
+    if (!buffer) return false;
+    const at = context.currentTime;
+    if (at - (lastEffects.get(name) ?? -Infinity) < spec.cooldown) return false;
+    lastEffects.set(name, at);
+    const kind = 'world:' + name;
+    stop(kind);
+    while (voices.length >= 8) stopVoice(voices[0]);
+    const source = context.createBufferSource(), gain = context.createGain();
+    source.buffer = buffer;
+    // No persistent ambience: the only permitted loop is a bounded water gesture.
+    source.loop = name === 'water' && options.loop === true;
+    const duration = source.loop ? 3 : Math.min(buffer.duration, spec.duration ?? buffer.duration);
+    const level = spec.volume * unit(options.volume, 1);
+    gain.gain.setValueAtTime(0, at);
+    gain.gain.linearRampToValueAtTime(level, at + Math.min(.006, duration / 3));
+    gain.gain.setValueAtTime(level, at + Math.max(.006, duration - .025));
+    gain.gain.linearRampToValueAtTime(0, at + duration);
+    source.connect(gain).connect(effectOutput);
+    const voice = { source, gain, kind };
+    voices.push(voice); source.onended = () => removeVoice(voice);
+    try { if (source.loop) source.start(at); else source.start(at, 0, duration); source.stop(at + duration + .005); }
     catch { removeVoice(voice); return false; }
     return true;
   }
@@ -136,8 +207,9 @@
       const source=context.createOscillator(), gain=context.createGain();
       source.type='sine'; source.frequency.value=frequency;
       const at=context.currentTime+index*.3;
-      gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.035*effectVolume*Math.max(0,Math.min(1,options.volume??1)),at+.045);
-      gain.gain.linearRampToValueAtTime(0,at+.26);source.connect(gain).connect(output);
+      while(voices.length>=8)stopVoice(voices[0]);
+      gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.035*unit(options.volume,1),at+.045);
+      gain.gain.linearRampToValueAtTime(0,at+.26);source.connect(gain).connect(effectOutput);
       const voice={source,gain,kind:'hum'};voices.push(voice);source.onended=()=>removeVoice(voice);
       source.start(at);source.stop(at+.29);
     });
@@ -149,18 +221,22 @@
     const source=context.createOscillator(), gain=context.createGain(), at=context.currentTime;
     source.type=kind==='knock'?'triangle':'sine';source.frequency.setValueAtTime(frequency,at);
     if(kind==='whistle')source.frequency.linearRampToValueAtTime(1050,at+.12);
-    const level=(kind==='knock'?.045:.035)*effectVolume*Math.max(0,Math.min(1,options.volume??1));
+    const level=(kind==='knock'?.045:.035)*unit(options.volume,1);
     gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(level,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
-    source.connect(gain).connect(output);const voice={source,gain,kind};voices.push(voice);source.onended=()=>removeVoice(voice);
+    source.connect(gain).connect(effectOutput);const voice={source,gain,kind};voices.push(voice);source.onended=()=>removeVoice(voice);
     source.start(at);source.stop(at+duration+.015);return true;
   }
   function note(index,options={}){const notes=[261.626,329.628,293.665,391.995];return tone(options.odd?277.183:notes[Math.max(0,Math.min(3,Math.floor(index)))],'piano',.38,options);}
   function whistle(){return tone(740,'whistle',.22);}
   function knock(){return tone(92,'knock',.16);}
   global.UndertaleAudio = Object.freeze({
-    prepare, play, hum, note, whistle, knock, stop, setMuted, setPaused,
-    setVolumes({effects=effectVolume,text=textVolume}={}){effectVolume=Math.max(0,Math.min(1,Number(effects)||0));textVolume=Math.max(0,Math.min(1,Number(text)||0));},
+    prepare, play, effect, hum, note, whistle, knock, stop, setMuted, setPaused,
+    setVolumes({effects=effectVolume,text=textVolume}={}){
+      effectVolume=unit(effects); textVolume=unit(text);
+      if(context && effectOutput){effectOutput.gain.setValueAtTime(effectVolume,context.currentTime);textOutput.gain.setValueAtTime(textVolume,context.currentTime);}
+    },
     get activeVoices() { return voices.length; },
     get sampleStatus() { return { ...sampleStatus }; }
   });
+  document.addEventListener?.('visibilitychange', () => { if (document.hidden) stop(); });
 })(window);

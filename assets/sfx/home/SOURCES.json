@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "imported": "2026-10-12",
+  "catalog": "https://sounds.spriters-resource.com/pc_computer/undertale/asset/399803/",
+  "catalogSubmission": {
+    "author": "MilesTheCreator",
+    "date": "2016-03-12"
+  },
+  "catalogDownloadStatus": "Public download link retrieved successfully; all selected samples extracted directly from the catalog ZIP.",
+  "mirror": "https://github.com/fachinformatiker/undertale/tree/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio",
+  "rights": "Undertale samples belong to Toby Fox and their respective authors. No publishing license inferred from availability or from the mirror license.",
+  "transformation": "Original sample bytes retained; playback gains and short playback windows set in undertale-audio.js.",
+  "samples": [
+    {
+      "id": "bell",
+      "file": "snd_bell.wav",
+      "bytes": 83278,
+      "sha256": "5f1831b83155b9b19d6dd874a462bad44e94a7d31f280bb59fe9cb3e45634804",
+      "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+      "sourceCommit": "8fe470447df7bd9a374671e58554d0f3a7471693",
+      "encoding": "wav",
+      "mirrorVerification": {
+        "source": "https://raw.githubusercontent.com/fachinformatiker/undertale/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio/snd_bell.wav",
+        "sha256": "5f1831b83155b9b19d6dd874a462bad44e94a7d31f280bb59fe9cb3e45634804",
+        "matchesLibrary": true
+      },
+      "archivePath": "snd_bell.wav"
+    },
+    {
+      "id": "box",
+      "file": "snd_dimbox.wav",
+      "bytes": 51278,
+      "sha256": "afb6557a352a122ab834247e9eb3b9dcbb20b288b8658b2577ef07be92123c33",
+      "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+      "sourceCommit": "8fe470447df7bd9a374671e58554d0f3a7471693",
+      "encoding": "wav",
+      "mirrorVerification": {
+        "source": "https://raw.githubusercontent.com/fachinformatiker/undertale/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio/snd_dimbox.wav",
+        "sha256": "afb6557a352a122ab834247e9eb3b9dcbb20b288b8658b2577ef07be92123c33",
+        "matchesLibrary": true
+      },
+      "archivePath": "snd_dimbox.wav"
+    },
+    {
+      "id": "switch",
+      "file": "snd_lightswitch.wav",
+      "bytes": 63866,
+      "sha256": "d8629fd07199e06fc7bb57c842cab3fefe403a59ecd10597b59e3ac0659fa96f",
+      "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+      "sourceCommit": "8fe470447df7bd9a374671e58554d0f3a7471693",
+      "encoding": "wav",
+      "mirrorVerification": {
+        "source": "https://raw.githubusercontent.com/fachinformatiker/undertale/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio/snd_lightswitch.wav",
+        "sha256": "d8629fd07199e06fc7bb57c842cab3fefe403a59ecd10597b59e3ac0659fa96f",
+        "matchesLibrary": true
+      },
+      "archivePath": "snd_lightswitch.wav"
+    },
+    {
+      "id": "water",
+      "file": "snd_splash.wav",
+      "bytes": 302478,
+      "sha256": "f4f26d7677d92a1e5ca1942aa2c9210d5689450bb52fd451b24e286de2bd212a",
+      "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+      "sourceCommit": "8fe470447df7bd9a374671e58554d0f3a7471693",
+      "encoding": "wav",
+      "mirrorVerification": {
+        "source": "https://raw.githubusercontent.com/fachinformatiker/undertale/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio/snd_splash.wav",
+        "sha256": "f4f26d7677d92a1e5ca1942aa2c9210d5689450bb52fd451b24e286de2bd212a",
+        "matchesLibrary": true
+      },
+      "archivePath": "snd_splash.wav"
+    },
+    {
+      "id": "lever",
+      "file": "snd_switchpull_n.wav",
+      "bytes": 55394,
+      "sha256": "62d765aba92ecd035f55ff4a2600f3ef6216ce9ae6df4c0ab409bd122237509c",
+      "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+      "sourceCommit": "8fe470447df7bd9a374671e58554d0f3a7471693",
+      "encoding": "wav",
+      "mirrorVerification": {
+        "source": "https://raw.githubusercontent.com/fachinformatiker/undertale/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio/snd_switchpull_n.wav",
+        "sha256": "62d765aba92ecd035f55ff4a2600f3ef6216ce9ae6df4c0ab409bd122237509c",
+        "matchesLibrary": true
+      },
+      "archivePath": "snd_switchpull_n.wav"
+    },
+    {
+      "id": "paper",
+      "file": "snd_tearcard.wav",
+      "bytes": 314958,
+      "sha256": "1d05e5ef13b39d9357650cc0667356667366a37664d7536f7cd2b5f5ae809186",
+      "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+      "sourceCommit": "8fe470447df7bd9a374671e58554d0f3a7471693",
+      "encoding": "wav",
+      "mirrorVerification": {
+        "source": "https://raw.githubusercontent.com/fachinformatiker/undertale/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio/snd_tearcard.wav",
+        "sha256": "1d05e5ef13b39d9357650cc0667356667366a37664d7536f7cd2b5f5ae809186",
+        "matchesLibrary": true
+      },
+      "archivePath": "snd_tearcard.wav"
+    },
+    {
+      "id": "squeak",
+      "file": "snd_squeak.wav",
+      "bytes": 2142,
+      "sha256": "aece76a22bbfc904ddcf8b4c5cdbade0cbb39ce5759d23e1fa56c4a9041cddde",
+      "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+      "sourceCommit": "8fe470447df7bd9a374671e58554d0f3a7471693",
+      "encoding": "wav",
+      "mirrorVerification": {
+        "source": "https://raw.githubusercontent.com/fachinformatiker/undertale/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio/snd_squeak.wav",
+        "sha256": "aece76a22bbfc904ddcf8b4c5cdbade0cbb39ce5759d23e1fa56c4a9041cddde",
+        "matchesLibrary": true
+      },
+      "archivePath": "snd_squeak.wav"
+    },
+    {
+      "id": "open",
+      "file": "mus_dooropen.ogg",
+      "bytes": 9233,
+      "sha256": "db886dc9f3ee4ba6a25d97e584cd0e05d7e7e9132d38324c8d0fdc443bd9cd5d",
+      "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+      "sourceCommit": "8fe470447df7bd9a374671e58554d0f3a7471693",
+      "encoding": "ogg",
+      "mirrorVerification": {
+        "source": "https://raw.githubusercontent.com/fachinformatiker/undertale/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio/mus_dooropen.ogg",
+        "sha256": "defb78c4c87af811d81636febd5b0f9269a8b944d95b9da3e5228b761801cf4a",
+        "matchesLibrary": false
+      },
+      "archivePath": "mus_dooropen.ogg"
+    },
+    {
+      "id": "close",
+      "file": "mus_doorclose.ogg",
+      "bytes": 13942,
+      "sha256": "36bfe04691551527f3492a014110b3958db64ea924759e99d31dfdda285ec78f",
+      "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+      "sourceCommit": "8fe470447df7bd9a374671e58554d0f3a7471693",
+      "encoding": "ogg",
+      "mirrorVerification": {
+        "source": "https://raw.githubusercontent.com/fachinformatiker/undertale/8fe470447df7bd9a374671e58554d0f3a7471693/sound/audio/mus_doorclose.ogg",
+        "sha256": "23b2dd79dfcacd15870733db81a1f09b8721da3cf3d1c6a306b1cf285ebac6de",
+        "matchesLibrary": false
+      },
+      "archivePath": "mus_doorclose.ogg"
+    }
+  ],
+  "archive": {
+    "source": "https://sounds.spriters-resource.com/media/assets/397/399803.zip?updated=1785017638",
+    "bytes": 25015950,
+    "sha256": "6c996030b346bb57f631e8702a62ee1975b4b170f988a0b1cf8515c96aa2ff0a"
+  }
+}

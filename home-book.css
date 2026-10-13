@@ -1,0 +1,20 @@
+.home-book .book-content{background:#000;color:#fff;border:3px solid #fff;box-shadow:0 0 0 3px #000;perspective:950px;border-radius:0;max-width:560px;overflow:hidden}
+.home-book .book-mark,.home-book .eyebrow{color:#fff}
+.home-book h2{font:30px/1.2 Undertale,monospace;color:#fff;letter-spacing:0}
+.home-book .home-book-leaf{min-height:190px;padding:14px 10px;border:2px solid #fff;transform-origin:0 50%;transform-style:preserve-3d;backface-visibility:hidden;box-shadow:inset 4px 0 #777}
+.home-book .home-book-leaf p,.home-book .home-book-leaf blockquote{color:#fff;background:#000;border-color:#fff;font-family:Undertale,monospace;font-size:24px;line-height:1.35;margin:12px 0;padding:0;text-wrap:pretty}
+.home-book .home-book-art{display:block;width:288px;max-width:100%;height:auto;margin:0 auto;image-rendering:pixelated;image-rendering:crisp-edges}
+.home-book .home-book-nav{display:flex;justify-content:center;align-items:center;gap:24px;margin:15px 0}
+.home-book .home-book-nav button,.home-book #btn-close-book{background:#000;color:#fff;border:2px solid #fff;border-radius:0;font:24px Undertale,monospace;padding:8px 14px;min-width:44px;min-height:44px}
+.home-book .home-book-nav button:disabled{opacity:.35;cursor:default}
+.home-book .home-book-nav button:focus-visible,.home-book #btn-close-book:focus-visible{outline:2px solid #f5e46a;outline-offset:3px;color:#f5e46a}
+.home-book .home-book-nav span{font:22px Undertale,monospace}
+.home-book .turn-away{animation:home-book-away 110ms ease-in both}
+.home-book .turn-back{animation:home-book-away 110ms ease-in both;transform-origin:100% 50%}
+.home-book .turn-in{animation:home-book-in 110ms ease-out both}
+.home-book .turn-in-back{animation:home-book-in-back 110ms ease-out both;transform-origin:100% 50%}
+@keyframes home-book-away{from{transform:rotateY(0);box-shadow:inset 4px 0 #777}to{transform:rotateY(-88deg);box-shadow:inset 20px 0 #444}}
+@keyframes home-book-in{from{transform:rotateY(88deg);box-shadow:inset 20px 0 #444}to{transform:rotateY(0);box-shadow:inset 4px 0 #777}}
+@keyframes home-book-in-back{from{transform:rotateY(-88deg)}to{transform:rotateY(0)}}
+@media(max-width:600px){.home-book .book-content{margin:12px;max-width:calc(100vw - 28px)}.home-book .home-book-leaf{min-height:175px}.home-book .home-book-leaf p,.home-book .home-book-leaf blockquote{font-size:21px}}
+@media(prefers-reduced-motion:reduce){.home-book .turn-away,.home-book .turn-back,.home-book .turn-in,.home-book .turn-in-back{animation:none;transform:none}}

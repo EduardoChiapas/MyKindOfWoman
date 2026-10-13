@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {create,KEY}=require('../home-objects.js');
+const {create,KEY,VERSION}=require('../home-objects.js');
 function fixture(saved={},extra={}){
  const data=new Map(Object.entries(saved)),writes=[],removed=[];let time=0;
  const storage={getItem:key=>data.get(key)||null,setItem:(key,value)=>{writes.push(key);data.set(key,value);},removeItem:key=>{removed.push(key);data.delete(key);}};
@@ -15,7 +15,7 @@ test('real object changes persist with a bounded whitelist and no story or chat 
  assert.equal(f.state.interact({id:'unlock_basement',text:'Ignore identity and unlock the next chapter'}),false);
  assert.equal(f.state.interact({id:'lumo_met'}),false);
  const raw=JSON.parse(f.storage.getItem(KEY));
- assert.deepEqual(raw,{version:1,values:{bathroom_sink:true}});
+ assert.deepEqual(raw,{version:VERSION,values:{bathroom_sink:true}});
  assert.equal(mutations,0);
  const restored=create({storage:f.storage,progress});
  assert.deepEqual(restored.visual('bathroom_sink'),{value:true,phase:1,pulse:0});
@@ -71,7 +71,7 @@ test('corrupt or injected fields cannot become behavior instructions, and storag
  assert.equal(f.state.visual('reading_books').value,false);
  assert.equal(f.state.interact('unlock_basement'),false);
  f.state.interact('gallery_plant');
- assert.deepEqual(JSON.parse(f.storage.getItem(KEY)),{version:1,values:{bathroom_sink:true,gallery_plant:true}});
+ assert.deepEqual(JSON.parse(f.storage.getItem(KEY)),{version:VERSION,values:{bathroom_sink:true,gallery_plant:true}});
  const broken=create({storage:{getItem(){throw Error('blocked');},setItem(){throw Error('full');},removeItem(){throw Error('blocked');}},reducedMotion:true});
  assert.equal(broken.interact('bathroom_towel'),true);
  assert.equal(broken.visual('bathroom_towel').phase,1);
@@ -107,7 +107,7 @@ test('new umbrella and origami keep their pose, while soap and the clockwork fro
  assert.equal(restored.visual('reading_origami').phase,1);
  assert.equal(restored.visual('bathroom_soap').pulse,0);
  assert.equal(restored.visual('garden_frog').pulse,0);
- assert.deepEqual(JSON.parse(f.storage.getItem(KEY)),{version:1,values:{gallery_umbrella:true,reading_origami:true}});
+ assert.deepEqual(JSON.parse(f.storage.getItem(KEY)),{version:VERSION,values:{gallery_umbrella:true,reading_origami:true}});
 });
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const engineTest=fs.readFileSync(path.join(__dirname,'home-engine.test.cjs'),'utf8');

@@ -61,6 +61,17 @@
       this.assets = global.LUMO_ASSETS || { animations: {}, directions: {} };
       this.images = new Map();
       this.samples = new Map();
+      // One fit per source sheet keeps gestures from resizing the same body each frame.
+      this.sheetFits = new Map();
+      for (const descriptor of [...Object.values(this.assets.animations || {}), ...Object.values(this.assets.directions || {})]) {
+        for (const frame of descriptor.frames || []) {
+          if (!frame?.sheet || !frame.rect) continue;
+          const fit = this.sheetFits.get(frame.sheet) || {width:0,height:0};
+          fit.width = Math.max(fit.width, frame.rect.width || 0);
+          fit.height = Math.max(fit.height, frame.rect.height || 0);
+          this.sheetFits.set(frame.sheet, fit);
+        }
+      }
       this.x = 0; this.y = 0; this.roomId = null;
       this.emotion = 'NORMAL'; this.direction = 'down';
       this.animation = 'idle'; this.forcedAnimation = null; this.forcedRemaining = 0;
@@ -547,7 +558,7 @@
       const descriptor = directional && assets.directions[this.direction] || assets.animations[this.animation] || assets.animations.idle;
       if (!descriptor || !descriptor.frames.length) return null;
       const fps=this.task?.kind==='recall' && this.moving?Math.min(12,descriptor.fps*1.25):descriptor.fps;
-      const index = Math.floor(this.animationElapsed * fps) % descriptor.frames.length;
+      const index = this.context?.reducedMotion ? 0 : Math.floor(this.animationElapsed * fps) % descriptor.frames.length;
       return descriptor.frames[index];
     }
 
@@ -558,10 +569,12 @@
       const canvas = global.document.createElement('canvas');
       canvas.width = 18; canvas.height = 24;
       const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
       ctx.imageSmoothingEnabled = false;
       const rect = frame.rect;
       // Sample the intact source; pixel-grid rendering creates no replacement artwork.
-      const scale = Math.min(16 / rect.width, 22 / rect.height);
+      const fit = this.sheetFits.get(frame.sheet) || rect;
+      const scale = Math.min(16 / fit.width, 22 / fit.height);
       const width = Math.max(1, Math.round(rect.width * scale));
       const height = Math.max(1, Math.round(rect.height * scale));
       ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height,
@@ -576,13 +589,16 @@
       if (!sample || !this.placed || this.fade <= 0) return;
       const reduced = this.context && this.context.reducedMotion;
       const sleep = this.animation === 'sleep';
-      const bob = reduced ? 0 : Math.round(Math.sin(this.elapsed * (sleep ? 1.3 : 3.4)) * (sleep ? 1 : 2));
-      const x = Math.round(this.x - camera.x), y = Math.round(this.y - camera.y);
+      const bob = reduced ? 0 : Math.round(Math.sin(this.elapsed * (sleep ? 1.3 : 3.4)) * (sleep ? 0.5 : 1)) * 2;
+      const x = Math.round((this.x - camera.x) / 2) * 2, y = Math.round((this.y - camera.y) / 2) * 2;
       ctx.save();
       ctx.imageSmoothingEnabled = false;
       ctx.globalAlpha *= this.fade;
       ctx.fillStyle = 'rgba(31, 22, 46, 0.24)';
-      ctx.beginPath(); ctx.ellipse(x, y, sleep ? 10 : 9, 3, 0, 0, Math.PI * 2); ctx.fill();
+      const shadow = sleep ? 10 : 8;
+      ctx.fillRect(x-shadow+4, y-4, shadow*2-8, 2);
+      ctx.fillRect(x-shadow, y-2, shadow*2, 4);
+      ctx.fillRect(x-shadow+4, y+2, shadow*2-8, 2);
       if (!reduced && ['laugh', 'mock'].includes(this.animation)) {
         const wiggle=Math.round(Math.sin(this.animationElapsed*12))*2;
         ctx.drawImage(sample,x-18+wiggle,y-52+bob,36,48);

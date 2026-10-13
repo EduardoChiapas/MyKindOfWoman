@@ -66,6 +66,7 @@ function fixture(saved={},options={}){
   vm.runInContext(source('home-story.js'),context);
   vm.runInContext(source('home-objects.js'),context);
   vm.runInContext(source('home-pixel-art.js'),context);
+  vm.runInContext(source('home-room-details.js'),context);
   vm.runInContext(source('home-world.js'),context);
   const actualUI=c.LumoUI;
   c.LumoUI=new Proxy({},{get(_target,key){return key==='mount'?adapter=>actualUI.mount({...adapter,manifest:c.LUMO_ASSETS}):Reflect.get(actualUI,key);}});

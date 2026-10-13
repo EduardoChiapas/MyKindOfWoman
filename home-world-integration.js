@@ -5,3 +5,5 @@ if(window.HomeObjects){
 }
 window.HomeWorld.install({rooms,R,progress:window.HomeProgress});
 window.HomeWorld.getFeet=getPlayerHitbox;
+window.HomeRoomDetails?.install({objects:window.HomeObjectsState,progress:window.HomeProgress});
+window.HomeBook?.install();

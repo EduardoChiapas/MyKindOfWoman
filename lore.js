@@ -82,7 +82,7 @@ const HOUSE_LORE = {
     },
     {
       id: 'hallway_painting', x: 250, y: 26, width: 50, height: 35,
-      text: '* Un paisaje marrón, sencillo y lejano.\n* La pintura nunca podrá abrir una ventana, pero lo intenta.'
+      text: '* Una capucha lavanda y una estrella.\n* El dibujo parece hecho con muchísimo cuidado.'
     },
     {
       id: 'hallway_large_plant', x: 322, y: 35, width: 31, height: 51,

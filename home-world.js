@@ -6,8 +6,7 @@
   'use strict';
   const rect=(x,y,width,height)=>({x,y,width,height});
   const image=src=>{if(!global)return null;const value=new global.Image();value.src=src;return value;};
-  const images={wood:image('assets/rooms/living_room.png'),
-    atlas:image('assets/home/furniture-atlas.png')};
+  const images={wood:image('assets/rooms/living_room.png')};
   // Tight atlas frames preserve transparent margins without stretching cell backgrounds.
   const FRAMES={piano:[65,95,355,329],sofa:[475,136,390,267],bath:[924,85,376,328],
     sink:[1450,72,206,347],toilet:[136,498,200,332],bench:[480,504,384,315],
@@ -232,6 +231,7 @@
     const visual=global?.HomeWorld?.objects?.visual(object.id);
     return visual&&alternatives[object.id]&&!visual.value?alternatives[object.id]:null;
   }
-  function feedback(object){if(object?.id==='garden_hall_picture'&&!global?.HomeWorld?.objects?.readOnly)global?.UndertaleAudio?.note(3,{volume:.35});}
+  function feedback(object){if(global?.HomeRoomDetails)return global.HomeRoomDetails.feedback(object);
+    if(object?.id==='garden_hall_picture'&&!global?.HomeWorld?.objects?.readOnly)global?.UndertaleAudio?.note(3,{volume:.35});}
   return {definitions,install,assets:Object.values(images).filter(Boolean),drawPiano,drawProps,description,feedback,frames:FRAMES,extraFrames:EXTRA_FRAMES,getFeet:null,objects:null};
 });

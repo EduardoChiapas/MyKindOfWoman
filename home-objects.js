@@ -4,14 +4,22 @@
   else root.HomeObjects=factory();
 })(typeof window==='object'?window:this,function(){
   'use strict';
-  const KEY='mkw:home:objects:v1',VERSION=1,DURATION=250,PULSE_DURATION=360;
+  const KEY='mkw:home:objects:v1',VERSION=2,DURATION=250,PULSE_DURATION=360;
   const TOGGLES=new Set(['gallery_picture','gallery_candle_right','gallery_plant',
     'bathroom_sink','bathroom_toilet','bathroom_towel','reading_books','reading_window',
-    'reading_plant','garden_hall_flower','gallery_umbrella','reading_origami']);
+    'reading_plant','garden_hall_flower','gallery_umbrella','reading_origami',
+    'entrance_console','living_library','living_umbrella_stand','living_table','hallway_umbrella_stand',
+    'frisk_dresser','toriel_dresser','toriel_wardrobe','kitchen_fridge','kitchen_sink']);
   const PULSES=new Set(['gallery_candle_left','bathroom_tub','reading_sofa','reading_chair',
     'garden_hall_window','garden_hall_picture','garden_tree_left','garden_tree_right','garden_bench',
     'garden_flower','garden_watering_can','garden_workbench','reading_table',
-    'lumo_bed','lumo_candle','lumo_box','lumo_desk','lumo_drawing','bathroom_soap','garden_frog']);
+    'lumo_bed','lumo_candle','lumo_box','lumo_desk','lumo_drawing','bathroom_soap','garden_frog',
+    'entrance_plant','entrance_landscape','entrance_candle','entrance_portrait','living_fireplace',
+    'living_chair','living_dining_back','living_dining_left','living_dining_right','hallway_first_candle',
+    'hallway_flowers','hallway_painting','hallway_large_plant','hallway_middle_candle','hallway_last_candle',
+    'hallway_small_plant','hallway_mirror_candle','mirror','hallway_far_umbrella','frisk_bed',
+    'frisk_little_plant','frisk_bookshelf','frisk_desk_book','frisk_chair','frisk_wastebasket','frisk_corner_plant',
+    'toriel_bed','toriel_wall_drawing','toriel_chair','toriel_desk','kitchen_counter','kitchen_stove','home_piano']);
   const clamp=value=>Math.max(0,Math.min(1,value));
   const ease=value=>value*value*(3-2*value);
   function create(options={}){
@@ -25,7 +33,7 @@
     try{
       const raw=JSON.parse(storage?.getItem(KEY)||'null');
       if(raw&&Number(raw.version)>VERSION)readOnly=true;
-      if(raw?.version===VERSION&&raw.values&&typeof raw.values==='object')
+      if([1,VERSION].includes(raw?.version)&&raw.values&&typeof raw.values==='object')
         for(const id of TOGGLES)if(typeof raw.values[id]==='boolean')values[id]=raw.values[id];
     }catch{} // A bad optional save cannot interrupt exploration.
     if(progress?.getState?.().readOnly===true)readOnly=true;

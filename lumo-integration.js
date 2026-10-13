@@ -186,16 +186,23 @@
     hideNode.querySelector('button').addEventListener('click',cancelHide); document.body.append(hideNode); updateHideLabel();
     comment({text:'Me escondo por aquí. Encuéntrame y examíname con Z o toca mi sprite. Prometo no convertirme en un mueble. Bueno, intentaré.',emotion:'PLAYFUL',animation:'hide',source:'local'},true);
   }
-  function updateHideLabel() { if (hideNode) hideNode.querySelector('span').textContent=`ESCONDIDAS ${hide.round} / 3 · Encuentra a Lumo `; }
+  function updateHideLabel() { if(!hideNode)return;
+    hideNode.querySelector('span').textContent=`ESCONDIDAS ${hide.round} / 3 · Encuentra a Lumo `;
+    let stars=hideNode.querySelector('canvas');if(!stars){stars=document.createElement('canvas');stars.width=32;stars.height=9;stars.className='lumo-hide-progress';stars.setAttribute('aria-hidden','true');hideNode.append(stars);}
+    stars.style.animation=HouseExperience.reducedMotion?'none':'';
+    const c=stars.getContext('2d');c.clearRect(0,0,32,9);c.imageSmoothingEnabled=false;
+    for(let i=0;i<3;i++){const x=i*11;c.fillStyle=i<hide.round-1?'#f5e46a':'#fff';c.fillRect(x+3,0,2,8);c.fillRect(x,3,8,2);c.fillRect(x+1,2,6,4);c.fillStyle=i<hide.round-1?'#f5e46a':'#000';c.fillRect(x+2,3,4,2);}
+  }
   function cancelHide() { if (!hide) return; actor.endHide(); hide=null; hideNode?.remove(); hideNode=null; }
   function findHidden() {
     if (!hide) return false;
     if (hide.round >= 3) {
+      global.UndertaleAudio?.effect?.('success',{ui:true,volume:.35});
       cancelHide(); global.HomeProgress?.record('played_hide_seek'); const result=mind.act('game',{game:'hide_seek',result:'win'},context()); actor.react(result); global.LumoUI.speak(result); return true;
     }
     hide.round++; const point=hidePlace();
     if (!point || !actor.beginHide(point)) { cancelHide(); return true; }
-    updateHideLabel(); HouseExperience.play('confirm'); return true;
+    updateHideLabel(); if(!global.UndertaleAudio?.effect?.('match',{ui:true,volume:.35}))HouseExperience.play('confirm'); return true;
   }
   function pickup(object,id) {
     if (world.claimed.includes(object.id)) return false;
@@ -272,6 +279,7 @@
     if ((layer==='back')===behind) actor.draw(context2d,view);
   }
   function roomChanged() {
+    global.UndertaleAudio?.stop?.('world');
     global.LumoUI.dismissAmbient?.();
     cancelHide(); actor.onRoomChange({roomId:currentRoom,room:rooms[currentRoom],player,feet:getPlayerHitbox(),state:gameState});
     stageEncounter();
@@ -340,6 +348,7 @@
   });
   global.LumoGame=Object.freeze({start,tick,draw,roomChanged,interact,observe,open,call:callLumo,callForStory,
     get drawingClaimed(){return world.claimed.includes('lumo_drawing_pickup');},
+    hasClaimed:id=>['kitchen_stove','frisk_dresser','hallway_flowers','lumo_drawing_pickup'].includes(id)&&world.claimed.includes(id),
     get mind(){return mind;},
     getInteraction:(probe,feet)=>companionVisible()?actor.getInteraction(probe,feet):null,
     getState:()=>({chapter:'HOME',world:clone(world),actor:actor.getState(),mind:mind.getState(),activity:hide ? clone(hide) : global.LumoActivities.active ? 'memory' : null}),

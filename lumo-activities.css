@@ -1,13 +1,24 @@
 .lumo-memory { position:fixed; inset:0; z-index:160; display:grid; place-items:center; background:rgba(0,0,0,.76); padding:12px; font-family:Undertale,monospace; color:white; }
-.lumo-memory-card { width:min(520px,100%); max-height:95dvh; overflow:auto; background:#000; border:3px solid #fff; padding:20px; text-align:center; box-shadow:0 0 0 4px #000; }
+.lumo-memory-card { box-sizing:border-box; width:min(520px,100%); max-height:95dvh; overflow:auto; background:#000; border:3px solid #fff; padding:20px; text-align:center; box-shadow:0 0 0 4px #000; animation:lumo-activity-open 160ms ease-out; }
 .lumo-memory h2 { font-size:22px; font-weight:normal; margin:0 0 16px; }
 .lumo-memory p { font-size:17px; line-height:1.5; }
 .lumo-memory-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:18px 0; }
 .lumo-memory button { border:2px solid white; color:white; background:#000; font:inherit; cursor:pointer; touch-action:manipulation; }
-.lumo-memory-grid button { min-height:65px; font-size:30px; }
+.lumo-memory-grid button { min-width:0; min-height:82px; padding:10px 4px; display:grid;place-items:center; perspective:240px; }
+.lumo-hide-progress{width:96px;height:27px;image-rendering:pixelated;vertical-align:middle;margin:0 8px;animation:lumo-round-in 180ms steps(3,end)}
+@keyframes lumo-round-in{from{transform:translateY(-3px);opacity:.5}to{transform:translateY(0);opacity:1}}
+@media(prefers-reduced-motion:reduce){.lumo-hide-progress{animation:none}}
+.lumo-memory-inner{position:relative;display:block;width:48px;height:48px;transform-style:preserve-3d;transition:transform 180ms ease-in-out}
+.lumo-memory-cover,.lumo-memory-face{position:absolute;inset:0;backface-visibility:hidden;display:grid;place-items:center;image-rendering:pixelated}
+.lumo-memory-face{transform:rotateY(180deg)}
+.lumo-memory-grid .is-visible .lumo-memory-inner{transform:rotateY(180deg)}
+.lumo-memory-inner canvas{display:block;width:48px;height:48px;image-rendering:pixelated}
 .lumo-memory button:hover,.lumo-memory button:focus-visible { color:#ffdf42; border-color:#ffdf42; outline:2px solid #ffdf42; outline-offset:3px; }
-.lumo-memory button.is-matched { color:#ad92eb; border-color:#ad92eb; }
+.lumo-memory button.is-matched { color:#ad92eb; border-color:#ad92eb;background:#151019; }
+.lumo-memory-status{min-height:2.8em}
 .lumo-memory-exit { padding:12px 20px; }
 .lumo-hide-status { position:fixed; left:12px; top:max(12px,env(safe-area-inset-top)); z-index:99; max-width:calc(100vw - 24px); padding:9px 12px; background:#000; color:#fff; border:2px solid #fff; font:15px Undertale,monospace; }
 .lumo-hide-status button { font:inherit; background:none; color:#ffdf42; border:0; cursor:pointer; padding:4px 8px; }
 @media(max-width:480px) { .lumo-memory-card{padding:15px}.lumo-memory-grid{gap:8px}.lumo-memory h2{font-size:19px}.lumo-memory p{font-size:15px}.lumo-hide-status{font-size:13px} }
+@keyframes lumo-activity-open{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.lumo-memory-card{animation:none}.lumo-memory-inner{transition:none}}

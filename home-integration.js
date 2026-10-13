@@ -2,11 +2,13 @@
 (function(global){
  'use strict';
  const progress=global.HomeProgress, mind=global.LumoMind, story=global.HomeStory;
+ const initial=progress.getState(),freshStart=!initial.readOnly&&!initial.position&&!initial.events.length&&!initial.visits.length&&!mind.getState().met;
  const focus=()=>canvas.focus({preventScroll:true});
- const near=()=>{if(!mind.getState().met)return false;const a=global.LumoGame.actor.getState(),f=getPlayerHitbox();return Math.hypot(a.x-f.x-f.width/2,a.y-f.y-f.height/2)<=64;};
+ const near=()=>{if(!mind.getState().met)return false;const a=global.LumoGame.actor.getState(),f=getPlayerHitbox();return a.placed&&!a.hiding&&Math.hypot(a.x-f.x-f.width/2,a.y-f.y-f.height/2)<=64;};
  story.mount({progress,rooms,R,actor:global.LumoGame.actor,
+  freshStart,
   getContext:()=>({roomId:currentRoom,state:gameState,hidden:document.hidden,reducedMotion:HouseExperience.reducedMotion}),
-  pause(value,options){resetMovementInput();resetJoystick();gameState=value?(options?.allowLumoMotion?'HOME_ENDING':'HOME_ACTIVITY'):'PLAYING';},
+  pause(value,options){if(value)global.LumoUI?.dismissAmbient?.();resetMovementInput();resetJoystick();gameState=value?(options?.allowLumoMotion?'HOME_ENDING':'HOME_ACTIVITY'):'PLAYING';},
   showDialog(text,options={}){
    if(options.speaker==='LUMO'){
     const response={text,emotion:options.emotion||'NORMAL',source:'local'};
@@ -20,13 +22,12 @@
   canCompanionActions:()=>near()&&['PLAYING','HOME_ACTIVITY'].includes(gameState),
   openCompanionActions:()=>global.LumoUI.openActions(),
   onEvent(event){
-   if(event.id)mind.remember('event',{id:event.id});
+   if(event.id&&event.id!=='home_melody_found')mind.remember('event',{id:event.id});
    if(event.type==='knock')mind.remember('event',{id:'home_knocks'});
-   if(event.type==='cooked')mind.noteLocalAction({id:'cook'});
-   if(event.type==='melody-found')mind.noteLocalAction({id:'hum'});
+   if(event.type==='cooked'&&near())mind.noteLocalAction({id:'cook'});
   }
  });
- progress.onChange(id=>{if(id!=='visit')mind.remember('event',{id});});
+ progress.onChange(id=>{if(id!=='visit'&&id!=='home_melody_found')mind.remember('event',{id});});
  // External options are separate from Lumo's clean dialogue.
  const help=document.querySelector('.help-content');
  const options=document.createElement('div');options.className='home-options';

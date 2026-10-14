@@ -1,0 +1,101 @@
+{
+  "status": "pass",
+  "checks": 28,
+  "spawn": [
+    145,
+    112
+  ],
+  "facing": "up",
+  "roomSolids": 6,
+  "interactivePC": {
+    "id": "toriel_pc",
+    "x": 266,
+    "y": 106,
+    "width": 108,
+    "height": 130,
+    "action": "pc",
+    "text": "* La PC está encendida.\n* Una tercera llave espera entre las canciones."
+  },
+  "routes": {
+    "doorToPC": [
+      [
+        150,
+        205
+      ],
+      [
+        145,
+        205
+      ],
+      [
+        145,
+        112
+      ]
+    ],
+    "pcFront": [
+      [
+        145,
+        112
+      ],
+      [
+        166,
+        112
+      ]
+    ],
+    "pcRight": [
+      [
+        145,
+        112
+      ],
+      [
+        145,
+        130
+      ],
+      [
+        208,
+        130
+      ],
+      [
+        208,
+        110
+      ]
+    ],
+    "lowerChair": [
+      [
+        145,
+        112
+      ],
+      [
+        145,
+        130
+      ],
+      [
+        148,
+        130
+      ],
+      [
+        148,
+        154
+      ]
+    ],
+    "bed": [
+      [
+        145,
+        112
+      ],
+      [
+        145,
+        125
+      ],
+      [
+        89,
+        125
+      ]
+    ]
+  },
+  "chairProps": [],
+  "sourceFiles": [
+    "script.js",
+    "lore.js",
+    "ambience.js"
+  ]
+}

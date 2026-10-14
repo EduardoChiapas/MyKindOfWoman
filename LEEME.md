@@ -1,5 +1,7 @@
 # HOME · casa, Lumo y PC/FNF
 
+Esta copia es **experimental — interacciones corregidas, 13 de octubre de 2026**. Para probarla, sigue LEEME-EXPERIMENTAL.md; las instrucciones de publicación que aparecen más abajo son referencias históricas. Esta entrega no se copió ni publicó en GitHub. El piano está retirado temporalmente y su partitura y escenas quedan pendientes de reubicación, sin borrar lo que ya hayas guardado.
+
 La habitación abre un escritorio con monitor, torre y ventiladores RGB. El icono de FNF abre el motor oficial **Friday Night Funkin’ 0.8.6**, compilado para HTML5, con sus menús y gameplay originales. La web aloja esa compilación en un iframe; el ejecutable de Windows no se ejecuta en el navegador y no se usa un emulador.
 
 El orden del catálogo es **Tutorial → The Date Week → feat. Bad Bunny**. The Date Week contiene **Whitroll → Perfume → Heartbass**, con Easy, Normal y Hard. Bad Bunny conserva **Celoso → Palmas → Amarre**. El juego original controla la selección, las notas y los menús. The Date Week se adapta desde el código original de Kade Engine a este motor HTML5: se reutilizan sus imágenes, flechas, audio, charts y cameos, sin redibujar el arte.

@@ -18,3 +18,9 @@
 @keyframes home-book-in-back{from{transform:rotateY(-88deg)}to{transform:rotateY(0)}}
 @media(max-width:600px){.home-book .book-content{margin:12px;max-width:calc(100vw - 28px)}.home-book .home-book-leaf{min-height:175px}.home-book .home-book-leaf p,.home-book .home-book-leaf blockquote{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.home-book .turn-away,.home-book .turn-back,.home-book .turn-in,.home-book .turn-in-back{animation:none;transform:none}}
+.home-book h2{color:#ffdf8a}
+.home-book .book-mark{color:#a7e6ed}
+.home-book .home-book-leaf{box-shadow:inset 4px 0 #89709e}
+.home-book .home-book-nav span{color:#c6a1ff}
+.home-book .home-book-nav button:not(:disabled):hover,.home-book #btn-close-book:hover{background:#241b31;color:#ffdf8a}
+.home-book .home-book-nav button:active,.home-book #btn-close-book:active{background:#332442}

@@ -287,8 +287,14 @@
         renderDialogue();
       }
     }
-    const canExamine = gameState === 'PLAYING' && !player.isMoving && Boolean(findInteraction());
-    byId('interaction-hint').classList.toggle('hidden', !canExamine);
+    const object = gameState === 'PLAYING' && !player.isMoving ? findInteraction() : null;
+    const hint = byId('interaction-hint');
+    hint.classList.toggle('hidden', !object);
+    if(object){
+      const coarse = global.matchMedia?.('(pointer: coarse)').matches === true;
+      const label = global.HomePresentation?.hintLabel(object,coarse) || 'Z · Examinar';
+      if(hint.textContent!==label)hint.textContent=label;
+    }
   }
 
   function boot(images, audioTracks) {

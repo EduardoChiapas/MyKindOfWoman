@@ -11,7 +11,7 @@ function fixture(saved={}){
     LumoActor:class{constructor({adapter}){this.adapter=adapter;this.x=160;this.y=206;}react(){}setFollowing(){}onRoomChange(){}perform(){}setEmotion(){}update(){}draw(){}getState(){return {x:this.x,y:this.y};}getInteraction(){return null;}beginHide(p){this.x=p.x;this.y=p.y;return true;}endHide(){}call(){return {accepted:true,nearby:true};}},
     UndertaleAudio:{hum(){}},HouseExperience:{play(){},reducedMotion:false},currentRoom:'entrance',gameState:'PLAYING',ROOM_SCALE:2,
     player:{isMoving:false},keys:{},joystickData:{active:false},camera:{x:0,y:0},roomImages:{friskRoom:{complete:false}},
-    rooms:Object.fromEntries(['entrance','hallway','kitchen','friskRoom','torielRoom','basementHallway'].map(k=>[k,{...room,interactives:[{id:'base',text:'base'}]}])),
+    rooms:Object.fromEntries(['entrance','hallway','kitchen','friskRoom','torielRoom','basementHallway','readingRoom'].map(k=>[k,{...room,interactives:[{id:'base',text:'base'},...(k==='readingRoom'?[{id:'lumo_hideout_entry',target:'lumoRoom',spawn:[96,146],facing:'up'}]:[])]}])),
     R:(x,y,width,height)=>({x:x*2,y:y*2,width:width*2,height:height*2}),getPlayerHitbox:()=>({x:150,y:200,width:20,height:12}),
     hitboxInsideWalkable:(box,r)=>Array.isArray(r.walkable),rectsOverlap:()=>false,resetMovementInput(){},resetJoystick(){},
     showDialog(text){context.dialog=text;},changeRoom(exit){context.exit=exit;},canvas:{focus(){},addEventListener(){}},
@@ -29,10 +29,12 @@ test('real world actions persist once, gifts are consumed, repeat pickups cannot
   mind.act('feed',{item:'cookie'});const before=mind.getState().friendship.score;mind.act('feed',{item:'cookie'});
   assert.equal(mind.getState().friendship.score,before);
 });
-test('hideout requires meeting, exploration and shared action; closet stays locked',()=>{
-  const {context,game,mind}=fixture();game.interact({id:'hallway_locked_door'});assert.equal(context.exit,undefined);
+test('the music-room hideout requires meeting, exploration and a shared action; the original third door and closet stay locked',()=>{
+  const {context,game,mind}=fixture();context.currentRoom='readingRoom';game.interact({id:'lumo_hideout_entry'});assert.equal(context.exit,undefined);
   game.open();mind.act('pet');for(const room of ['kitchen','friskRoom']){context.currentRoom=room;game.roomChanged();}
-  game.interact({id:'hallway_locked_door'});assert.equal(context.exit.target,'lumoRoom');
+  context.currentRoom='hallway';game.interact({id:'hallway_locked_door'});assert.equal(context.exit,undefined);assert.match(context.dialog,/puerta no se abre/);
+  context.currentRoom='readingRoom';game.interact({id:'lumo_hideout_entry'});assert.equal(context.exit.target,'lumoRoom');assert.deepEqual(Array.from(context.exit.spawn),[96,146]);
+  assert.equal(game.getState().world.hideout,true);context.exit=null;context.currentRoom='hallway';game.interact({id:'hallway_locked_door'});assert.equal(context.exit,null);
   context.exit=null;game.interact({id:'basement_closet'});assert.equal(context.exit,null);
   assert.ok(!mind.getState().events.includes('home_knocks'));
 });

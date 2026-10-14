@@ -14,7 +14,7 @@
     photo_lumo:{title:'Una criatura dibujada',text:'Una capucha doblada y dos ojos blancos. Alguien se tomó muy en serio dibujar a Lumo. Una estrella ocupa la esquina.'}
   };
   const HINTS={anomaly_session:'Vuelve a la computadora después de explorar.',anomaly_photo:'Vuelve a mirar el recuerdo de tu habitación.',
-    anomaly_piano:'Hay una partitura sobre el piano de la sala.',anomaly_message:'Comprueba la computadora una vez más.',
+    anomaly_piano:'Vuelve a escuchar las cuatro notas en la sala de lectura y música.',anomaly_message:'Comprueba la computadora una vez más.',
     anomaly_lumo:'Da un paseo con Lumo y vuelve a hablarle.',anomaly_door:'Mira la bajada al sótano junto a las escaleras.'};
   const DOOR_PAGES=[{text:'* Las escaleras descienden hacia la oscuridad.'},{text:'* No puedes bajar.'},{text:'* ...'},
     {text:'* Se escucha algo desde abajo.'},{speaker:'LUMO',text:'Eh...',emotion:'SCARED'},
@@ -114,17 +114,11 @@
       if(event.code==='KeyJ'&&!event.repeat&&started&&!sequence&&!ending){event.preventDefault();panel?closePanel():openJournal();}
       if(panel&&['Escape','KeyX'].includes(event.code)){event.preventDefault();closePanel();}
     });
-    registerObjects();
-  }
-  function registerObjects(){
-    const room=adapter.rooms?.livingRoom;if(!room||room.interactives.some(item=>item.id==='home_piano'))return;
-    const R=adapter.R||((x,y,width,height)=>({x:x*2,y:y*2,width:width*2,height:height*2}));
-    room.interactives.push({...R(32,87,74,35),id:'home_piano',label:'Piano y partitura'});
-    room.solids.push(R(34,88,70,29));
   }
   function closePanel(){if(!panel)return;panel.remove();panel=null;global.document.body.classList.remove('home-story-open');
     adapter.pause?.(false);adapter.resumeFocus?.();}
   function makePanel(title){closePanel();panel=global.document.createElement('section');panel.className='home-story-panel';
+    panel.classList.toggle('home-quiet',getContext().reducedMotion===true);
     panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label',title);
     const heading=global.document.createElement('h2');heading.textContent=title;panel.append(heading);
     const body=global.document.createElement('div');body.className='home-story-body';panel.append(body);
@@ -143,28 +137,32 @@
   function paintActivity(canvas,kind,stage=0,variant=''){
     const brush=canvas.getContext('2d');brush.imageSmoothingEnabled=false;brush.clearRect(0,0,96,40);
     const fill=(color,x,y,w,h)=>{brush.fillStyle=color;brush.fillRect(Math.round(x),Math.round(y),w,h);};
-    const paper='#eee7ce',edge='#a6997e',gold='#f3d67b',purple='#ad92c4';
+    const paper='#fff0ca',edge='#b88d5b',gold='#ffdb71',purple='#b68af4',mint='#81d2af',cyan='#82d3e8',coral='#f7829d';
     if(kind==='piano'){
-      fill(paper,3,3,90,34);fill(edge,5,5,86,1);
-      for(let y=13;y<=25;y+=4)fill(edge,9,y,78,1);
-      [25,17,21,13].forEach((y,index)=>{fill(index<stage?gold:'#5f536b',17+index*19,y,5,3);fill(index<stage?gold:'#5f536b',21+index*19,y-8,1,10);});
-      for(let index=0;index<4;index++){fill('#17131c',25+index*12,31,5,3);if(index<stage)fill(gold,26+index*12,32,3,1);}
+      fill('#6c4b72',2,2,92,36);fill(paper,3,3,90,34);fill(edge,5,5,86,1);fill('#fff9df',5,6,86,1);
+      for(let y=13;y<=25;y+=4)fill('#c2a78e',9,y,78,1);
+      [25,17,21,13].forEach((y,index)=>{const color=index<stage?[coral,gold,cyan,purple][index]:'#53405b';fill(color,17+index*19,y,5,3);fill(color,21+index*19,y-8,1,10);});
+      for(let index=0;index<4;index++){fill('#53405b',25+index*12,31,5,3);if(index<stage)fill(mint,26+index*12,32,3,1);}
     }else if(kind==='cooking'){
+      fill('#32263d',14,37,68,2);
       if(stage<2){
-        fill(edge,20,19,56,3);fill(paper,23,22,50,9);fill(paper,27,31,42,3);fill(edge,31,34,34,2);
-        fill(gold,25,20,46,2);fill(purple,44,4,3,19);fill(purple,42,19,8,3);
-        if(stage===1){fill(edge,73,2,9,11);fill(gold,74,5,7,7);for(const [x,y]of [[67,12],[64,15],[60,18],[57,19]])fill(gold,x,y,1,1);}
+        fill(edge,20,19,56,3);fill(mint,23,22,50,9);fill('#54a68c',23,28,50,3);fill(mint,27,31,42,3);fill(edge,31,34,34,2);fill(paper,25,23,46,1);
+        fill(gold,25,20,46,2);fill(purple,44,4,3,19);fill('#e0c4ff',44,4,1,14);fill(purple,42,19,8,3);
+        fill(paper,11,15,7,10);fill(cyan,12,16,5,3);fill(edge,12,14,5,1);
+        if(stage===1){fill(edge,73,2,9,11);fill('#e9ae6b',74,5,7,7);fill(paper,74,3,7,2);for(const [x,y]of [[67,12],[64,15],[60,18],[57,19]])fill(gold,x,y,1,1);}
       }else{
-        fill(edge,20,3,56,32);fill(paper,22,5,52,6);fill('#17131c',24,14,48,17);fill(gold,30,22,36,6);fill(variant==='crispy'?edge:paper,33,20,30,3);
+        fill('#6d536e',20,3,56,32);fill(purple,22,5,52,6);fill('#dfc9fb',23,5,50,1);fill('#201627',24,14,48,17);fill(gold,30,22,36,6);fill(variant==='crispy'?edge:paper,33,20,30,3);
         if(variant==='extra_cinnamon')for(const x of [35,41,47,53,59])fill(edge,x,20+(x%3),1,1);
-        [28,36,44,52,60,68].forEach(x=>fill(purple,x,7,2,2));fill(paper,38,34,20,2);
+        [28,36,44,52,60,68].forEach(x=>fill(x%3?coral:cyan,x,7,2,2));fill(paper,38,34,20,2);
+        if(stage===3){fill(cyan,81,21,1,5);fill(cyan,79,23,5,1);fill(gold,12,10,1,3);fill(gold,11,11,3,1);}
       }
-      for(let index=0;index<3;index++){fill(edge,5+index*5,35,3,3);if(index<stage)fill(gold,5+index*5,35,3,3);}
+      for(let index=0;index<3;index++){fill('#665371',5+index*5,35,3,3);if(index<stage)fill(mint,5+index*5,35,3,3);}
     }else if(kind==='garden'){
-      fill(edge,39,28,19,3);fill(paper,41,31,15,6);fill(edge,44,37,9,2);
-      fill('#9fba81',48,15,2,14);fill('#9fba81',43,23,5,2);fill('#9fba81',50,19,5,2);
-      if(stage){fill(gold,44,9,10,7);fill(gold,42,11,14,3);fill(paper,48,11,2,3);fill('#a5c5da',64,6,2,5);fill('#a5c5da',68,12,2,4);}
-      else{fill(purple,47,12,4,5);fill(paper,48,13,2,2);}
+      fill('#846044',39,28,19,3);fill('#e5aa74',41,31,15,6);fill('#f5cd90',42,32,13,1);fill(edge,44,37,9,2);
+      fill('#70ca8b',48,15,2,14);fill('#70ca8b',43,23,5,2);fill('#70ca8b',50,19,5,2);fill('#b4e59e',44,22,3,1);
+      if(stage){fill(gold,44,9,10,7);fill(gold,42,11,14,3);fill(coral,47,10,4,4);fill(paper,48,11,2,2);fill(cyan,64,6,2,5);fill(cyan,68,12,2,4);}
+      else{fill(purple,47,12,4,5);fill('#dfc8ff',48,13,2,2);}
+      fill('#496b59',29,38,35,1);fill(mint,32,36,3,2);fill(mint,61,35,2,3);
     }
   }
   function openJournal(){if(!started||!['PLAYING','HOME_STORY','HOME_ACTIVITY'].includes(getContext().state))return;
@@ -180,16 +178,16 @@
     paragraph(body,'El ritmo breve reduce la espera entre cambios. Todavía debes volver a explorar; no salta escenas.');}
   function openAlbum(){const body=makePanel('RECUERDOS DE CASA');paragraph(body,'Tres pequeñas imágenes de la casa.');
     for(const id of PHOTO_IDS){if(progress.has(id))body.append(button(PHOTO_TEXT[id].title,()=>openPhoto(id)));else paragraph(body,'Un espacio por llenar.');}}
-  function drawPhoto(canvas,id,changed){const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.fillStyle='#252234';ctx.fillRect(0,0,240,168);
-    ctx.fillStyle='#dfd4af';ctx.fillRect(8,8,224,152);ctx.fillStyle='#444055';ctx.fillRect(14,14,212,140);
+  function drawPhoto(canvas,id,changed){const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.fillStyle='#30203f';ctx.fillRect(0,0,240,168);
+    ctx.fillStyle='#f5d69e';ctx.fillRect(8,8,224,152);ctx.fillStyle='#634777';ctx.fillRect(14,14,212,140);
     if(id==='photo_window'){const source=image('assets/rooms/frisk_room.png');if(source?.complete&&source.naturalWidth)ctx.drawImage(source,0,0,source.naturalWidth,source.naturalHeight,52,18,136,134);
       if(changed){ctx.fillStyle='#b4b6cc';ctx.fillRect(90,31,4,3);}}
-    if(id==='photo_music'){ctx.fillStyle='#eee9cf';ctx.fillRect(25,28,190,112);ctx.fillStyle='#423b50';for(let y=56;y<=88;y+=8)ctx.fillRect(38,y,162,1);
+    if(id==='photo_music'){ctx.fillStyle='#fff0ca';ctx.fillRect(25,28,190,112);ctx.fillStyle='#634777';for(let y=56;y<=88;y+=8)ctx.fillRect(38,y,162,1);
       for(const [index,y] of [80,64,72,56].entries()){ctx.fillRect(55+index*38,y,8,5);ctx.fillRect(61+index*38,y-24,2,26);}
       ctx.font='12px monospace';ctx.fillText('DO  MI  RE  SOL',43,123);}
-    if(id==='photo_lumo'){ctx.fillStyle='#e5dfcf';ctx.fillRect(31,24,178,120);const frame=global.LUMO_ASSETS?.portraits?.emotions?.NORMAL;
+    if(id==='photo_lumo'){ctx.fillStyle='#fff0ca';ctx.fillRect(31,24,178,120);const frame=global.LUMO_ASSETS?.portraits?.emotions?.NORMAL;
       const source=frame&&image(frame.sheet);if(source?.complete&&source.naturalWidth){const r=frame.rect;ctx.drawImage(source,r.x,r.y,r.width,r.height,80,35,80,80);}
-      ctx.fillStyle='#8065a4';ctx.fillRect(177,39,3,11);ctx.fillRect(173,43,11,3);ctx.font='11px monospace';ctx.fillStyle='#484052';ctx.fillText('LUMO',99,130);}}
+      ctx.fillStyle='#a06be3';ctx.fillRect(177,39,3,11);ctx.fillRect(173,43,11,3);ctx.font='11px monospace';ctx.fillStyle='#484052';ctx.fillText('LUMO',99,130);}}
   function openPhoto(id,direction='forward'){const photo=core.inspectPhoto(id);if(!photo)return;const body=makePanel(photo.title);panel.classList.add('home-album');
     const leaf=global.document.createElement('div');leaf.className=`home-photo-leaf ${direction==='back'?'home-page-back':'home-page-forward'}`;body.append(leaf);
     const canvas=global.document.createElement('canvas');canvas.width=240;canvas.height=168;canvas.className='home-photo';canvas.setAttribute('role','img');canvas.setAttribute('aria-label',photo.title);leaf.append(canvas);
@@ -212,9 +210,10 @@
         paintActivity(score,'piano',count);
         key.classList.remove('is-playing');if(!getContext().reducedMotion){void key.offsetWidth;key.classList.add('is-playing');}
         status.textContent=progress.has('home_melody_found')?'Reconoces el patrón de cuatro notas. La partitura lo conserva.':`${label}. La nota queda flotando un momento.`;
+        status.classList.toggle('is-complete',progress.has('home_melody_found'));
       });key.addEventListener('animationend',()=>key.classList.remove('is-playing'));keyboard.append(key);
     });
-    const status=paragraph(body,'Puedes tocar sin acertar ni perder.');status.setAttribute('role','status');
+    const status=paragraph(body,'Puedes tocar sin acertar ni perder.');status.className='home-activity-status';status.setAttribute('role','status');
     body.append(button('MIRAR Y GUARDAR LA PARTITURA',()=>openPhoto('photo_music')));
     panel.addEventListener('keydown',event=>{const index=['Digit1','Digit2','Digit3','Digit4'].indexOf(event.code||`Digit${event.key}`);if(index>=0&&!event.repeat){event.preventDefault();keyboard.children[index].click();}});keyboard.children[0]?.focus();}
   function openCooking(){core.resetRecipe();const withLumo=progress.has('lumo_met')&&adapter.canCompanionActions?.()!==false;
@@ -230,7 +229,7 @@
         const result=core.cookStep(prompts[step][2][index]);if(result.accepted){step++;activitySound(step===3?'success':'switch');paint();(body.querySelector('button')||panel.querySelector('.home-story-close'))?.focus();}})));}
     paint();body.querySelector('button')?.focus();}
   function openGarden(){const body=makePanel('CUIDAR LA FLOR');panel.classList.add('home-minigame','home-garden');const watered=progress.has('flower_watered');activityArt(body,'garden',watered?1:0);
-    paragraph(body,watered?'La tierra conserva humedad. Los pétalos se han abierto. Basta con acompañar su crecimiento.':'La flor tiene espacio para crecer. Hay una regadera cerca.');
+    paragraph(body,watered?'La tierra conserva humedad. Los pétalos se han abierto. Basta con acompañar su crecimiento.':'La flor tiene espacio para crecer. Puedes regarla con cuidado.');
     if(!watered)body.append(button('REGAR CON CUIDADO',()=>{if(core.waterFlower())activitySound('water');global.HomeObjectsState?.interact('garden_flower');global.HomeObjectsState?.interact('garden_watering_can');closePanel();adapter.showDialog?.('* Riegas con cuidado.\n* Los pétalos se abren un poquito.\n* Por hoy, es suficiente.');}));
     paragraph(body,'La flor se queda en la casa. Su cuidado se conserva en la partida.');}
   function beginSequence(pages,done){closePanel();sequence={pages,index:0,waiting:false,done};}
@@ -252,7 +251,7 @@
   function interact(object){const context=getContext();if(!started||!object||panel||sequence||ending||context.hidden||context.state!=='PLAYING')return false;
     const room=context.roomId,id=object.id;if(!ROOM_KEYS[room]||room!==core.getState().currentRoom)return false;
     if(room==='entrance'&&id==='entrance_basement_door')return doorInteraction();
-    if(room==='livingRoom'&&id==='home_piano'){openPiano();return true;}
+    if(id==='home_piano'&&adapter.rooms?.[room]?.interactives?.some(item=>item.id==='home_piano')){openPiano();return true;}
     if(room==='friskRoom'&&id==='frisk_bookshelf'){openPhoto('photo_window');return true;}
     if(room==='hallway'&&id==='hallway_painting'){openPhoto('photo_lumo');return true;}
     if(room==='kitchen'&&['kitchen_counter','kitchen_stove'].includes(id)){openCooking();return true;}
@@ -260,7 +259,7 @@
     // expanded house has a physical garden; examining a different plant cannot
     // water its flower remotely or turn a paper-flower pickup into garden care.
     if(!global.HomeWorld&&(room==='friskRoom'&&['frisk_little_plant','frisk_corner_plant'].includes(id)||room==='hallway'&&id==='hallway_flowers')){openGarden();return true;}
-    if(room==='garden'&&['garden_flower','garden_watering_can','garden_workbench'].includes(id)){openGarden();return true;}
+    if(room==='garden'&&['garden_flower','garden_watering_can'].includes(id)){openGarden();return true;}
     if(room==='readingRoom'&&id==='reading_table'&&progress.has('lumo_met')){global.LumoActivities?.start();return true;}
     if(id==='lumo'&&core.tryAnomaly('anomaly_lumo')){actor()?.setEmotion?.('CONFUSED');actor()?.perform?.('confused',3);
       beginSequence([{speaker:'LUMO',emotion:'CONFUSED',text:'¿Yo ya había escuchado esa melodía aquí?... Qué raro. Se me fue la idea.'}],()=>{});return true;}
@@ -277,19 +276,8 @@
     if(ending&&!context.hidden){ending.elapsed+=Math.min(.1,Math.max(0,Number(dt)||0));const t=Math.min(1,ending.elapsed/(context.reducedMotion?.2:1.1));ending.node.style.opacity=String(t);
       if(ending.elapsed>=1.3&&!ending.complete){core.completeHome();ending.complete=true;ending.button.hidden=false;ending.button.focus();}}
   }
-  function draw(ctx,camera={x:0,y:0}){if(!started)return;const room=getContext().roomId;
-    if(room!=='livingRoom')return;
-    if(global.HomeWorld){global.HomeWorld.drawPiano(ctx,camera);return;}
-    ctx.save();ctx.translate(Math.round(68-camera.x),Math.round(176-camera.y));ctx.scale(2,2);ctx.imageSmoothingEnabled=false;
-    // No original piano sprite exists. This explicit code-native placeholder
-    // uses the room's wood palette; no original map or bitmap is replaced.
-    ctx.fillStyle='#3f2d1d';ctx.fillRect(0,0,70,29);ctx.fillStyle='#644826';ctx.fillRect(1,1,68,26);
-    ctx.fillStyle='#b88245';ctx.fillRect(2,2,66,12);ctx.fillStyle='#d4a15d';ctx.fillRect(3,2,64,1);
-    ctx.fillStyle='#9b6c37';ctx.fillRect(4,6,62,1);ctx.fillRect(6,11,58,1);
-    ctx.fillStyle='#49321e';ctx.fillRect(2,25,6,4);ctx.fillRect(62,25,6,4);
-    ctx.fillStyle='#352a23';ctx.fillRect(1,15,68,9);ctx.fillStyle='#efddb0';for(let x=4;x<66;x+=6)ctx.fillRect(x,16,5,7);
-    ctx.fillStyle='#302529';for(const x of [8,14,26,32,38,50,56])ctx.fillRect(x,15,3,4);ctx.fillStyle='#f1e5b9';ctx.fillRect(27,-5,16,11);
-    ctx.fillStyle='#574936';for(let y=-2;y<5;y+=2)ctx.fillRect(29,y,12,1);ctx.restore();}
+  // Furniture belongs to HomeWorld; narrative panels never paint over a room.
+  function draw(){return false;}
   return Object.freeze({createCore,mount,start,roomChanged,interact,tick,draw,openJournal,openAlbum,
     renderPhoto(canvas,id){if(!PHOTO_IDS.includes(id))return false;const paint=()=>drawPhoto(canvas,id,progress.has('anomaly_photo')&&id==='photo_window');paint();for(const source of photoImages.values())if(!source.complete)source.addEventListener('load',()=>{if(canvas.isConnected)paint();},{once:true});return true;},
     onPCopen(){return core?.pcNotice()||null;},onRyonmessage(){return core?.onRyonmessage()||false;},

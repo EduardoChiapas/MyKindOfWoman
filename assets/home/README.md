@@ -1,33 +1,13 @@
-# HOME — mobiliario complementario
+# HOME — fuentes del arte vigente
 
-Creado el 12 de octubre de 2026 con la herramienta integrada `image_gen.imagegen`.
-Los PNG originales de la casa, Mira y Lumo se conservan intactos. Los dos atlas
-nuevos tienen transparencia y se dibujan con nearest-neighbor sobre una rejilla
-nativa, con marcos recortados solo durante el render. No se reemplazaron los
-recursos ni el motor de FNF.
+Versión `home-art-library-20261013`. El rediseño se limita a las seis áreas nuevas y conserva las habitaciones originales, personajes, PC/FNF y guardados.
 
-- `furniture-atlas.png`: piano, sofá, bañera, lavabo/espejo, inodoro, mesa de
-  jardinería, regadera y planta. 1774 × 887; 810.916 bytes.
-- `lumo-furniture-atlas.png`: cama lavanda, escritorio, aplique de vela y librero.
-  1254 × 1254; 493.998 bytes.
-- Marcos, escala, posición, área física e interacción: `home-world.js`.
-- Pisos: piezas originales de living_room.png con origen compartido, periodo
-  vertical de 30 píxeles; continuidad a través de los umbrales. Alfombras,
-  ventanas, banco, maceta/flor, puerta pequeña y dibujo son piezas nativas de
-  canvas con paleta limitada, editables desde código.
+Bitglow: packs LRK v1.1, BA v1.0 y BR v1.1. Once PNG originales, copiados sin cambiar sus bytes, en [bitglow/](bitglow/CREDITS.md), con las licencias originales. El juego compone 24 muebles interiores y la flor con recortes a 1×/2×, sin suavizar, deformar ni recolorear. El lavabo combina tres sprites del autor; bañera/lavabo utilizan sus variantes con agua. Los materiales mantienen fase continua en los pasillos. Las cartas de parejas y el dibujo realmente recogible siguen siendo elementos del juego.
 
-Referencias usadas: `assets/source/home_and_new_home_sheet.png` y, para el
-segundo atlas, `assets/home/furniture-atlas.png`. Los atlas complementan el
-estilo; no son sprites oficiales de Undertale. No se editaron las referencias.
+Marie Pepo: dos hojas originales de [Autumn Forest](https://marie-pepo.itch.io/autumn-forest), en [marie-pepo/](marie-pepo/CREDITS.md). Jardín con árbol, roca con musgo, banco, calabazas, señal y setas. Césped y bordes del sendero comparten el fondo del pack; no se superponen bloques de otro tono. Uso en proyectos personales/comerciales con crédito al artista; no reventa de los recursos independientes. No se presenta este juego como un pack de assets.
 
-Prompts completos y parámetros conservados en GENERATION_PROMPTS.md.
+31 objetos del ala usan fuentes de los artistas. El dibujo de amistad y el pasadizo lateral conservan su arte específico y sus eventos. Posición, interacción, sólidos y profundidad se definen juntos en home-world.js. Las pistas usan los nombres físicos actuales, conservando los IDs anteriores para los guardados.
 
+Los objetos móviles de la zona normal reutilizan sus PNG originales. El refrigerador conserva ambos paneles juntos; un respaldo basado en drawImage permite renderizar sin getImageData, cuya lectura puede ser bloqueada con file://. Duración 480 ms; los demás gestos mantienen su duración. Efectos tranquilos muestra pose final. El retrato del corredor y el libro real de Mira conservan la integración anterior.
 
-## Pulido del ala nueva y accesos — 2026-10-12
-
-La revisión vigente usa home-pixel-art.js para los33 objetos distintos del ala nueva, con contornos y píxeles enteros editables. Se retiró su uso de los muebles bitmap escalados y recursos clonados. El piano de la sala original conserva furniture-atlas.png; lumo-furniture-atlas.png ya no se carga. Ambos PNG y sus prompts se conservan como fuentes históricas. No se han editado imágenes originales de Undertale, Mira, Lumo o FNF en esta revisión. Estados visuales e interpolación separados en home-objects.js; posiciones y colisión en home-world.js. Es arte propio inspirado en la paleta existente, sin afirmar procedencia oficial.
-
-
-## Sprites, coherencia, sonido y minijuegos HOME — 2026-10-12
-
-La revisión actual usa34 sprites nativos en home-pixel-art.js (33ala más piano). Ningún atlas de mobiliario se carga ya; archivos/prompts se conservan como fuentes históricas. home-room-details.js añade42capas de detalle sobre las seis habitaciones originales sin editar sus PNG; home-character-render.js estabiliza los16recortes de Mira, LumoActor mantiene escala por hoja/cola alineada. Todo se pinta en rejilla y las transiciones respetan reducción de movimiento. No se usó nueva generación de imágenes ni se reemplazó el arte de FNF.
+Los atlas generados anteriores, furniture-atlas.png y lumo-furniture-atlas.png, son históricos y no se cargan. No se generaron nuevos muebles ni sonidos en esta revisión. Las hojas originales de Lumo, sus retratos B/W y los sonidos previos siguen intactos. 246 pruebas pasan en 28 archivos; los límites de QA constan en LEEME-EXPERIMENTAL.md.

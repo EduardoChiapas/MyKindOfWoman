@@ -785,8 +785,9 @@ function hitboxInsideWalkable(hitbox, room) {
   const epsilon = 1e-7;
   const right = hitbox.x + hitbox.width;
   const bottom = hitbox.y + hitbox.height;
-  const candidates = room.walkable.filter(area => rectsOverlap(hitbox, area));
+  const candidates = (room.continuousWalkable || room.walkable).filter(area => rectsOverlap(hitbox, area));
   if (!candidates.length) return false;
+  if (room.continuousSolids?.some(solid => rectsOverlap(hitbox, solid))) return false;
   const cuts = [...new Set([hitbox.x, right, ...candidates.flatMap(area => [
     Math.max(hitbox.x, area.x), Math.min(right, area.x + area.width)
   ])])].sort((a, b) => a - b);
@@ -955,6 +956,10 @@ function setAudioRoom(roomId) {
 function changeRoom(exit) {
   if (roomTransition.phase !== 'idle' || !rooms[exit.target]) return;
   if (window.HomeProgress && !window.HomeProgress.canEnter(exit.target)) return false;
+  if (exit.seamless && window.HomeContinuousWing?.atSeam(currentRoom,exit,getPlayerHitbox())) {
+    applyRoomChange({...exit,continuity:true});
+    return true;
+  }
   roomTransition.exit = exit;
   roomTransition.phase = 'out';
   roomTransition.elapsed = 0;
@@ -967,6 +972,16 @@ function changeRoom(exit) {
 
 function applyRoomChange(exit) {
   if (window.HomeProgress && !window.HomeProgress.canEnter(exit.target)) return false;
+  const shift=exit.continuity&&window.HomeContinuousWing?.delta(currentRoom,exit.target);
+  if(shift){
+    player.x+=shift.x;player.y+=shift.y;currentRoom=exit.target;
+    roomNameLabel.textContent=rooms[currentRoom].label;
+    // No spawn, grace period or reset: this is the same walking frame.
+    window.HomeContinuousWing.preserveCompanion(shift,()=>window.LumoGame?.roomChanged());
+    window.HomeStory?.roomChanged();window.HomeGame?.checkpoint();
+    updateCamera();
+    return true;
+  }
   currentRoom = exit.target;
 
   // Crossfade smoothly; neither track restarts when a doorway is crossed.
@@ -1031,6 +1046,7 @@ function checkRoomExit() {
   const room = rooms[currentRoom];
 
   const exit = room.exits.find((candidate) => {
+    if (candidate.seamless) return window.HomeContinuousWing?.atSeam(currentRoom,candidate,hitbox)===true;
     if (candidate.dir && candidate.dir !== player.direction) return false;
     if (candidate.activation === 'feetCenter') {
       return pointInsideRect(hitbox.x + hitbox.width / 2, hitbox.y + hitbox.height / 2, candidate);
@@ -1134,12 +1150,15 @@ function closeInteraction(reason = 'cancel') {
 // ============================================================
 function updateCamera(snap = false) {
   const room = rooms[currentRoom];
-  const roomW = room.nativeWidth * ROOM_SCALE;
-  const roomH = room.nativeHeight * ROOM_SCALE;
-  const playerCenterX = player.x + player.width / 2;
-  const playerCenterY = player.y + player.height / 2;
+  const continuous = window.HomeContinuousWing?.cameraRegion(currentRoom);
+  const originX=continuous?.x||0,originY=continuous?.y||0;
+  const roomW = continuous?.width || room.nativeWidth * ROOM_SCALE;
+  const roomH = continuous?.height || room.nativeHeight * ROOM_SCALE;
+  const playerCenterX = player.x + player.width / 2 + originX;
+  const playerCenterY = player.y + player.height / 2 + originY;
 
-  const reset = snap || cameraTracking.room !== currentRoom;
+  const group=continuous?.id||currentRoom;
+  const reset = snap || cameraTracking.group !== group;
   const followAxis = (axis, roomSize, viewSize, playerCenter) => {
     if (roomSize <= viewSize) return -(viewSize - roomSize) / 2;
     let origin = cameraTracking[axis];
@@ -1154,10 +1173,11 @@ function updateCamera(snap = false) {
   cameraTracking.x = followAxis('x', roomW, VIEW_W, playerCenterX);
   cameraTracking.y = followAxis('y', roomH, VIEW_H, playerCenterY);
   cameraTracking.room = currentRoom;
+  cameraTracking.group = group;
   // Una sola cámara redondeada para fondo, sprite, reflejo y primer plano.
   // La posición física mantiene decimales: el pixel art nunca se desenfoca.
-  camera.x = Math.round(cameraTracking.x);
-  camera.y = Math.round(cameraTracking.y);
+  camera.x = Math.round(cameraTracking.x-originX);
+  camera.y = Math.round(cameraTracking.y-originY);
 }
 
 // ============================================================
@@ -1300,15 +1320,17 @@ function draw() {
   window.HomeStory?.draw(ctx,camera);
   const ambienceOptions = { scale: ROOM_SCALE, reducedMotion: HouseExperience.reducedMotion };
   HouseAmbience.draw(ctx, currentRoom, camera, HouseExperience.elapsedSeconds, ambienceOptions);
-  window.HomeRoomDetails?.draw(ctx,currentRoom,camera);
-  if (currentRoom === 'hallway') drawMirrorReflection();
+  window.HomeRoomDetails?.draw(ctx,currentRoom,camera,false,null,room.image);
+  const joinedLayers=window.HomeContinuousWing?.layers(currentRoom,camera);
+  const hallwayLayer=joinedLayers?.find(layer=>layer.id==='hallway');
+  if (hallwayLayer) drawMirrorReflection(hallwayLayer.view);
+  else if (currentRoom === 'hallway') drawMirrorReflection();
   window.LumoGame?.draw(ctx, camera, 'back');
   drawPlayer();
   window.LumoGame?.draw(ctx, camera, 'front');
   HouseAmbience.drawForeground(ctx, currentRoom, camera, getPlayerHitbox(), ambienceOptions);
-  window.HomeRoomDetails?.draw(ctx,currentRoom,camera,true,getPlayerHitbox());
-  if(currentRoom==='livingRoom')window.HomeWorld?.drawPiano(ctx,camera,true,getPlayerHitbox());
-  if (rooms[currentRoom].drawForeground) rooms[currentRoom].drawForeground(ctx, camera);
+  if(joinedLayers)window.HomeContinuousWing.foreground(ctx,currentRoom,camera,getPlayerHitbox());
+  else if (rooms[currentRoom].drawForeground) rooms[currentRoom].drawForeground(ctx, camera);
   drawLighting();
 
   if (debugCollisions) drawDebug();
@@ -1316,27 +1338,41 @@ function draw() {
 }
 
 function drawRoom() {
-  const room = rooms[currentRoom];
+  const joined=window.HomeContinuousWing?.layers(currentRoom,camera);
+  if(joined){
+    for(const layer of joined){
+      const room=rooms[layer.id];ctx.save();ctx.beginPath();
+      ctx.rect(Math.round(-layer.view.x),Math.round(-layer.view.y),room.nativeWidth*ROOM_SCALE,room.nativeHeight*ROOM_SCALE);ctx.clip();
+      drawRoomLayer(layer.id,layer.view);ctx.restore();
+    }
+    return;
+  }
+  drawRoomLayer(currentRoom,camera);
+}
+
+function drawRoomLayer(roomId,view) {
+  const room = rooms[roomId];
   const roomW = room.nativeWidth * ROOM_SCALE;
   const roomH = room.nativeHeight * ROOM_SCALE;
 
   if (room.render) {
-    room.render(ctx, camera, VIEW_W, VIEW_H);
+    room.render(ctx, view, VIEW_W, VIEW_H);
     return;
   }
   if (room.image.complete && room.image.naturalWidth > 0) {
     ctx.drawImage(
       room.image,
-      Math.round(-camera.x),
-      Math.round(-camera.y),
+      Math.round(-view.x),
+      Math.round(-view.y),
       roomW,
       roomH
     );
-    if (currentRoom === 'torielRoom') drawGamingPC();
-    if (currentRoom === 'hallway') {
+    if (roomId === 'torielRoom') drawGamingPC();
+    if (roomId === 'hallway') {
+      window.HomeWingStyle?.hallwayPassage(ctx, room.image, view, ROOM_SCALE);
       // El color morado estaba incorporado en el fondo original, no en clip().
       // Retirar sólo el cristal antiguo antes de pintar el nuevo gris/celeste.
-      const glass = worldToScreen(MIRROR_GLASS);
+      const glass = {...MIRROR_GLASS,x:MIRROR_GLASS.x-view.x,y:MIRROR_GLASS.y-view.y};
       ctx.clearRect(Math.round(glass.x), Math.round(glass.y), glass.width, glass.height);
     }
   }
@@ -1352,8 +1388,9 @@ function drawGamingPC() {
   // Replace only the rough PC/table patch in the supplied layout reference.
   // The reference floor and wall are one native pixel above the original.
   // Sample y + 1 so every horizontal seam continues across the repaired area.
-  const floor = torielOriginalArt;
-  if (floor.complete && floor.naturalWidth) {
+  const floorSource = torielOriginalArt;
+  if (floorSource.complete && floorSource.naturalWidth) {
+    const floor=floorSource;
     ctx.drawImage(floor, 120, 55, 26, 40, px(130), py(54), 52, 80);
     ctx.drawImage(floor, 120, 55, 26, 40, px(156), py(54), 52, 80);
     ctx.drawImage(floor, 120, 55, 10, 40, px(182), py(54), 20, 80);
@@ -1398,9 +1435,9 @@ function mirrorReflectionPose() {
   };
 }
 
-function drawMirrorReflection() {
-  if (currentRoom !== 'hallway') return;
-  const glass = worldToScreen(MIRROR_GLASS);
+function drawMirrorReflection(view=camera) {
+  if (currentRoom !== 'hallway' && arguments.length===0) return;
+  const glass = {...MIRROR_GLASS,x:MIRROR_GLASS.x-view.x,y:MIRROR_GLASS.y-view.y};
   ctx.save();
   ctx.beginPath();
   ctx.rect(Math.round(glass.x), Math.round(glass.y), glass.width, glass.height);
@@ -1412,7 +1449,7 @@ function drawMirrorReflection() {
   if (reflection && playerSprite.complete && playerSprite.naturalWidth > 0) {
     ctx.globalAlpha = 0.5;
     drawSpriteFrame(reflection.frameX, reflection.frameY,
-      Math.round(reflection.x - camera.x), Math.round(reflection.y - camera.y));
+      Math.round(reflection.x - view.x), Math.round(reflection.y - view.y));
   }
   ctx.restore();
 }
@@ -1538,4 +1575,4 @@ function gameLoop(timestamp) {
   requestAnimationFrame(gameLoop);
 }
 
-HouseExperience.boot([playerSprite, gamingPCSprite, torielOriginalArt, ...Object.values(roomImages), ...(window.HomeWorld?.assets||[])], [bgm, bgmDown]);
+HouseExperience.boot([playerSprite, gamingPCSprite, torielOriginalArt, ...Object.values(roomImages), ...(window.HomeWorld?.assets||[]), ...(window.HomePictureRender?.assets||[])], [bgm, bgmDown]);

@@ -214,10 +214,17 @@
   }
   function interact(object) {
     if (object.id==='lumo') { if (hide) return findHidden(); open(); return true; }
-    if (object.id==='hallway_locked_door') {
-      if (!hasHideout()) { showDialog(global.HomeWorld?'* Un pasadizo demasiado pequeño.\n* Lumo todavía no te ha invitado a entrar.':'* La puerta está cerrada.\n* En la madera hay una estrella diminuta.'); return true; }
-      world.hideout=true; save(); mind.remember('event',{id:'secret_room_found'}); global.HomeProgress?.record('lumo_room_found');
-      changeRoom({target:'lumoRoom',spawn:global.HomeWorld?[120,170]:[120,158],facing:'up'}); return true;
+    if (object.id==='hallway_locked_door' && currentRoom==='hallway') {
+      // The original third door is unrelated to Lumo's optional invitation.
+      const door=rooms.hallway.interactives.find(item=>item.id==='hallway_locked_door');
+      showDialog(door?.text || '* La puerta no se abre.\n* El cartel ha perdido sus letras.\n* Del otro lado, alguien parece haberse olvidado de hacer ruido.'); return true;
+    }
+    if (object.id==='lumo_hideout_entry' && currentRoom==='readingRoom') {
+      const entry=rooms.readingRoom.interactives.find(item=>item.id==='lumo_hideout_entry');
+      if(entry?.target!=='lumoRoom' || !Array.isArray(entry.spawn) || entry.spawn.length!==2 || !entry.spawn.every(Number.isFinite))return false;
+      if (!hasHideout()) { showDialog('* Un pasadizo pequeño junto a la sala de música.\n* Lumo todavía no te ha invitado a entrar.'); return true; }
+      if(changeRoom({target:entry.target,spawn:[...entry.spawn],facing:entry.facing||'up'})===false)return true;
+      world.hideout=true; save(); mind.remember('event',{id:'secret_room_found'}); global.HomeProgress?.record('lumo_room_found'); return true;
     }
     if (currentRoom==='lumoRoom') {
       if (object.id==='lumo_drawing') {
@@ -226,7 +233,7 @@
       }
       if (object.id==='lumo_box') {
         const gifts=mind.getState().gifts.map(id=>labels[id]).filter(Boolean);
-        showDialog('* Una caja de recuerdos.\n* '+(gifts.length ? 'Lumo guardó: '+gifts.join(', ')+'.' : 'Está lista para guardar aventuras, sin prisa.')); return true;
+        showDialog('* El cajón de recuerdos de Lumo.\n* '+(gifts.length ? 'Lumo guardó: '+gifts.join(', ')+'.' : 'Está listo para guardar aventuras, sin prisa.')); return true;
       }
       if (object.id==='lumo_desk' && !world.claimed.includes('lumo_drawing_pickup')) {
         world.claimed.push('lumo_drawing_pickup'); world.inventory.drawing=1; save();
@@ -296,7 +303,7 @@
   // An optional side room, using the existing house's pixel furniture and palette.
   rooms.lumoRoom={ label:'El escondite de Lumo',nativeWidth:240,nativeHeight:180,
     walkable:[R(18,47,204,111),R(102,154,36,26)],solids:[R(27,55,37,42),R(159,55,30,38),R(181,109,25,24)],
-    exits:[{...R(104,168,32,12),dir:'down',target:'hallway',spawn:[590,83],facing:'down'}],
+    exits:[{...R(104,168,32,12),dir:'down',target:'readingRoom',spawn:[205,158],facing:'left'}],
     interactives:[{...R(27,55,37,42),id:'lumo_bed',text:'* Una cama diminuta.\n* La almohada parece una nube doblada.'},
       {...R(159,55,30,38),id:'lumo_desk',text:'* Un escritorio lleno de dibujos y estrellas.'},
       {...R(84,27,59,30),id:'lumo_drawing'}, {...R(181,109,25,24),id:'lumo_box'}], render:drawHideout };

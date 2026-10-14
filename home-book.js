@@ -7,9 +7,11 @@
   leaf.replaceChildren();const art=document.createElement('canvas');art.width=96;art.height=48;art.className='home-book-art';art.setAttribute('aria-hidden','true');
   const c=art.getContext('2d');c.imageSmoothingEnabled=false;
   const r=(color,x,y,w,h)=>{c.fillStyle=color;c.fillRect(x,y,w,h);};
-  r('#fff',15,3,66,40);r('#000',17,5,62,36);r('#aaa',47,5,1,36);r('#ddd',20,9,22,1);r('#ddd',52,9,23,1);
-  r('#a9aa7b',61,21,1,14);r('#a9aa7b',57,28,5,2);r('#c3a169',57,17,9,4);r('#c3a169',60,14,3,10);
-  r('#79604a',61,18,1,1);r('#af919f',24,36,8,2);
+  r('#714b99',14,4,68,41);r('#c19bee',15,3,66,40);r('#fff0ca',17,5,62,36);r('#bf996e',47,5,1,36);
+  r('#94717e',20,9,22,1);r('#94717e',52,9,23,1);r('#d4b38e',20,13,18,1);r('#d4b38e',21,17,20,1);
+  r('#79bb83',61,21,1,14);r('#79bb83',57,28,5,2);r('#e4b26d',57,17,9,4);r('#e4b26d',60,14,3,10);
+  r('#fff3ac',58,17,6,1);r('#99673d',61,18,1,1);r('#f294b0',24,36,8,2);r('#ffd3df',24,36,2,1);
+  r('#82d3e8',21,25,1,4);r('#82d3e8',20,26,3,1);
   leaf.append(art);const p=document.createElement(current?'blockquote':'p');
   p.textContent=current?'«No hace falta conocer el final para guardar el comienzo».':'Algunas páginas están en blanco. Otras conservan una flor seca.';
   leaf.append(p);counter.textContent=(current+1)+' / 2';previous.disabled=current===0||busy;next.disabled=current===1||busy;

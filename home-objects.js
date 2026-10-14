@@ -7,12 +7,12 @@
   const KEY='mkw:home:objects:v1',VERSION=2,DURATION=250,PULSE_DURATION=360;
   const TOGGLES=new Set(['gallery_picture','gallery_candle_right','gallery_plant',
     'bathroom_sink','bathroom_toilet','bathroom_towel','reading_books','reading_window',
-    'reading_plant','garden_hall_flower','gallery_umbrella','reading_origami',
+    'reading_plant','garden_hall_flower','gallery_umbrella','reading_origami','reading_tv',
     'entrance_console','living_library','living_umbrella_stand','living_table','hallway_umbrella_stand',
     'frisk_dresser','toriel_dresser','toriel_wardrobe','kitchen_fridge','kitchen_sink']);
   const PULSES=new Set(['gallery_candle_left','bathroom_tub','reading_sofa','reading_chair',
     'garden_hall_window','garden_hall_picture','garden_tree_left','garden_tree_right','garden_bench',
-    'garden_flower','garden_watering_can','garden_workbench','reading_table',
+    'garden_flower','garden_watering_can','garden_workbench','reading_table','garden_tree_gold','garden_pond',
     'lumo_bed','lumo_candle','lumo_box','lumo_desk','lumo_drawing','bathroom_soap','garden_frog',
     'entrance_plant','entrance_landscape','entrance_candle','entrance_portrait','living_fireplace',
     'living_chair','living_dining_back','living_dining_left','living_dining_right','hallway_first_candle',
@@ -22,6 +22,9 @@
     'toriel_bed','toriel_wall_drawing','toriel_chair','toriel_desk','kitchen_counter','kitchen_stove','home_piano']);
   const clamp=value=>Math.max(0,Math.min(1,value));
   const ease=value=>value*value*(3-2*value);
+  // A full-height refrigerator front needs enough time to show its swing while
+  // the description begins. Small switches keep their existing quicker pace.
+  const duration=id=>id==='kitchen_fridge'?480:DURATION;
   function create(options={}){
     const storage=options.storage,progress=options.progress;
     const clock=typeof options.now==='function'?options.now:()=>globalThis.performance?.now?.()??Date.now();
@@ -45,7 +48,7 @@
       if(reduced()){transitions.delete(id);return value?1:0;}
       const transition=transitions.get(id);
       if(!transition)return value?1:0;
-      const unit=clamp((time-transition.start)/DURATION);
+      const unit=clamp((time-transition.start)/duration(id));
       const result=transition.from+(transition.to-transition.from)*ease(unit);
       if(unit===1)transitions.delete(id);
       return result;

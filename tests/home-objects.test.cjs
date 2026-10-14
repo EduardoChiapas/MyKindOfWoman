@@ -32,6 +32,19 @@ test('reversing a toggle during motion continues from its visible position witho
  f.time(250);assert.equal(f.state.visual('reading_books').phase,.25);
  f.time(375);assert.equal(f.state.visual('reading_books').phase,0);
 });
+
+test('the refrigerator takes a readable full-front swing, can reverse smoothly and respects quiet effects',()=>{
+ const f=fixture();f.state.interact('kitchen_fridge');
+ f.time(240);assert.equal(f.state.visual('kitchen_fridge').phase,.5);
+ f.time(480);assert.equal(f.state.visual('kitchen_fridge').phase,1);
+ f.state.interact('kitchen_fridge');f.time(720);assert.equal(f.state.visual('kitchen_fridge').phase,.5);
+ f.state.interact('kitchen_fridge');assert.equal(f.state.visual('kitchen_fridge').phase,.5);
+ f.time(960);assert.equal(f.state.visual('kitchen_fridge').phase,.75);
+ f.time(1200);assert.equal(f.state.visual('kitchen_fridge').phase,1);
+ const quiet=fixture({}, {reducedMotion:true});quiet.state.interact('kitchen_fridge');
+ assert.equal(quiet.state.visual('kitchen_fridge').phase,1);
+ quiet.state.interact('kitchen_fridge');assert.equal(quiet.state.visual('kitchen_fridge').phase,0);
+});
 test('pulses finish naturally and do not write a permanent action, inventory or game result',()=>{
  const f=fixture();
  for(const id of ['reading_table','lumo_box','lumo_desk','lumo_drawing','garden_watering_can'])assert.equal(f.state.interact(id),true);

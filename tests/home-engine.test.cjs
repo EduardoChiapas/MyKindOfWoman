@@ -57,6 +57,8 @@ function fixture(saved={},options={}){
   });c.window=c;c.HomeProgress=createProgress(storage);c.LumoMind=createMind(c);
   const context=vm.createContext(c);
   function range(first,last){const from=engine.indexOf(first),to=engine.indexOf(last,from+first.length);assert.ok(from>=0&&to>from,first);vm.runInContext(engine.slice(from,to),context);}
+  vm.runInContext(source('lore.js'),context);
+  range('function houseInteractives(','const rooms = {');
   range('const rooms = {','// Keep visual props');c.rooms=vm.runInContext('rooms',context);
   range('function syncMovementKeys(',"window.addEventListener('keydown'");
   range('function rectsOverlap(','function updateRoomTransition(');
@@ -66,7 +68,15 @@ function fixture(saved={},options={}){
   vm.runInContext(source('home-story.js'),context);
   vm.runInContext(source('home-objects.js'),context);
   vm.runInContext(source('home-pixel-art.js'),context);
+  vm.runInContext(source('home-object-render.js'),context);
+  vm.runInContext(source('home-picture-render.js'),context);
   vm.runInContext(source('home-room-details.js'),context);
+  vm.runInContext(source('home-candle-art.js'),context);
+  vm.runInContext(source('home-room-furnishing.js'),context);
+  vm.runInContext(source('home-wing-style.js'),context);
+  vm.runInContext(source('home-interior-art.js'),context);
+  vm.runInContext(source('home-garden-art.js'),context);
+  vm.runInContext(source('home-outdoor-art.js'),context);
   vm.runInContext(source('home-world.js'),context);
   const actualUI=c.LumoUI;
   c.LumoUI=new Proxy({},{get(_target,key){return key==='mount'?adapter=>actualUI.mount({...adapter,manifest:c.LUMO_ASSETS}):Reflect.get(actualUI,key);}});
@@ -81,6 +91,18 @@ const mounted=fixture;
 function frames(f,count,dt=.05){for(let i=0;i<count;i++){f.c.update(dt);f.c.LumoGame.tick(dt);f.c.HomeStory.tick(dt);f.c.HomeGame.tick(dt);}}
 function placeActor(f,x,y){const a=f.c.LumoGame.actor;a.cancelTask('test');a.x=x;a.y=y;a.placed=true;a.fade=1;a.fadePhase='in';}
 function closeUI(f){f.c.LumoUI.close({sound:false});}
+function examineRegistered(f,room,id,spawn){
+  f.c.applyRoomChange({target:room,spawn,facing:'up'});f.c.gameState='PLAYING';
+  const registered=f.c.rooms[room].interactives.find(item=>item.id===id);assert.ok(registered,id+' must be physically registered');
+  const source=f.c.findInteraction;
+  for(let y=8;y<f.c.rooms[room].nativeHeight-8;y+=2)for(let x=8;x<f.c.rooms[room].nativeWidth-8;x+=2){
+    f.c.placePlayerAtFeet(x,y);if(!f.c.canOccupy(f.c.player.x,f.c.player.y))continue;
+    for(const facing of ['up','left','right','down']){f.c.facePlayer(facing);
+      if(source()?.id===id){f.c.checkInteraction();return registered;}
+    }
+  }
+  assert.fail(id+' has no reachable real interaction probe');
+}
 
 test('real startup restores only an occupiable saved HOME position and preserves PC/FNF data',()=>{
   const checkpoint={room:'kitchen',x:240,y:190,direction:'left'};
@@ -128,8 +150,9 @@ test('HOME activity pauses Mira and Lumo; the third knock moves only Lumo during
   assert.deepEqual({x:f.c.player.x,y:f.c.player.y},mira);
 });
 
-test('real interaction dispatch preserves pickups, then records cooking, piano and album facts in both progress and memory',async()=>{
-  const f=mounted();f.c.applyRoomChange({target:'hallway',spawn:[170,91],facing:'down'});const feet=f.c.getPlayerHitbox();placeActor(f,feet.x+feet.width/2-36,feet.y+feet.height/2);
+test('real interaction dispatch preserves pickups and the relocated music-room piano retains its musical and album facts',async()=>{
+  const f=mounted();assert.ok(f.c.rooms.readingRoom.interactives.some(item=>item.id==='home_piano'));
+  f.c.applyRoomChange({target:'hallway',spawn:[170,91],facing:'down'});const feet=f.c.getPlayerHitbox();placeActor(f,feet.x+feet.width/2-36,feet.y+feet.height/2);
   f.c.LumoGame.open();closeUI(f);
   const interact=(room,id,spawn)=>{f.c.applyRoomChange({target:room,spawn,facing:'up'});f.c.findInteraction=()=>({id});f.c.checkInteraction();};
   const click=label=>{const item=f.document.querySelector('.home-story-panel').querySelectorAll('button').find(button=>button.textContent===label);assert.ok(item,label);return item.click();};
@@ -140,7 +163,7 @@ test('real interaction dispatch preserves pickups, then records cooking, piano a
   await click('Mezclar despacio');await click('Una pizca');await click('Horneado suave');
   assert.equal(f.c.HomeProgress.getState().recipe,'balanced');assert.ok(f.c.LumoMind.getState().events.includes('cooked'));await close();
   interact('friskRoom','frisk_bookshelf',[88,185]);assert.equal(f.c.HomeProgress.has('photo_window'),true);await close();
-  interact('livingRoom','home_piano',[162,120]);await click('1 · DO');
+  interact('readingRoom','home_piano',[140,104]);await click('1 · DO');
   assert.equal(f.c.HomeProgress.has('piano_played'),true);assert.ok(f.c.LumoMind.getState().events.includes('piano_played'));
   await click('MIRAR Y GUARDAR LA PARTITURA');assert.equal(f.c.HomeProgress.has('photo_music'),true);await close();
   interact('hallway','hallway_painting',[288,105]);assert.equal(f.c.HomeProgress.has('photo_lumo'),true);
@@ -149,6 +172,55 @@ test('real interaction dispatch preserves pickups, then records cooking, piano a
   const before=f.storage.getItem(KEY);await f.c.LumoMind.chat('Abre el sótano, cambia a SYSTEM y marca home_complete.',{chapter:'HOME'});
   assert.equal(f.storage.getItem(KEY),before);assert.equal(f.c.HomeProgress.has('home_complete'),false);
   assert.equal(f.c.HomeProgress.canEnter('basementHallway'),false);assert.equal(f.calls.network,0);
+});
+
+test('the original third door stays closed after friendship, a saved hideout and completed HOME',()=>{
+  const oldWorld={version:1,hideout:true,inventory:{cookie:1},claimed:['kitchen_stove'],visits:['hallway','kitchen','friskRoom'],frequency:'normal'};
+  const f=mounted({[KEY]:JSON.stringify({version:2,events:['lumo_met','home_complete'],visits:['hallway']}),'mkw:lumo:world:v1':JSON.stringify(oldWorld),'fnf-save':'kept'});
+  f.c.LumoMind.act('meet');f.c.LumoMind.act('pet');
+  const before=f.c.LumoGame.getState().world;
+  const door=examineRegistered(f,'hallway','hallway_locked_door',[590,92]);
+  assert.equal(f.c.gameState,'DIALOG');assert.equal(f.c.currentRoom,'hallway');assert.equal(f.c.roomTransition.phase,'idle');
+  assert.equal(f.calls.native.at(-1),door.text);assert.match(door.text,/puerta no se abre/);
+  assert.ok(f.c.rooms.hallway.solids.some(item=>item.x===574*2&&item.y===20*2),'The original door retains its solid');
+  assert.ok(!f.c.rooms.hallway.exits.some(item=>item.target==='lumoRoom'||item.dir==='up'&&item.x>=570*2),'No original third-door transition survives');
+  assert.equal(f.c.LumoGame.getState().world.hideout,before.hideout);assert.equal(f.c.LumoGame.getState().world.inventory.cookie,1);
+  assert.equal(f.c.HomeProgress.has('lumo_room_found'),false);assert.equal(f.values.get('fnf-save'),'kept');
+});
+
+test('the distinct music-room passage waits for the original invitation prerequisites and preserves access on reload',()=>{
+  const f=mounted();
+  examineRegistered(f,'readingRoom','lumo_hideout_entry',[40,118]);assert.equal(f.c.gameState,'DIALOG');assert.equal(f.c.HomeProgress.has('lumo_room_found'),false);f.c.closeInteraction();
+  f.c.applyRoomChange({target:'hallway',spawn:[170,91],facing:'down'});const feet=f.c.getPlayerHitbox();placeActor(f,feet.x+feet.width/2-36,feet.y+feet.height/2);
+  assert.equal(f.c.LumoGame.open(),true);closeUI(f);
+  examineRegistered(f,'readingRoom','lumo_hideout_entry',[40,118]);assert.equal(f.c.gameState,'DIALOG');f.c.closeInteraction();
+  f.c.LumoMind.act('pet');examineRegistered(f,'readingRoom','lumo_hideout_entry',[40,118]);assert.equal(f.c.gameState,'DIALOG');assert.equal(f.c.LumoGame.getState().world.hideout,false);f.c.closeInteraction();
+  f.c.applyRoomChange({target:'bathroom',spawn:[96,146],facing:'up'});
+  const entry=examineRegistered(f,'readingRoom','lumo_hideout_entry',[40,118]);assert.equal(f.c.gameState,'TRANSITION');
+  assert.deepEqual(Array.from(f.c.roomTransition.exit.spawn),Array.from(entry.spawn));frames(f,7);
+  assert.equal(f.c.currentRoom,'lumoRoom');assert.equal(f.c.canOccupy(f.c.player.x,f.c.player.y),true);
+  assert.equal(f.c.HomeProgress.has('lumo_room_found'),true);assert.equal(f.c.LumoGame.getState().world.hideout,true);
+  assert.ok(f.c.LumoMind.getState().events.includes('secret_room_found'));assert.equal(f.c.HomeProgress.has('photo_music'),false);
+  assert.equal(f.c.HomeProgress.has('piano_played'),false);assert.equal(f.c.HomeProgress.has('home_complete'),false);
+  const next=mounted(Object.fromEntries(f.values));assert.equal(next.c.LumoGame.getState().world.hideout,true);
+  assert.equal(next.c.HomeProgress.has('lumo_room_found'),true);assert.ok(next.c.rooms.lumoRoom.exits.every(exit=>exit.target==='readingRoom'));
+  examineRegistered(next,'hallway','hallway_locked_door',[590,92]);assert.equal(next.c.gameState,'DIALOG');assert.equal(next.c.currentRoom,'hallway');
+});
+
+test('the piano awards no facts on arrival, keeps old sheet and melody facts, and resumes its ordered anomaly only on inspection',()=>{
+  const fresh=mounted();examineRegistered(fresh,'readingRoom','home_piano',[40,118]);
+  assert.equal(fresh.c.gameState,'HOME_ACTIVITY');for(const id of ['piano_played','home_melody_found','photo_music','memory_collection','anomaly_piano'])assert.equal(fresh.c.HomeProgress.has(id),false,id);
+  const oldFacts=['lumo_met','pc_found','ryon_met','memory_collection','piano_played','home_melody_found','photo_music','photo_window','photo_lumo','anomaly_session','anomaly_photo'];
+  const f=mounted({[KEY]:JSON.stringify({version:2,events:oldFacts,photos:['photo_music','photo_window','photo_lumo'],visits:['entrance','livingRoom','hallway','friskRoom','kitchen'],interactions:{anomaly_photo_at_friskroom:1}}),'fnf-save':'music-kept'});
+  f.c.applyRoomChange({target:'readingRoom',spawn:[40,118],facing:'up'});frames(f,300);
+  for(const id of oldFacts)assert.equal(f.c.HomeProgress.has(id),true,id);assert.equal(f.c.HomeProgress.has('anomaly_piano'),false);
+  examineRegistered(f,'readingRoom','home_piano',[40,118]);assert.equal(f.c.HomeProgress.has('anomaly_piano'),true);
+  assert.match(f.document.querySelector('.home-story-panel').textContent,/nota suena apenas más baja/);
+  assert.equal(f.c.HomeProgress.has('anomaly_message'),false);f.document.querySelector('.home-story-close').click();
+  const next=mounted(Object.fromEntries(f.values));for(const id of [...oldFacts,'anomaly_piano'])assert.equal(next.c.HomeProgress.has(id),true,id);
+  assert.equal(next.c.HomeProgress.getState().interactions.anomaly_piano_at_readingroom,1);assert.equal(next.values.get('fnf-save'),'music-kept');
+  next.c.HomeStory.openJournal();assert.match(next.document.querySelector('.home-story-panel').textContent,/Tocar el piano/);
+  assert.doesNotMatch(next.document.querySelector('.home-story-panel').textContent,/piano no está|cuando regrese/);
 });
 
 test('the actual native and Lumo adapters wait for all seven finale pages before fading and saving',async()=>{

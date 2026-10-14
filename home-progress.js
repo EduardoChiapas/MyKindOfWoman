@@ -6,7 +6,26 @@
   'use strict';
   const KEY='mkw:home:progress:v1';
   const SCHEMA_VERSION=2;
+  const LAYOUT_VERSION=2;
   const ROOM_IDS=['entrance','livingRoom','hallway','friskRoom','torielRoom','kitchen','lumoRoom','gallery','bathroom','readingRoom','gardenHall','garden'];
+  // Historical visits remain valid even when a physical room is merged.
+  // Geometry revisions only relocate rooms whose furniture or bounds changed.
+  // Keep this table in sync with the actual clear entry points in HomeWorld.
+  const LAYOUT_SAFE_POSITIONS=Object.freeze({
+    gallery:Object.freeze({feet:Object.freeze([44,152]),changedAt:1}),
+    bathroom:Object.freeze({feet:Object.freeze([120,168]),changedAt:2}),
+    readingRoom:Object.freeze({feet:Object.freeze([40,130]),changedAt:2}),
+    garden:Object.freeze({feet:Object.freeze([192,230]),changedAt:2}),
+    lumoRoom:Object.freeze({feet:Object.freeze([96,146]),changedAt:1})
+  });
+  function migratePosition(position,layoutVersion){
+    if(!position||!ROOM_IDS.includes(position.room)||!Number.isFinite(position.x)||!Number.isFinite(position.y))return null;
+    const room=position.room==='gardenHall'?'gallery':position.room;
+    const entry=LAYOUT_SAFE_POSITIONS[room];
+    if(entry&&(Number(layoutVersion||0)<entry.changedAt||position.room==='gardenHall'))
+      return {room,x:entry.feet[0]*2-24,y:entry.feet[1]*2-59,direction:'up'};
+    return {room,x:position.x,y:position.y,direction:['up','down','left','right'].includes(position.direction)?position.direction:'down'};
+  }
   const EVENTS=new Set(['lumo_met','pc_found','ryon_met','photo_window','photo_music','photo_lumo','memory_collection',
     'cooked','piano_played','flower_watered','lumo_room_found','lumo_drawing_found','played_memory','played_hide_seek','played_fnf',
     'anomaly_session','anomaly_photo','anomaly_piano','anomaly_message','anomaly_lumo','anomaly_door','investigate_door','home_complete',
@@ -15,17 +34,16 @@
   const PHOTOS=['photo_window','photo_music','photo_lumo'];
   function createProgress(storage,build={chapter:'HOME'}){
     const listeners=new Set(); let readOnly=false;
-    let state={version:SCHEMA_VERSION,chapter:build.chapter==='ECHOES'?'ECHOES':'HOME',basementUnlocked:false,events:[],visits:[],photos:[],interactions:{},position:null,recipe:null,flower:{watered:false},updatedAt:0};
+    let state={version:SCHEMA_VERSION,layoutVersion:LAYOUT_VERSION,chapter:build.chapter==='ECHOES'?'ECHOES':'HOME',basementUnlocked:false,events:[],visits:[],photos:[],interactions:{},position:null,recipe:null,flower:{watered:false},updatedAt:0};
     try{
       const raw=JSON.parse(storage?.getItem(KEY)||'null');
-      if(raw && Number(raw.version)>SCHEMA_VERSION) readOnly=true;
-      if(raw && [1,SCHEMA_VERSION].includes(raw.version)){
+      if(raw && (Number(raw.version)>SCHEMA_VERSION||Number(raw.layoutVersion)>LAYOUT_VERSION)) readOnly=true;
+      if(raw && !readOnly && [1,SCHEMA_VERSION].includes(raw.version)){
         state.events=[...new Set((Array.isArray(raw.events)?raw.events:[]).filter(id=>EVENTS.has(id)))];
         state.visits=[...new Set((Array.isArray(raw.visits)?raw.visits:[]).filter(id=>ROOM_IDS.includes(id)))];
         state.photos=PHOTOS.filter(id=>state.events.includes(id));
         if(build.chapter==='ECHOES') state.basementUnlocked=raw.basementUnlocked===true;
-        if(raw.position && ROOM_IDS.includes(raw.position.room) && Number.isFinite(raw.position.x) && Number.isFinite(raw.position.y))
-          state.position={room:raw.position.room,x:raw.position.x,y:raw.position.y,direction:['up','down','left','right'].includes(raw.position.direction)?raw.position.direction:'down'};
+        state.position=migratePosition(raw.position,raw.layoutVersion);
         for(const [id,count] of Object.entries(raw.interactions||{}).slice(0,100)) if(/^[a-z_]{2,50}$/.test(id)) state.interactions[id]=Math.min(999,Math.max(0,Number(count)||0));
         state.recipe=['balanced','extra_cinnamon','crispy'].includes(raw.recipe)?raw.recipe:null;
         state.flower.watered=state.events.includes('flower_watered');
@@ -40,7 +58,7 @@
     function barrier(room){return room==='entrance'&&!canEnter('basementHallway')?{x:410,y:190,width:30,height:66}:null;}
     function visit(room){if(!ROOM_IDS.includes(room))return false;if(!state.visits.includes(room)){state.visits.push(room);emit('visit');}return true;}
     function touch(id){if(!/^[a-z_]{2,50}$/.test(id))return 0;state.interactions[id]=Math.min(999,(state.interactions[id]||0)+1);save();return state.interactions[id];}
-    function checkpoint(position){if(!position||!ROOM_IDS.includes(position.room)||!Number.isFinite(position.x)||!Number.isFinite(position.y))return false;state.position={room:position.room,x:position.x,y:position.y,direction:position.direction};save();return true;}
+    function checkpoint(position){const safe=migratePosition(position,LAYOUT_VERSION);if(!safe)return false;state.position=safe;save();return true;}
     function nextAnomaly(){return ANOMALIES.find(id=>!has(id))||null;}
     function recordAnomaly(id){if(id!==nextAnomaly()||!has('memory_collection')||!has('ryon_met'))return false;return record(id);}
     function quests(){
@@ -64,5 +82,5 @@
       onChange(fn){listeners.add(fn);return()=>listeners.delete(fn);}
     });
   }
-  return {createProgress,KEY,ANOMALIES,PHOTOS,SCHEMA_VERSION};
+  return {createProgress,KEY,ANOMALIES,PHOTOS,SCHEMA_VERSION,LAYOUT_VERSION,LAYOUT_SAFE_POSITIONS};
 });

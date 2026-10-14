@@ -1,0 +1,30 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><base href="../"><title>Lumo: verificación visual</title>
+<style>body{margin:0;background:#19151f;color:white;font:14px monospace}canvas{display:block;image-rendering:pixelated}</style></head>
+<body><canvas id="world" width="880" height="660"></canvas><canvas id="portraits" width="880" height="220"></canvas>
+<script src="assets/lumo/manifest.js"></script><script src="lumo-actor.js"></script><script>
+const context = {roomId:'visual-test',player:{direction:'down'},feet:{x:30,y:70,width:20,height:12},state:'PLAYING'};
+const actor = new LumoActor({adapter:{getContext:()=>context,canStand:()=>true}});
+const ready = Promise.all([...actor.images.values()].map(image=>image.complete?Promise.resolve():new Promise(resolve=>{image.onload=resolve;image.onerror=resolve})));
+ready.then(()=>{
+  const ctx=document.getElementById('world').getContext('2d');ctx.imageSmoothingEnabled=false;
+  const names=Object.keys(LUMO_ASSETS.animations);
+  names.forEach((name,index)=>{
+    const x=index%4*220,y=Math.floor(index/4)*132;
+    ctx.fillStyle=index%2?'#57415e':'#61485e';ctx.fillRect(x,y,220,132);
+    ctx.fillStyle='#fff';ctx.font='14px monospace';ctx.fillText(name,x+12,y+22);
+    actor.animation=name; actor.fade=1;
+    for(let frame=0;frame<4;frame++){
+      actor.x=x+30+frame*53;actor.y=y+102;actor.animationElapsed=frame/LUMO_ASSETS.animations[name].fps;
+      actor.elapsed=frame*0.1;actor.draw(ctx,{x:0,y:0});
+    }
+  });
+  const portraits=document.getElementById('portraits').getContext('2d');portraits.imageSmoothingEnabled=false;
+  portraits.fillStyle='#050405';portraits.fillRect(0,0,880,220);
+  LUMO_ASSETS.portraits.frames.forEach((frame,index)=>{
+    const image=actor.images.get(frame.sheet),rect=frame.rect,x=index%8*110,y=Math.floor(index/8)*110;
+    portraits.drawImage(image,rect.x,rect.y,rect.width,rect.height,x+12,y+4,86,86);
+    portraits.fillStyle='#fff';portraits.font='12px monospace';portraits.fillText(String(index),x+48,y+104);
+  });
+  window.previewReady=true;
+});
+</script></body></html>

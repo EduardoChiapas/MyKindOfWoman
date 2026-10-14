@@ -27,3 +27,19 @@
 @media(max-width:380px){.home-activity-art{width:192px}.home-cooking .home-story-body>button{min-width:0;width:calc(100% - 8px)}}
 @media(prefers-reduced-motion:reduce){.home-minigame,.home-photo-leaf{animation:none}.home-piano-keys .is-playing{animation:none;background:#ffe982}.home-piano-keys button:active{background:#ffe982}}
 @media(max-width:600px){.home-story-panel.home-minigame,.home-story-panel.home-album{max-height:calc(100dvh - 24px);top:50%;bottom:auto;font-size:15px}.home-minigame h2,.home-album h2{font-size:20px}}
+.home-minigame h2,.home-album h2{color:#ffdf8a;border-bottom:2px solid #76608f;padding-bottom:8px;letter-spacing:.3px}
+.home-minigame .home-story-body>p:first-of-type{color:#ece1f6}
+.home-activity-status{padding:7px 10px;border-left:3px solid #b68af4;background:#19131f;color:#eddefc}
+.home-activity-status.is-complete{border-color:#8de0b2;color:#adf1c8;background:#13271d}
+.home-minigame .home-story-body>button,.home-album button{transition:background-color 120ms ease-out,border-color 120ms ease-out}
+.home-minigame .home-story-body>button:hover,.home-minigame .home-story-body>button:focus-visible{background:#281f36}
+.home-piano-keys button{--key-accent:#ffdf8a;background:#fff0ca;box-shadow:inset 0 -6px #be996d}
+.home-piano-keys button:nth-child(1){--key-accent:#ffa0b5;border-bottom-color:#ffa0b5}
+.home-piano-keys button:nth-child(2){--key-accent:#ffe476;border-bottom-color:#ffe476}
+.home-piano-keys button:nth-child(3){--key-accent:#a0dfef;border-bottom-color:#a0dfef}
+.home-piano-keys button:nth-child(4){--key-accent:#d1b0ff;border-bottom-color:#d1b0ff}
+.home-piano-keys button:hover,.home-piano-keys button:focus-visible{background:var(--key-accent)}
+@keyframes home-piano-press{0%,40%{background:var(--key-accent);box-shadow:inset 0 -2px #be996d}100%{background:#fff0ca;box-shadow:inset 0 -6px #be996d}}
+.home-story-panel.home-quiet,.home-quiet .home-photo-leaf{animation:none}
+.home-quiet button{transition:none}
+@media(prefers-reduced-motion:reduce){.home-minigame .home-story-body>button,.home-album button{transition:none}}

@@ -90,21 +90,30 @@ test('opening garden care makes no watering sound; the actual watering choice pl
   assert.equal(f.c.HomeProgress.has('flower_watered'),false);click(f,'REGAR CON CUIDADO');
   assert.equal(sounds.filter(item=>item.name==='water').length,1);assert.equal(f.c.HomeProgress.has('flower_watered'),true);
 });
-test('Mira can learn the four-note pattern alone without creating a Lumo hum action or a heard-song memory',()=>{
-  const f=fixture();inspect(f,'livingRoom','home_piano',[162,120]);for(const label of ['1 · DO','2 · MI','3 · RE','4 · SOL'])click(f,label);
+test('the relocated piano keeps the four-note activity without creating a Lumo hum action or a heard-song memory',()=>{
+  const f=fixture();assert.ok(f.c.rooms.readingRoom.interactives.some(item=>item.id==='home_piano'));
+  inspect(f,'readingRoom','home_piano',[140,104]);for(const label of ['1 · DO','2 · MI','3 · RE','4 · SOL'])click(f,label);
   const state=f.c.LumoMind.getState();assert.equal(f.c.HomeProgress.has('home_melody_found'),true);assert.equal(state.localActions.some(item=>item.id==='hum'),false);
   assert.equal(state.events.includes('hummed_melody'),false);assert.equal(state.memories.some(item=>item.id==='hummed_melody'),false);
   assert.doesNotMatch(f.document.querySelector('.home-story-panel').textContent,/Lumo tararea/);
 });
-test('all original detail layers stay inside native room bounds and the new piano uses native rectangles without a bitmap',()=>{
-  const f=fixture(),rectangles=[],ctx={save(){},restore(){},translate(){},scale(){},fillRect:(...value)=>rectangles.push(value),drawImage(){throw Error('The piano and details must use native pixel art.');}};
+test('retired decoration layers and the relocated piano leave the original rooms untouched',()=>{
+  const f=fixture(),draws=[],ctx={save(){},restore(){},translate(){},scale(){},fillRect:()=>assert.fail('No synthetic patches belong over the original art'),drawImage:(...args)=>draws.push(args)};
   for(const [room,width,height]of [['entrance',320,240],['livingRoom',320,240],['hallway',745,156],['friskRoom',239,234],['torielRoom',227,234],['kitchen',196,163]]){
-    rectangles.length=0;for(const item of f.c.HomeRoomDetails.scenes[room])f.c.HomeObjectsState.interact(item.id);
-    f.c.HomeRoomDetails.draw(ctx,room);assert.ok(rectangles.length>0,room);
-    for(const [x,y,w,h]of rectangles){assert.ok([x,y,w,h].every(Number.isInteger));assert.ok(x>=0&&y>=0&&x+w<=width&&y+h<=height,`${room}: ${[x,y,w,h]}`);}
+    f.c.HomeRoomDetails.draw(ctx,room,{x:0,y:0},false,null,{complete:true,naturalWidth:width,naturalHeight:height});
+    assert.equal(draws.length,0,room+' retains its original closed appearance');
   }
-  rectangles.length=0;f.c.HomeWorld.drawPiano(ctx,{x:0,y:0});assert.ok(rectangles.length>40);
-  for(const [x,y,w,h]of rectangles)assert.ok(x>=32&&y>=78&&x+w<=106&&y+h<=147,`piano ${[x,y,w,h]}`);
+  assert.equal(f.c.HomeWorld.drawPiano(ctx,{x:0,y:0}),false);assert.equal(f.c.HomeStory.draw(ctx,{x:0,y:0}),false);assert.equal(draws.length,0);
+});
+
+test('piano relocation frees its former floor and rejects ghost interactions without erasing musical memories',()=>{
+  const key=require('../home-progress.js').KEY,events=['lumo_met','piano_played','home_melody_found','photo_music'];
+  const f=fixture({[key]:JSON.stringify({version:2,events,photos:['photo_music'],visits:['livingRoom']})});
+  enter(f,'livingRoom',[80,115]);assert.ok(!f.c.rooms.livingRoom.interactives.some(item=>item.id==='home_piano'));
+  assert.ok(f.c.canOccupy(f.c.player.x,f.c.player.y),'The former piano footprint is walkable');
+  assert.equal(f.c.HomeStory.interact({id:'home_piano'}),false);assert.equal(f.document.querySelector('.home-story-panel'),null);
+  for(const event of events)assert.equal(f.c.HomeProgress.has(event),true,event);
+  assert.ok(f.c.HomeProgress.getState().photos.includes('photo_music'));assert.equal(f.c.HomeProgress.has('home_complete'),false);
 });
 test('the original book changes content exactly at its hinge midpoint, rejects rapid turns and never advances itself',()=>{
   const f=bookFixture();assert.match(f.get('.home-book-leaf').textContent,/flor seca/);assert.equal(f.timers.size,0);

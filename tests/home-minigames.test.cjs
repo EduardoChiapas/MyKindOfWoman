@@ -49,8 +49,9 @@ test('cancelled flip callbacks cannot change a later deal; keyboard and touch cl
   f.key('Escape');assert.equal(f.timers.size,0);assert.equal(f.completed.length,0);
   assert.ok(f.sounds.every(value=>value.options.ui===true),'The effects are allowed while this activity pauses movement.');
 });
-test('actual piano presses update the score without auto-playing notes and retain the HOME motif',()=>{
-  const f=engineFixture();enter(f,'livingRoom',[218,169]);assert.equal(f.c.HomeStory.interact({id:'home_piano'}),true);
+test('the music-room piano updates the score from actual presses and retains the HOME motif',()=>{
+  const f=engineFixture();assert.ok(f.c.rooms.readingRoom.interactives.some(item=>item.id==='home_piano'));
+  enter(f,'readingRoom',[140,104]);assert.equal(f.c.HomeStory.interact({id:'home_piano'}),true);
   assert.equal(f.document.querySelector('.home-activity-art').width,96);const keys=f.document.querySelector('.home-piano-keys').querySelectorAll('button');
   assert.equal(f.calls.sound.length,0);for(const key of keys)key.click();
   assert.equal(f.c.HomeProgress.has('home_melody_found'),true);assert.equal(f.calls.sound.filter(value=>value==='note').length,4);

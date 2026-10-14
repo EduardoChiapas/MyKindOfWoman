@@ -1,8 +1,9 @@
 /* Optional HOME activities. Outcomes come from game input, never from chat. */
 (function (global) {
   'use strict';
-  let adapter, panel, timer, active = false, selected = [], matched = new Set(), cards = [], turns = 0, epoch = 0, buttons = [], finished = false;
+  let adapter, panel, timer, active = false, selected = [], matched = new Set(), cards = [], turns = 0, epoch = 0, buttons = [], finished = false, feedback = 'idle';
   const names = ['corazón', 'estrella', 'luna', 'nota'];
+  const colors = ['#ff7b94', '#ffe476', '#8ddff2', '#c6a1ff'];
   const pixels = [
     ['01100110','11111111','11111111','11111111','01111110','00111100','00011000'],
     ['00011000','00011000','11111111','01111110','00111100','01111110','11000011'],
@@ -16,11 +17,19 @@
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 12;
     canvas.setAttribute('aria-hidden', 'true');
     const brush = canvas.getContext('2d'); brush.imageSmoothingEnabled = false;
-    brush.fillStyle = cover ? '#e2d4ac' : '#ffea81';
     if (cover) {
+      brush.fillStyle = '#9b86d2';
       for (let y = 1; y < 11; y += 2) for (let x = 1; x < 11; x += 2) if ((x + y) % 4 === 2) brush.fillRect(x, y, 1, 1);
+      brush.fillStyle = '#ffe476';
       brush.fillRect(5, 4, 2, 4); brush.fillRect(3, 5, 6, 2);
-    } else for (const [y, row] of pixels[pair].entries()) for (const [x, value] of [...row].entries()) if (value === '1') brush.fillRect(x + 2, y + 2, 1, 1);
+      brush.fillStyle = '#fff4d3'; brush.fillRect(5, 4, 1, 1);
+    } else {
+      brush.fillStyle = '#3e2c58';
+      for (const [y, row] of pixels[pair].entries()) for (const [x, value] of [...row].entries()) if (value === '1') brush.fillRect(x + 3, y + 3, 1, 1);
+      for (const [y, row] of pixels[pair].entries()) for (const [x, value] of [...row].entries()) if (value === '1') {
+        brush.fillStyle = y === 0 ? '#fff4e0' : colors[pair]; brush.fillRect(x + 2, y + 2, 1, 1);
+      }
+    }
     return canvas;
   }
   function close() {
@@ -33,12 +42,13 @@
   }
   function memory() {
     if (active) return;
-    active = true; finished = false; epoch++; selected = []; matched = new Set(); turns = 0; buttons = [];
+    active = true; finished = false; feedback = 'idle'; epoch++; selected = []; matched = new Set(); turns = 0; buttons = [];
     cards = names.flatMap((symbol, pair) => [{ symbol, pair }, { symbol, pair }]);
     for (let i = cards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1)); [cards[i], cards[j]] = [cards[j], cards[i]];
     }
     panel = document.createElement('section'); panel.className = 'lumo-memory';
+    panel.classList.toggle('is-quiet',global.HouseExperience?.reducedMotion===true);
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true'); panel.setAttribute('aria-label', 'Memoria con Lumo');
     const frame = document.createElement('div'); frame.className = 'lumo-memory-card'; panel.append(frame);
     const title = document.createElement('h2'); title.textContent = 'MEMORIA CON LUMO'; frame.append(title);
@@ -71,22 +81,24 @@
   }
   function reveal(index) {
     if (!active || finished || selected.length >= 2 || selected.includes(index) || matched.has(cards[index].pair)) return;
-    sound('card'); selected.push(index); paint();
+    sound('card'); selected.push(index); feedback = 'selecting'; paint();
     if (selected.length !== 2) return;
     turns++; const ticket = epoch, [a, b] = selected;
     if (cards[a].pair === cards[b].pair) {
-      matched.add(cards[a].pair); selected = []; finished = matched.size === 4; paint(); sound(finished ? 'success' : 'match');
+      matched.add(cards[a].pair); selected = []; finished = matched.size === 4; feedback = finished ? 'complete' : 'match'; paint(); sound(finished ? 'success' : 'match');
       if (finished) {
         panel.querySelector('.lumo-memory-status').textContent = `¡Las cuatro parejas! ${turns} intentos. Lumo exige una revancha amistosa.`;
         const exit = panel.querySelector('.lumo-memory-exit'); exit.textContent = 'VOLVER CON LUMO · ENTER'; exit.focus();
       }
     } else {
+      feedback = 'miss'; paint();
       panel.querySelector('.lumo-memory-status').textContent = `${matched.size} / 4 parejas · Esas dos prefieren seguir buscando.`;
       sound('miss', 'move');
-      timer = setTimeout(() => { if (ticket === epoch && active) { selected = []; paint(); } }, 750);
+      timer = setTimeout(() => { if (ticket === epoch && active) { selected = []; feedback = 'idle'; paint(); } }, 750);
     }
   }
   function paint() {
+    for (const state of ['selecting','match','miss','complete']) panel.classList.toggle('is-' + state, feedback === state);
     cards.forEach((card, index) => {
       const visible = selected.includes(index) || matched.has(card.pair), button = buttons[index];
       button.classList.toggle('is-visible', visible); button.classList.toggle('is-matched', matched.has(card.pair));
@@ -94,7 +106,7 @@
       // Matched cards stay focusable; a reveal guard prevents duplicate results.
       button.setAttribute('aria-disabled', String(matched.has(card.pair)));
     });
-    panel.querySelector('.lumo-memory-status').textContent = `${matched.size} / 4 parejas · ${turns} intentos`;
+    panel.querySelector('.lumo-memory-status').textContent = `${matched.size} / 4 parejas · ${turns} intentos${feedback === 'match' ? ' · ¡Pareja encontrada!' : ''}`;
   }
   global.LumoActivities = Object.freeze({ mount(value) { adapter = value; }, start: memory, cancel: close, get active() { return active; } });
 })(window);

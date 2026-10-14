@@ -5,6 +5,7 @@ const fixture=vm.runInNewContext(engineFixture.slice(0,engineFixture.indexOf("\n
   require,__dirname,console,AbortController,Promise});
 const {KEY:OBJECT_KEY}=require('../home-objects.js');
 const {KEY:PROGRESS_KEY}=require('../home-progress.js');
+const {createArt,assertSourceDraw}=require('./home-art-fixture.cjs');
 
 // Select an actual reachable approach where the engine chooses this object,
 // rather than bypassing nearest-object selection or dispatching a fake action.
@@ -20,7 +21,7 @@ function approach(f,roomId,objectId){
   assert.fail(`${roomId}/${objectId}: no safe approach selecting the object`);
 }
 function enter(f,id){
-  const spawn={gallery:[160,209],bathroom:[120,170],readingRoom:[286,139],gardenHall:[26,108],garden:[34,170],lumoRoom:[120,170]}[id];
+  const spawn={gallery:[44,152],bathroom:[120,168],readingRoom:[40,130],garden:[192,230],lumoRoom:[96,146]}[id];
   f.c.applyRoomChange({target:id,spawn,facing:'up'});
 }
 function examine(f,room,id){approach(f,room,id);f.c.checkInteraction();}
@@ -44,27 +45,38 @@ async function meetAndShare(f){
   assert.ok(c.LumoMind.getState().events.includes('pet'));
 }
 function openHideout(f){
-  const c=f.c,object=c.rooms.gallery.interactives.find(p=>p.id==='hallway_locked_door');
+  const c=f.c;enter(f,'readingRoom');
+  const object=c.rooms.readingRoom.interactives.find(p=>p.id==='lumo_hideout_entry');
   assert.equal(c.LumoGame.interact(object),true);assert.equal(c.gameState,'TRANSITION');
   c.updateRoomTransition(.5);assert.equal(c.currentRoom,'lumoRoom');assert.equal(c.gameState,'PLAYING');
   assert.ok(c.canOccupy(c.player.x,c.player.y));
   assert.ok(!c.rooms.lumoRoom.exits.some(e=>c.rectsOverlap(c.getPlayerHitbox(),e)));
 }
 
-test('the HOME wing has distinct object silhouettes, all painted with native integer pixels without bitmap furniture',()=>{
-  const f=fixture(),defs=f.c.HomeWorld.definitions(),props=Object.values(defs).flatMap(room=>room.props);
-  assert.equal(new Set(props.map(p=>p.kind)).size,props.length,'Every wing object has its own silhouette.');
+test('every wing furnishing draws a complete silhouette at integer native scale within its declared rectangle',()=>{
+  const art=createArt(),f=fixture(),defs=f.c.HomeWorld.definitions();
+  const props=Object.values(defs).flatMap(room=>room.props);
+  assert.equal(new Set(props.map(p=>p.kind)).size,props.length,'The compact rooms keep distinct furniture.');
   for(const p of props){
-    let painted=0;const ctx=paintContext();
-    ctx.drawImage=()=>assert.fail(`${p.id}: pixel furniture must not fall back to a scaled bitmap`);
-    ctx.fillRect=(x,y,w,h)=>{assert.ok([x,y,w,h].every(Number.isInteger),`${p.id}: native pixel grid`);painted++;};
-    assert.equal(f.c.HomePixelArt.draw(ctx,p,{phase:0,pulse:0,time:0,motion:false}),true,p.id);
-    assert.ok(painted>0,`${p.id} paints a visible object`);
+    let paints=0;const ctx=paintContext();
+    const bounds=(x,y,w,h)=>{
+      assert.ok([x,y,w,h].every(Number.isInteger),p.id);
+      assert.ok(w>0&&h>0,`${p.id}: nonempty draw`);
+      assert.ok(x>=p.x&&y>=p.y&&x+w<=p.x+p.width&&y+h<=p.y+p.height,`${p.id}: all pixels stay in its rectangle (${x},${y},${w},${h})`);
+      paints++;
+    };
+    ctx.fillRect=(...args)=>bounds(...args);
+    ctx.drawImage=(image,sx,sy,sw,sh,x,y,w,h)=>{
+      assertSourceDraw(image,[sx,sy,sw,sh,x,y,w,h],p);bounds(x,y,w,h);
+    };
+    const state={phase:0,pulse:0,time:0,motion:false};
+    assert.equal(art.draw(ctx,p,state),true,p.id);
+    assert.ok(paints>0,`${p.id}: actual pixels are drawn`);
   }
 });
 
 test('real object selection and interaction change wing objects, close/reopen correctly, and persist both states',()=>{
-  for(const [room,id]of [['gallery','gallery_umbrella'],['bathroom','bathroom_sink'],['readingRoom','reading_origami'],['gardenHall','garden_hall_flower']]){
+  for(const [room,id]of [['gallery','gallery_umbrella'],['bathroom','bathroom_sink'],['readingRoom','reading_origami']]){
     const f=fixture();enter(f,room);const before=f.c.HomeProgress.getState().events.slice();
     examine(f,room,id);assert.equal(f.c.gameState,'DIALOG');
     assert.equal(f.c.HomeObjectsState.visual(id).value,true);assert.equal(f.c.HomeObjectsState.visual(id).phase,1);
@@ -91,20 +103,20 @@ test('unknown future furniture data stays byte-identical during real interaction
   assert.ok(reset);assert.equal(reset.disabled,true);
 });
 
-test('the side alcove respects real friendship prerequisites and its entrance/return never spawn inside an exit or wall',async()=>{
-  const f=fixture(),c=f.c;enter(f,'gallery');const secret=c.rooms.gallery.interactives.find(p=>p.id==='hallway_locked_door');
-  assert.equal(c.LumoGame.interact(secret),true);assert.equal(c.gameState,'DIALOG');assert.equal(c.currentRoom,'gallery');
+test('the reading-room hideout respects real friendship prerequisites and safely returns to the music room',async()=>{
+  const f=fixture(),c=f.c;enter(f,'readingRoom');const secret=c.rooms.readingRoom.interactives.find(p=>p.id==='lumo_hideout_entry');
+  assert.equal(c.LumoGame.interact(secret),true);assert.equal(c.gameState,'DIALOG');assert.equal(c.currentRoom,'readingRoom');
   assert.equal(c.HomeProgress.has('lumo_room_found'),false);c.closeInteraction();
   c.applyRoomChange({target:'hallway',spawn:[245,105],facing:'up'});assert.equal(c.LumoGame.open(),true);c.LumoUI.close({sound:false});
-  enter(f,'readingRoom');enter(f,'garden');enter(f,'gallery');
+  enter(f,'garden');enter(f,'gallery');enter(f,'readingRoom');
   assert.equal(c.LumoGame.interact(secret),true);assert.equal(c.gameState,'DIALOG');
   assert.equal(c.HomeProgress.has('lumo_room_found'),false,'Visits alone cannot open the hideout.');c.closeInteraction();
   c.LumoUI.openActions();const pet=f.document.querySelector('#lumo-ui').querySelectorAll('button').find(node=>node.textContent==='ACARICIAR');
   assert.ok(pet);await pet.click();c.LumoUI.close({sound:false});openHideout(f);
   assert.equal(c.HomeProgress.has('lumo_room_found'),true);
-  const back=c.rooms.lumoRoom.exits.find(e=>e.target==='gallery');c.applyRoomChange(back);
-  assert.equal(c.currentRoom,'gallery');assert.ok(c.canOccupy(c.player.x,c.player.y));
-  assert.ok(!c.rooms.gallery.exits.some(e=>c.rectsOverlap(c.getPlayerHitbox(),e)));
+  const back=c.rooms.lumoRoom.exits.find(e=>e.target==='readingRoom');c.applyRoomChange(back);
+  assert.equal(c.currentRoom,'readingRoom');assert.ok(c.canOccupy(c.player.x,c.player.y));
+  assert.ok(!c.rooms.readingRoom.exits.some(e=>c.rectsOverlap(c.getPlayerHitbox(),e)));
   assert.equal(c.HomeProgress.canEnter('basementHallway'),false);
 });
 

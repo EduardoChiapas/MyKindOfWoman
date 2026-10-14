@@ -1,67 +1,27 @@
-# Para Damaris · Un lugar al que volver
+# MY KIND OF WOMAN · HOME
 
-Una versión pulida de tu proyecto de la casa de Toriel. Extrae **todo el ZIP** y abre **index.html** en Chrome, Edge o Firefox. No requiere instalación, compilación, conexión ni cuentas. La música comienza al entrar en la casa. También funciona con cualquier servidor estático.
+Mira explora la casa acompañada por Lumo. Acércate y pulsa **Z/E** o toca su sprite para conversar. El diálogo conserva retrato B/W y marco negro/blanco; el texto permanece hasta que lo confirmas con Enter o un toque. Al confirmar la última página aparece el campo limpio para escribir. Toca el texto para acelerar/avanzar, usa Enter para enviar y Esc/X fuera del campo o un toque exterior para cerrar.
 
-## Qué se ha mejorado
+**L / silbato** llaman a Lumo sin abrir conversación. **J** abre el diario y **H** las opciones. Las acciones de compañía, regalos y juegos se consultan fuera del chat. No hay penalización por ausentarse. La entrada del sótano permanece cerrada durante HOME.
 
-- Vista de 640 × 480, con los fondos nativos a escala 2 y píxeles nítidos.
-- Caminar a velocidad constante, diagonales normalizadas, parada inmediata y animación ligada a la distancia recorrida. Se aceptan flechas y WASD.
-- Colisiones de los pies con subpasos y ajuste preciso contra paredes: no se atraviesan barandales ni muebles. Cámara estable con una pequeña zona de seguimiento.
-- Fundidos cortos al cruzar puertas, con colocación segura y protección contra volver inmediatamente por la misma salida.
-- Sala distribuida como la referencia: sillón vacío a la izquierda de la chimenea, mesa con florero y tres sillas. Sin Toriel ni tarta. Los muebles conservan sus píxeles nativos y tienen profundidad y colisiones propias.
-- Textos más acogedores; las siete descripciones provisionales del sótano se han completado. Se conservan el espejo, el libro y la dedicatoria a Damaris.
-- Fuente 8bitoperator JVE en toda la interfaz, incluidos botones, ayuda, libro y diálogos, con acentos españoles. Carga local, también al abrir directamente index.html.
-- Texto progresivo con la muestra de voz de texto de Undertale; selección, confirmación y cancelación usan sus muestras de menú correspondientes. Las páginas tienen hasta tres líneas, con botón de continuación y anuncio accesible por página.
-- Música con entrada y cambios de volumen suaves entre casa y sótano; crepitar tenue cerca de la chimenea; control de silencio.
-- Ayuda con pausa, pantalla completa, controles táctiles y modo de efectos tranquilos. La preferencia de silencio y efectos se recuerda si el navegador permite almacenamiento local.
-- Todos los recursos necesarios son locales; ya no se depende de Google Fonts.
+Extrae la carpeta completa y ejecuta **iniciar.cmd** en Windows o **node servidor.cjs** desde esta carpeta. Abre la dirección indicada en Chrome/Edge. FNF requiere HTTP/HTTPS; el doble clic sobre index.html no carga su motor.
 
-## Controles
+La PC conserva sus aplicaciones y FNF original, y añade Fotos, Mensajes, Música, Archivos y Papelera. FNF prepara sus recursos al abrir la PC por primera vez. Desde el escritorio puedes volver a la habitación; las victorias no conceden llaves ni abren puertas de HOME.
 
-| Acción | Teclas |
-| --- | --- |
-| Entrar | Espacio, Enter, Z o botón de inicio |
-| Caminar | Flechas / WASD / joystick táctil |
-| Examinar | Z / Enter |
-| Completar texto y avanzar | Z / Enter / Espacio / botón del diálogo |
-| Cerrar diálogo o libro | X / Shift / Esc |
-| Ayuda y pausa | H |
-| Audio | M |
-| Pantalla completa | F |
-| Ver colisiones para depuración | F2 |
+La conexión Gemini está preparada en el backend; requiere habilitación, modelo y credenciales exclusivamente de servidor. Sin configuración o permiso se usan respuestas locales naturales. Las preferencias y la privacidad están en opciones externas, sin avisos ni marcas del proveedor en el diálogo.
 
-Puedes tomarte todo el tiempo que quieras; no hay temporizador. Al perder el foco se liberan los controles y, al ocultar la pestaña, el audio se pausa. El modo «Efectos tranquilos» detiene las pequeñas variaciones de fuego y luz y presenta el texto completo.
+La ampliación de HOME está integrada y en verificación. No se certifican todavía una partida completa, Android físico ni IA real. Consulta [LEEME.md](LEEME.md), [LUMO.md](LUMO.md) y [servidor](server/LUMO_BACKEND.md). Créditos en [CREDITOS.md](CREDITOS.md) y [ASSET_CREDITS.md](ASSET_CREDITS.md).
 
-## Fidelidad y personalización
+## Verificación de esta versión
 
-Se ha acercado la presentación y el tacto al RPG original conservando el sprite de Frisk que traía el ZIP, el laberinto personalizado del sótano, los textos para Damaris y las pistas musicales proporcionadas. La sala sigue la referencia de muebles enviada. La tipografía y las muestras de menú se detallan en ASSET_CREDITS.md.
+Revisión experimental `home-art-library-20261013`: los objetos de las habitaciones originales conservan su arte y colores. Sus movimientos reutilizan los píxeles del mueble real. Ver LEEME-EXPERIMENTAL.md. **246 pruebas portables pasan en 28 archivos**, ejecutadas con Node y las opciones `--test --test-isolation=none`.
+El helper visual externo anterior es opcional; la captura actual se obtuvo en navegador.
+La IA real requiere la configuración privada descrita en server/LUMO_BACKEND.md.
+Android físico y una partida completa de duración natural siguen pendientes. El piano se retiró de la sala a petición del creador; su nueva ubicación está pendiente. En esta copia, las escenas musicales y el avance natural que las necesita esperan su regreso. Los logros y recuerdos de partidas anteriores se conservan.
+La interfaz de conversación conserva solo retrato/texto/campo, sin marcas ni avisos técnicos.
 
-Al revelar el texto se oye una muestra por letra; los espacios y signos no disparan sonidos. Completar una página al instante evita acumular sonidos. Pasar de página, examinar, abrir el libro y aceptar opciones usan confirmación; enfocar opciones y cancelar usan la muestra de menú. Los pasos y los cruces de habitaciones permanecen silenciosos. El control de silencio afecta también a estos efectos.
+## Arte del ala nueva
 
-## Archivos
+Los tres packs de Bitglow, LRK/BA/BR, aportan muebles y materiales coherentes al corredor, baño, lectura, pasillo del jardín y escondite. Autumn Forest, de Marie Pepo, aporta el terreno, árbol, banco y plantas del jardín. 31 objetos usan recortes originales a escalas enteras; el dibujo canónico de amistad y el pasadizo conservan su función. Las hojas PNG y sus colores se mantienen intactos. Los objetos, pistas y descripciones se corresponden; se retiraron muebles hechos con bloques y la persiana artificial.
 
-- `script.js`: habitaciones, colisiones, caminar, cámara, espejo y transiciones.
-- `ambience.js`: muebles, fuego y luces locales; comparte sus datos de colisión con el motor.
-- `experience.js`: diálogos, paginación ajustada al ancho real, ayuda, preferencias y carga inicial.
-- `font.js` / `assets/fonts/`: fuente local incorporada; espera a que esté lista antes de entrar.
-- `undertale-audio.js` / `sfx-data.js` / `assets/sfx/`: reproducción y muestras locales de escritura y menús. Los datos incorporados permiten abrir el juego sin servidor.
-- `lore.js`: objetos de la casa; coordenadas nativas del fondo.
-- `basement.js`: geometría, renderizado y objetos del laberinto.
-- `index.html` / `style.css`: interfaz adaptable sin dependencias externas.
-- `assets/props/`: nuevos recortes transparentes de la hoja incluida. La hoja original permanece intacta.
-
-## Validación realizada
-
-Verificación automatizada de las siete habitaciones, doce puntos de llegada, doce transiciones completas y 60 objetos examinables. El recorrido busca posiciones válidas con las colisiones reales a pasos de dos píxeles de mundo en la casa y diez en el sótano. Se comprueban también movimiento a 30, 60 y 144 Hz, diagonales, paredes finas, parada, pérdida de foco, paginación, pausa, cambio gradual de música y silencio.
-
-Comprobados los sonidos por letra, selección, confirmación y cancelación; límites de voces, pausa, silencio y ausencia de dobles activaciones con teclado y táctil. La fuente conserva los 220 glifos y su dibujo original; se verificó texto español y paginación a anchos de 640, 360 y 280 píxeles.
-
-Revisión visual en navegador de inicio, entrada, sala con muebles, diálogo y ayuda; sin errores de consola en esas comprobaciones. Los scripts de prueba y el servidor de desarrollo no forman parte del juego entregado.
-
-Los fondos, el personaje y las pistas proceden del ZIP suministrado. Los elementos de Undertale pertenecen a sus respectivos autores; la dedicatoria y las ampliaciones son parte de este proyecto personal.
-
-## Lumo en HOME
-
-Lumo acompaña a Mira. Usa L, el botón de Lumo o Z al acercarte: conversación estilo Undertale, caricias, regalos, memoria, escondidas y un escondite opcional. Amistad y recuerdos persisten; la PC y el motor original de FNF permanecen integrados.
-
-Sin credenciales funciona Diálogo local. Para IA real desde GitHub Pages, despliega el servidor por separado, guarda la clave sólo allí y configura el endpoint HTTPS en lumo-config.js. Consulta LUMO.md y server/LUMO_BACKEND.md. En Windows, iniciar.cmd abre el servidor local; si existe .env, la carga sin publicarla.
+Fuentes, licencias y créditos en [assets/home/README.md](assets/home/README.md). Se conserva la zona normal; el refrigerador añade un respaldo sin lectura de píxeles para el bloqueo de archivos locales y una apertura de 480 ms. Efectos tranquilos mantiene la pose final. Esta versión se entrega en ZIP experimental, sin copiar ni subir a GitHub.

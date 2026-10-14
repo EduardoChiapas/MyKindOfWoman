@@ -5,7 +5,7 @@
   const game = document.createElement('fnf-original-host');
   desktop.setGame(game);
   const storageKey = 'toriel.pc.original.bad-bunny.progress.v1';
-  const order = Object.freeze(['celoso','palmas','amarre']);
+  const order = Object.freeze(['date-whitroll','date-perfume','date-heartbass','celoso','palmas','amarre']);
   let progress = {};
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
@@ -21,8 +21,7 @@
   } catch {}
   let active = false;
   let launchToken = 0;
-  let ownedFullscreen = false;
-  const nameOf = id => ({tutorial:'Tutorial',celoso:'Celoso',palmas:'Palmas',amarre:'Amarre'})[id] || id;
+  const nameOf = id => ({tutorial:'Tutorial','date-whitroll':'Whitroll · The Date Week','date-perfume':'Perfume · The Date Week','date-heartbass':'Heartbass · The Date Week',celoso:'Celoso',palmas:'Palmas',amarre:'Amarre'})[id] || id;
 
   function syncSongs() {
     desktop.setSongs(order.map(id => ({id,name:nameOf(id),completed:Boolean(progress[id]?.won)})));
@@ -33,16 +32,10 @@
     syncSongs();
   }
 
-  function leaveGameFullscreen() {
-    if (ownedFullscreen && document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    ownedFullscreen = false;
-  }
-
   function returnToDesktop(message) {
     ++launchToken;
     game.stop();
     desktop.showDesktop();
-    leaveGameFullscreen();
     if (message) desktop.notify(message);
   }
 
@@ -81,15 +74,8 @@
     const token = ++launchToken;
     desktop.setNowPlaying('Friday Night Funkin’');
     desktop.setGameVisible(true);
-    // The original game receives the full viewport. Its own menus and engine
-    // decide what to play; no song or gameplay is forced by the desktop.
-    if (!document.fullscreenElement && desktop.requestFullscreen) {
-      desktop.requestFullscreen().then(() => {
-        if (token !== launchToken) {
-          if (document.fullscreenElement === desktop) document.exitFullscreen().catch(() => {});
-        } else ownedFullscreen = true;
-      }).catch(() => {});
-    }
+    // The original engine stays inside the monitor. Expanding the PC is a
+    // separate user action and never starts, resets or replaces its session.
     game.setVolume(desktop.volume);
     try { await game.start(); }
     catch(error) {

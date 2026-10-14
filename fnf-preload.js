@@ -42,6 +42,9 @@
     if (!registrationPromise) registrationPromise = (async () => {
       try {
         const registration = await navigator.serviceWorker.register(new URL('fnf-cache-worker.js', root), {scope:root.pathname, updateViaCache:'none'});
+        // A reused registration can return its active worker while an update
+        // check is still pending. Finish that check before choosing the worker.
+        try { await registration.update?.(); } catch { /* Cached play remains available offline. */ }
         const worker = registration.installing || registration.waiting;
         // Await a pending update so the iframe uses the current engine and mods.
         if (!worker) return registration.active ? registration : null;
@@ -107,14 +110,15 @@
       else start();
     }, 2500);
   };
+  const enterHouse = () => { enabled = true; enteredHouse = true; schedule(); };
   const house = document.getElementById('game-container');
   if (house) {
     // Observe the existing entry UI; do not alter rooms or the house game loop.
     const observer = new MutationObserver(() => {
       if (house.style.display !== 'grid') return;
-      enteredHouse = true; observer.disconnect();
+      observer.disconnect(); enterHouse();
     });
-    if (house.style.display === 'grid') { enteredHouse = true; }
+    if (house.style.display === 'grid') { enterHouse(); }
     else observer.observe(house, {attributes:true, attributeFilter:['style']});
   }
   window.addEventListener('online', () => { if (state.phase === 'paused') start(); });

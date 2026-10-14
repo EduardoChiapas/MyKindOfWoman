@@ -30,7 +30,7 @@
     .window-layer{position:absolute;inset:0 0 38px;z-index:10;pointer-events:none}.app-window{position:absolute;width:min(520px,80%);height:min(320px,87%);left:50%;top:48%;transform:translate(-50%,-50%);border-radius:10px;background:#172338ef;border:1px solid #a6bfd544;box-shadow:0 18px 55px #0008;overflow:hidden;display:flex;flex-direction:column;backdrop-filter:blur(24px);pointer-events:auto}.window-header{height:36px;flex:0 0 36px;padding-left:12px;background:#202f46b3;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;touch-action:none;border-bottom:1px solid #a1c2f015}.window-title{display:flex;align-items:center;gap:8px;font-size:11px}.window-title .small-icon{width:16px;height:16px}.window-close{height:35px;width:40px;background:transparent;font-size:20px;line-height:1;color:#c2d1e5}.window-close:hover{background:#db4968;color:#fff}.window-body{flex:1;overflow:auto;min-height:0}.window-footer{padding:7px 14px;border-top:1px solid #bad7ff14;font-size:9px;color:#a7b6cf;flex-shrink:0;display:flex;justify-content:space-between;gap:8px}.notes{width:100%;height:100%;resize:none;border:0;padding:18px;background:#172338;color:#edf7ff;line-height:1.7;font:12px/1.7 'Segoe UI',sans-serif;outline-offset:-3px}.notes::placeholder{color:#8296b5}.files-head{padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #9dc2ff12}.files-head div:first-child{font-size:12px;font-weight:600}.files-head small{font-size:9px;color:#9bb0ca}.song-list{padding:9px 12px;display:flex;flex-direction:column;gap:5px}.song-card{display:flex;align-items:center;gap:12px;text-align:left;background:#ffffff04;border:1px solid #afcfff16;border-radius:7px;padding:10px 12px;min-height:47px}.song-card:hover{background:#95caff15;border-color:#99d9ef4d}.song-note{height:26px;width:26px;border-radius:6px;background:linear-gradient(140deg,#8146a0,#306d91);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}.song-card.completed .song-note{background:#2f756c}.song-title{font-size:11px;font-weight:600;flex:1}.song-state{font-size:9px;color:#89d6c8}.song-card:not(.completed) .song-state{color:#abc0dc}.play-arrow{font-size:13px;color:#77e0f7}.files-empty{padding:30px 18px;color:#9fb0c8;text-align:center;font-size:12px;line-height:1.6}
     .calculator-window{width:min(265px,72%);height:min(350px,94%)}.calculator-body{padding:12px;display:flex;flex-direction:column;gap:11px}.calc-display{width:100%;height:54px;text-align:right;padding:7px 12px;background:#0d182a;border:1px solid #789ccf33;border-radius:6px;color:#f0f7ff;font-size:24px;font-weight:300}.calc-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.calc-key{min-height:31px;background:#2b3b53;border:1px solid #a4c4ee10;border-radius:5px;font-size:13px}.calc-key:hover{background:#405778}.calc-key.operator{background:#334d6b;color:#9fdfff}.calc-key.equals{background:#86d4ed;color:#112234}.calc-key.clear{color:#f3acc9;background:#50314b}.settings-body{padding:22px 24px}.setting-row{margin-bottom:23px}.setting-title{font-size:12px;display:flex;justify-content:space-between;margin-bottom:11px}.setting-title output{font-size:10px;color:#a9cdeb}.setting-row input[type=range]{width:100%;accent-color:#89dbf0;cursor:pointer}.settings-about{border-top:1px solid #a6c8ff1a;padding-top:17px;color:#98afce;font-size:10px;line-height:1.7}.settings-about strong{color:#d9e7fc;font-weight:500}.quick-panel{position:absolute;bottom:45px;left:50%;transform:translateX(-50%);width:260px;padding:20px;background:#17253bf2;border:1px solid #a0c4ed33;box-shadow:0 10px 40px #0009;border-radius:12px;backdrop-filter:blur(25px);z-index:45}.quick-panel h3{margin:0 0 16px;font-size:13px;font-weight:500}.quick-panel p{font-size:11px;color:#9eb0cc;margin:0 0 17px;line-height:1.6}.quick-apps{display:flex;gap:7px;flex-wrap:wrap}.quick-apps button{background:#b8dfff0a;border:1px solid #a9d0ff16;border-radius:7px;padding:10px 12px;font-size:10px;display:flex;align-items:center;gap:7px}.quick-apps button:hover{background:#b8dfff22}.quick-apps .small-icon{width:19px;height:19px}.quick-power{margin-top:16px;border-top:1px solid #d5eaff15;padding-top:12px}.quick-power button{display:flex;gap:8px;align-items:center;background:transparent;padding:3px 0;color:#b0c6e2;font-size:10px}.quick-power svg{height:16px;width:16px}
     .toast{position:absolute;right:15px;bottom:50px;max-width:265px;padding:12px 16px;background:#152940e8;border:1px solid #92cce34d;border-radius:8px;z-index:60;font-size:11px;color:#d0e7f9;box-shadow:0 8px 22px #0005;animation:toast-in .2s ease-out}.custom-cursor{position:absolute;left:0;top:0;width:24px;height:30px;pointer-events:none;z-index:100;display:none;transform:translate(-2px,-2px);filter:drop-shadow(0 0 5px #8be3ffb0)}.custom-cursor path{fill:#ecfaff;stroke:#365d7b;stroke-width:1.3}.custom-cursor:after{content:'';position:absolute;left:-5px;top:-5px;width:11px;height:11px;border:1px solid #93eaff80;border-radius:50%;animation:cursor-pulse 1.8s ease-out infinite}.custom-cursor.press{transform:translate(-2px,-2px) scale(.86)}.custom-cursor.interactive path{fill:#96f3ff}.screen.cursor-enabled,.screen.cursor-enabled *{cursor:none!important}.screen.cursor-enabled .custom-cursor{display:block}
-    .game-host{position:fixed;inset:0;z-index:1100;overflow:hidden;background:#06070c}.game-host>*{width:100%;height:100%}.hint{position:absolute;bottom:18px;right:24px;font-size:9px;color:#7787a4;letter-spacing:.04em;z-index:2}.hint kbd{font:8px 'Segoe UI';border:1px solid #8494b333;padding:2px 5px;border-radius:3px;margin-right:6px}.loading-banner{position:absolute;top:15px;left:50%;transform:translateX(-50%);z-index:90;background:#11213de8;border:1px solid #a8ddff44;border-radius:9px;padding:10px 16px;color:#d6eaff;font-size:11px;box-shadow:0 10px 30px #0007;display:flex;align-items:center;gap:9px;white-space:nowrap}.loading-spinner{height:11px;width:11px;border-radius:50%;border:2px solid #8adfff33;border-top-color:#8adfff;animation:spin .8s linear infinite}
+    .game-host{position:absolute;inset:0;z-index:70;overflow:hidden;background:#06070c}.game-host>*{width:100%;height:100%}.hint{position:absolute;bottom:18px;right:24px;font-size:9px;color:#7787a4;letter-spacing:.04em;z-index:2}.hint kbd{font:8px 'Segoe UI';border:1px solid #8494b333;padding:2px 5px;border-radius:3px;margin-right:6px}.loading-banner{position:absolute;top:15px;left:50%;transform:translateX(-50%);z-index:90;background:#11213de8;border:1px solid #a8ddff44;border-radius:9px;padding:10px 16px;color:#d6eaff;font-size:11px;box-shadow:0 10px 30px #0007;display:flex;align-items:center;gap:9px;white-space:nowrap}.loading-spinner{height:11px;width:11px;border-radius:50%;border:2px solid #8adfff33;border-top-color:#8adfff;animation:spin .8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}@keyframes rgb{to{filter:hue-rotate(360deg)}}@keyframes cursor-pulse{0%{transform:scale(.5);opacity:.7}80%,100%{transform:scale(2.6);opacity:0}}@keyframes toast-in{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
     @media(min-width:1500px){.icons{grid-template-rows:repeat(3,94px);gap:10px 18px}.app-icon{width:87px;height:88px;font-size:12px}.app-icon .icon-art{width:49px;height:49px}.taskbar{height:44px}.window-layer{bottom:44px}.app-window{width:610px;height:365px}.window-title{font-size:13px}.window-header{height:40px;flex-basis:40px}.calculator-window{width:295px;height:375px}.calc-key{min-height:37px}.song-title{font-size:13px}.song-card{padding:12px}.song-state,.window-footer,.tray{font-size:10px}}
     @media(max-width:1050px){.setup{width:96vw;gap:14px}.tower{flex-basis:15%;height:30vw;padding:9px 7px}.tower-glass{inset:29px 6px 10px}.tower-top{font-size:5px;padding-bottom:8px}.power-dot{width:8px;height:8px}.usb{width:11px;height:3px}.monitor{padding:8px 8px 23px;border-radius:9px}.monitor:after{bottom:7px;font-size:5px}.monitor-led{bottom:9px}.icons{grid-template-rows:repeat(3,65px);gap:2px 3px;top:12px;left:9px}.app-icon{width:61px;height:63px;font-size:8px;padding:5px 2px;gap:4px}.app-icon .icon-art{width:34px;height:34px}.song-progress{top:12px;right:12px;font-size:8px;padding:8px 10px}.app-window{width:min(450px,85%);height:88%}.notes{font-size:11px;padding:12px}.settings-body{padding:15px 18px}.setting-row{margin-bottom:13px}.settings-about{padding-top:10px;font-size:9px}.calculator-window{width:235px;max-width:78%;height:95%;top:49%}.calculator-body{padding:8px;gap:6px}.calc-display{height:36px;font-size:19px}.calc-key{min-height:23px;font-size:11px}.calc-keys{gap:4px}.desktop-word{bottom:22%}.taskbar{height:33px}.window-layer{bottom:33px}.task-icon{height:27px;width:29px;padding:6px}.tray{font-size:8px;gap:7px;right:8px}.system-name{font-size:7px;left:8px}.files-head{padding:10px 12px}.files-head div:first-child{font-size:11px}.song-card{padding:7px 10px;min-height:42px;gap:8px}.song-title{font-size:10px}.song-state{font-size:8px}.song-list{padding:7px 9px}.pov-label{font-size:8px}.keyboard{width:330px;height:76px;left:calc(50% - 185px);gap:2px;padding:8px}.key{height:11px}.mouse{left:calc(50% + 200px);height:61px;width:43px}}
@@ -43,8 +43,16 @@
     @media(max-height:550px) and (min-width:701px){.setup{top:55%;width:min(80vw,960px,calc(190vh - 300px))}}
     @media(max-width:700px) and (orientation:landscape){.setup{top:54%;width:min(94vw,calc(175vh - 140px))}.keyboard,.mouse{display:none}.desk{bottom:-8%;height:28%}}
     @media(prefers-reduced-motion:reduce){.blades{animation-duration:8s}.fan:before{animation:none}.custom-cursor:after{animation:none;opacity:.4}.app-icon{transition:none}.toast{animation:none}}
-    .html-app{position:absolute;inset:0;z-index:60;background:#000;overflow:hidden;animation:html-app-in .22s ease-out}.html-app-stage{position:absolute;inset:0;overflow:hidden}.html-app iframe{position:absolute;left:50%;top:50%;border:0;background:#000;transform-origin:center}.html-app-return{position:absolute;top:7px;right:7px;z-index:2;padding:6px 9px;border:1px solid #d8eaff44;border-radius:5px;background:#152032db;color:#fff;font-size:clamp(7px,1vw,11px);cursor:pointer}.html-app-return:hover{background:#304664}.screen.html-active,.screen.html-active *{cursor:auto!important}.screen.html-active .custom-cursor{display:none}
+    .html-app{position:absolute;inset:0;z-index:60;background:#000;overflow:hidden;animation:html-app-in .22s ease-out}.html-app-stage{position:absolute;inset:0;overflow:hidden}.html-app iframe{position:absolute;left:50%;top:50%;border:0;background:#000;transform-origin:center}.html-app-return{position:absolute;top:7px;left:7px;z-index:2;padding:6px 9px;border:1px solid #d8eaff44;border-radius:5px;background:#152032db;color:#fff;font-size:clamp(7px,1vw,11px);cursor:pointer}.html-app-return:hover{background:#304664}.screen.html-active,.screen.html-active *{cursor:auto!important}.screen.html-active .custom-cursor{display:none}
     @keyframes html-app-in{from{opacity:0;filter:brightness(.6)}to{opacity:1;filter:brightness(1)}}@media(prefers-reduced-motion:reduce){.html-app{animation:none}}
+    .pc-expand{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:1200;min-height:40px;padding:8px 12px;display:flex;align-items:center;gap:7px;border:1px solid #b9dfff40;border-radius:8px;background:#101827e8;font-size:11px;color:#eef7ff}.pc-expand:hover{background:#293b53}.pc-expand .expand-symbol{font-size:19px;line-height:1}
+    .screen.game-active,.screen.game-active *{cursor:auto!important}.screen.game-active .custom-cursor{display:none!important}
+    :host([screen-expanded]) .setup{inset:0;left:0;top:0;transform:none;width:100%;height:100%;padding:0;display:block}
+    :host([screen-expanded]) .monitor-rig{width:100%;height:100%;padding:0}
+    :host([screen-expanded]) .monitor{height:100%;padding:0;border:0;border-radius:0;box-shadow:none;background:#000}
+    :host([screen-expanded]) .screen{width:100%;height:100%;max-height:none;aspect-ratio:auto;border:0;border-radius:0}
+    :host([screen-expanded]) .tower,:host([screen-expanded]) .keyboard,:host([screen-expanded]) .mouse,:host([screen-expanded]) .stand,:host([screen-expanded]) .stand-base,:host([screen-expanded]) .monitor-led,:host([screen-expanded]) .monitor:before,:host([screen-expanded]) .monitor:after,:host([screen-expanded]) .pov-label,:host([screen-expanded]) .hint,:host([screen-expanded]) .exit-room{display:none}
+    @media(max-width:700px){.pc-expand{min-width:40px;min-height:40px;padding:8px}.pc-expand .expand-label{display:none}}
   `;
 
   class GamingDesktop extends HTMLElement {
@@ -61,17 +69,29 @@
       this._volume = this._readNumber('pc-room-volume', 1, 0, 1);
       this._brightness = this._readNumber('pc-room-brightness', 1, .5, 1.3);
       this._nowPlaying = '';
+      this._fullscreenToken = 0;
+      this._ownsFullscreen = false;
       this._render();
       this._onPreload = () => this._updatePreload();
+      this._onFullscreenChange = () => {
+        if (this._ownsFullscreen && document.fullscreenElement !== this) {
+          this._ownsFullscreen = false;
+          ++this._fullscreenToken;
+          this.removeAttribute('screen-expanded');
+          this._updateExpandControl();
+          this._focusApplication();
+        }
+      };
       this._onKey = e => {
         if (!this._open || this._gameActive) return;
-        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this._htmlFrame ? this._closeHtmlApp() : this.close(); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.hasAttribute('screen-expanded') ? this.setExpanded(false) : this._htmlFrame ? this._closeHtmlApp() : this.close(); }
       };
     }
 
     connectedCallback() {
       if (!this._open) this.hidden = true;
       document.addEventListener('keydown', this._onKey, true);
+      document.addEventListener('fullscreenchange', this._onFullscreenChange);
       window.addEventListener('fnf:preload', this._onPreload);
       this._updatePreload();
       this._clockTick();
@@ -82,6 +102,8 @@
       this._disposeCustomApps();
       this._closeHtmlApp(false);
       document.removeEventListener('keydown', this._onKey, true);
+      document.removeEventListener('fullscreenchange', this._onFullscreenChange);
+      this.setExpanded(false);
       window.removeEventListener('fnf:preload', this._onPreload);
       clearInterval(this._clockInterval);
       clearTimeout(this._toastTimer);
@@ -112,6 +134,7 @@
 
     close() {
       if (this._gameActive) return;
+      this.setExpanded(false);
       this._disposeCustomApps();
       this._closeHtmlApp(false);
       this._open = false;
@@ -135,12 +158,49 @@
     setGameVisible(visible) {
       this._gameActive = Boolean(visible);
       this.gameHost.hidden = !this._gameActive;
-      this.shadowRoot.querySelector('.pov').hidden = this._gameActive;
+      this.shadowRoot.querySelector('.screen').classList.toggle('game-active',this._gameActive);
+      this.shadowRoot.querySelector('.desktop').inert = this._gameActive;
       if (this._gameActive) {
         this._open = true;
         this.hidden = false;
         this._setLoading(false);
       }
+    }
+
+    async setExpanded(expanded) {
+      const token = ++this._fullscreenToken;
+      this.toggleAttribute('screen-expanded',Boolean(expanded));
+      this._updateExpandControl();
+      if (!expanded) {
+        this._ownsFullscreen = false;
+        if (document.fullscreenElement === this) {
+          try { await document.exitFullscreen(); } catch { /* Keep the in-page view usable. */ }
+        }
+      } else if (!document.fullscreenElement && typeof this.requestFullscreen === 'function') {
+        try {
+          await this.requestFullscreen();
+          if (token !== this._fullscreenToken) {
+            if (document.fullscreenElement === this) await document.exitFullscreen();
+          } else this._ownsFullscreen = document.fullscreenElement === this;
+        } catch { /* Mobile and restricted frames can still expand within the page. */ }
+      }
+      if (token === this._fullscreenToken) this._focusApplication();
+    }
+
+    _updateExpandControl() {
+      const expanded = this.hasAttribute('screen-expanded');
+      const button = this.shadowRoot.querySelector('.pc-expand');
+      const label = expanded ? 'Reducir pantalla de la PC' : 'Ampliar pantalla de la PC';
+      button.setAttribute('aria-pressed',String(expanded));
+      button.setAttribute('aria-label',label);
+      button.title = label;
+      button.querySelector('.expand-label').textContent = expanded ? 'Reducir pantalla' : 'Ampliar pantalla';
+    }
+
+    _focusApplication() {
+      const frame = this._gameActive ? this.gameHost.firstElementChild?.iframe : this._htmlFrame;
+      frame?.focus({preventScroll:true});
+      frame?.contentWindow?.focus();
     }
 
     setSongs(songs) {
@@ -186,14 +246,16 @@
               <div class="loading-banner" hidden><i class="loading-spinner"></i><span class="loading-label">Abriendo FNF original…</span></div>
             </div>
             <section class="html-app" aria-label="Determination · Mira" hidden><div class="html-app-stage"></div><button class="html-app-return" type="button">← Escritorio</button></section>
+            <div class="game-host" hidden></div>
             <div class="custom-cursor" aria-hidden="true"><svg viewBox="0 0 24 30"><path d="M3 2v22l6-5 5 9 4-2-5-9 8-1Z"/></svg></div>
           </div><i class="monitor-led"></i></div><div class="stand"></div><div class="stand-base"></div></div>
           <div class="tower" aria-label="Torre gamer con tres ventiladores RGB girando"><div class="tower-top"><i class="power-dot"></i><span>DTRM</span><i class="usb"></i></div><div class="tower-glass"><div class="fan"><i class="blades"></i></div><div class="fan"><i class="blades"></i></div><div class="fan"><i class="blades"></i></div></div><span class="tower-mark">DETERMINATION</span></div></div>
           <div class="keyboard" aria-hidden="true">${Array.from({length:57}, (_, i) => `<i class="key${i === 51 ? ' space' : ''}"></i>`).join('')}</div><div class="mouse" aria-hidden="true"></div>
           <div class="hint"><kbd>ESC</kbd>Volver · Pulsa un icono para abrirlo</div>
-        </div><div class="game-host" hidden></div>`;
+        </div><button class="pc-expand" type="button" aria-label="Ampliar pantalla de la PC" aria-pressed="false" title="Ampliar pantalla de la PC"><span class="expand-symbol" aria-hidden="true">⛶</span><span class="expand-label">Ampliar pantalla</span></button>`;
       this.shadowRoot.querySelector('.screen').style.setProperty('--brightness', this._brightness);
       this.shadowRoot.addEventListener('click', e => {
+        if (e.target.closest('.pc-expand')) { this.setExpanded(!this.hasAttribute('screen-expanded')); return; }
         if (e.target.closest('.html-app-return')) { this._closeHtmlApp(); return; }
         const app = e.target.closest('[data-app]');
         if (app) {

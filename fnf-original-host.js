@@ -1,7 +1,7 @@
 /* Hosts the compiled original game. No menus, charts, or gameplay are reimplemented here. */
 (() => {
   'use strict';
-  const ENTRY = 'fnf-original/index.html';
+  const ENTRY = 'fnf-original/index.html?v=home-pc-monitor-20261014';
 
   class FnfOriginalHost extends HTMLElement {
     constructor() {
@@ -31,12 +31,12 @@
         :host{display:block;position:relative;width:100%;height:100%;min-height:0;background:#000;color:#fff;font:13px 'Segoe UI',system-ui,sans-serif;color-scheme:dark}
         *{box-sizing:border-box}[hidden]{display:none!important}.native-stage{position:absolute;inset:0;background:#000}
         iframe{display:block;position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
-        .return{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:5;color:#edf6ff;background:#101620c9;border:1px solid #e5f2ff35;border-radius:7px;padding:8px 12px;font:11px 'Segoe UI',system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 12px #0007;backdrop-filter:blur(9px)}
+        .return{position:absolute;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:5;min-width:44px;min-height:34px;color:#edf6ff;background:#101620c9;border:1px solid #e5f2ff35;border-radius:7px;padding:6px 9px;font:11px 'Segoe UI',system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 12px #0007;backdrop-filter:blur(9px)}
         .return:hover{background:#293749ed}.return:focus-visible{outline:2px solid #90e1ff;outline-offset:3px}
         .loading{position:absolute;inset:0;z-index:2;background:#080b13;display:flex;align-items:center;justify-content:center;text-align:center;padding:35px;color:#d6e4f5;font-size:13px;line-height:1.7}
         .loading-content{max-width:430px}.loading strong{display:block;font-size:15px;font-weight:500;margin-bottom:5px}.spinner{display:block;margin:0 auto 19px;width:22px;height:22px;border:2px solid #a1dfff25;border-top-color:#a1dfff;border-radius:50%;animation:spin .9s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spinner{animation:none;border-color:#a1dfff55}}
-        @media(max-width:650px){.return{font-size:9px;padding:7px 9px;right:8px;top:8px}.loading{font-size:11px}}
+        @media(max-width:650px){.return{font-size:9px;padding:6px 8px;left:6px;top:6px}.loading{font-size:11px}}
         .touch-controls{position:absolute;inset:0;z-index:3;pointer-events:none;user-select:none;-webkit-user-select:none}
         .touch-zones{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);gap:0;pointer-events:auto;touch-action:none}
         .touch-zone{position:relative;background:transparent;touch-action:none;-webkit-tap-highlight-color:transparent}

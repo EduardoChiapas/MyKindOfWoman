@@ -1,5 +1,5 @@
 {
-  "version": "home-pc-monitor-20261014",
+  "version": "home-pc-start-20261014",
   "date": "2026-10-14",
   "experimental": true,
   "weeks": [
@@ -19,10 +19,12 @@
   ],
   "fnfInsideMonitor": true,
   "pcExpansion": "explicit-user-action",
-  "engineSha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
+  "engineSha256": "520d419fb2719384f4d1ea80d85366623a124847fb0e1842609abcf03520e541",
   "modSha256": {
     "dateweek": "d3d7294bcb0c9eeda569452e223f4498543b1fcc4fe6ee32888d74a8dfb42167",
     "ftbb": "df3af4870cab2a097044a6479854fe1aa583c920401a5d475cfe4eb1c42ba961"
   },
-  "fnfCacheVersion": "6ff484fe874bef79577eb11c53fece1a2453ffb1ba5aa66fc003b9ce06cb8560"
+  "fnfCacheVersion": "aebcb1a5bacf5a17b264c7207f25fe07e24da8d791cee26668e4a91d4b1a5c28",
+  "directOriginalTitle": true,
+  "loadingSpinnerPixels": 56
 }

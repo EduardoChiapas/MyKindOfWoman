@@ -1,8 +1,15 @@
-# HOME experimental · publicación 14 de octubre de 2026
+# HOME experimental · inicio directo · 14 de octubre de 2026
 
-Versión `home-pc-monitor-20261014`. Incluye toda la casa integrada, PC, apps,
+Versión `home-pc-start-20261014`. Incluye toda la casa integrada, PC, apps,
 Lumo y FNF original compilado con Tutorial → The Date Week → Bad Bunny.
 El laboratorio aislado y los paquetes de Argon son entregas distintas.
+
+Se retira la espera extra Touch Here To Play del preloader nativo: al terminar
+la carga/fundido pasa al título original de GF, con sus controles normales.
+No se automatiza el botón Enter del título ni se simulan clics. El cargador
+del host tiene solo un círculo de56px, sin texto visible y con etiqueta de
+accesibilidad. preloader-direct-title.patch/audit.json/source.hx documentan el
+único cambio en el motor compilado y su equivalente en la fuente nativa.
 
 FNF abre dentro del monitor. El botón superior derecho amplía la pantalla de
 la PC sin reiniciar el juego; si el navegador impide pantalla completa nativa,
@@ -27,7 +34,7 @@ se mantienen en el entorno privado del servidor. Nunca subir .env ni planning,
 work, paquetes de Argon o documentos completos de lore. El sótano sigue cerrado
 durante HOME y la cronología no cambia.
 
-Verificación: 286 pruebas portables del proyecto, más comprobaciones de caché,
+Verificación: 288 pruebas portables del proyecto, más comprobaciones de caché,
 precarga, puente original y progreso de ambas weeks. Navegador: FNF real con
 Whitroll dentro del monitor, ampliar/reducir y volver a escritorio/habitación.
 No se repitieron canciones completas ni se probó un teléfono físico, Gemini

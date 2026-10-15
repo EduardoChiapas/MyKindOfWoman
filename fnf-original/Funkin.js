@@ -288770,7 +288770,7 @@ funkin_ui_transition_preload_FunkinPreloader.prototype = $extend(flixel_system_F
 	,updateGraphics: function(percent,elapsed) {
 		if(this.completeTime > 0.0) {
 			if(this.renderDisplayFadeOut(elapsed) > funkin_ui_transition_preload_FunkinPreloader.FADE_TIME) {
-				this.currentState = "TouchHereToPlay";
+				this.immediatelyStartGame();
 			}
 		} else {
 			var piecesToRender = percent * this.progressBarPieces.length | 0;

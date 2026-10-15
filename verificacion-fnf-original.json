@@ -1,6 +1,6 @@
 {
   "status": "pass",
-  "scope": "Native FNF 0.8.6 HTML5, Tutorial, The Date Week compatibility port and unchanged Bad Bunny ZIP. Runtime QA uses original charts/audio and native keyboard inputs without changing gameplay state. Performance is not benchmarked. Mobile touch zones forward native keyboard events; checked in a mobile-size browser and with pointer-input QA. No physical phone benchmark.",
+  "scope": "Native FNF 0.8.6 HTML5, Tutorial, The Date Week compatibility port and unchanged Bad Bunny ZIP. Runtime QA uses original charts/audio and native keyboard inputs without changing gameplay state. Performance is not benchmarked. Mobile touch zones forward native keyboard events; checked in a mobile-size browser and with pointer-input QA. No physical phone benchmark. Current build: the single native preloader transition is patched to immediatelyStartGame; full-song runtime records below remain tied to their original build hashes. New boot-only verification is recorded separately.",
   "verifiedAt": "2026-10-11T06:02:00.125284+00:00",
   "engine": {
     "name": "Friday Night Funkin’",
@@ -8,12 +8,15 @@
     "target": "HTML5",
     "source": "https://github.com/FunkinCrew/Funkin",
     "file": "fnf-original/Funkin.js",
-    "bytes": 16411121,
-    "sha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
+    "bytes": 16411111,
+    "sha256": "520d419fb2719384f4d1ea80d85366623a124847fb0e1842609abcf03520e541",
     "compiledOriginalEngine": true,
     "originalLimeWrapper": true,
     "soundExtension": "ogg",
-    "productMatchesAuditedBuild": true
+    "productMatchesAuditedBuild": false,
+    "previousAuditedSha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
+    "productMatchesAuditedBuildWithPreloaderPatch": true,
+    "preloaderPatch": "fnf-original/preloader-direct-title.patch"
   },
   "mod": {
     "name": "feat. Bad Bunny",
@@ -1764,5 +1767,34 @@
       }
     }
   },
-  "priorDateRuntimeBuildSha256": "9032ef643e33eded14832276280d41a6430b582d31f6ed0f32a74d8354d7972b"
+  "priorDateRuntimeBuildSha256": "9032ef643e33eded14832276280d41a6430b582d31f6ed0f32a74d8354d7972b",
+  "currentBootVerification": {
+    "date": "2026-10-14",
+    "baseEngine": "Friday Night Funkin 0.8.6 HTML5",
+    "beforeSha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
+    "afterSha256": "520d419fb2719384f4d1ea80d85366623a124847fb0e1842609abcf03520e541",
+    "bytes": 16411111,
+    "patch": "preloader-direct-title.patch",
+    "nativeSource": "preloader-direct-title-source.hx",
+    "changedEngineTransitions": 1,
+    "behavior": "After the native loading and fade finish, call the native immediatelyStartGame instead of waiting in TouchHereToPlay.",
+    "originalTitleAndMenusPreserved": true,
+    "gameplayChanges": false,
+    "chartAudioArtChanges": false,
+    "autoplay": "No synthetic clicks or audio policy override. The original title Enter/touch remains a normal user gesture for audio resume when required.",
+    "verification": {
+      "static": "Exact single-transition replacement; remainder of compiled engine identical.",
+      "runtime": {
+        "status": "pass",
+        "method": "Local browser8816: open PC through proximity and click original FNF icon, then no extra game clicks or keys until the GF title appears.",
+        "automaticOriginalGfTitle": true,
+        "visibleLoadingText": "",
+        "spinnerPixels": 56,
+        "consoleWarningsOrErrors": 0,
+        "screenshot": "PC-FNF-INICIO-DIRECTO-20261014.png",
+        "fullSongReplay": false,
+        "physicalAudioListening": false
+      }
+    }
+  }
 }

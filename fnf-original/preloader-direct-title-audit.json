@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-14",
+  "baseEngine": "Friday Night Funkin 0.8.6 HTML5",
+  "beforeSha256": "277310fcd7898b2aa39536df1591d5373689d747d4e87a2b73979fda69db2d0e",
+  "afterSha256": "520d419fb2719384f4d1ea80d85366623a124847fb0e1842609abcf03520e541",
+  "bytes": 16411111,
+  "patch": "preloader-direct-title.patch",
+  "nativeSource": "preloader-direct-title-source.hx",
+  "changedEngineTransitions": 1,
+  "behavior": "After the native loading and fade finish, call the native immediatelyStartGame instead of waiting in TouchHereToPlay.",
+  "originalTitleAndMenusPreserved": true,
+  "gameplayChanges": false,
+  "chartAudioArtChanges": false,
+  "autoplay": "No synthetic clicks or audio policy override. The original title Enter/touch remains a normal user gesture for audio resume when required.",
+  "verification": {
+    "static": "Exact single-transition replacement; remainder of compiled engine identical.",
+    "runtime": {
+      "status": "pass",
+      "method": "Local browser8816: open PC through proximity and click original FNF icon, then no extra game clicks or keys until the GF title appears.",
+      "automaticOriginalGfTitle": true,
+      "visibleLoadingText": "",
+      "spinnerPixels": 56,
+      "consoleWarningsOrErrors": 0,
+      "screenshot": "PC-FNF-INICIO-DIRECTO-20261014.png",
+      "fullSongReplay": false,
+      "physicalAudioListening": false
+    }
+  }
+}

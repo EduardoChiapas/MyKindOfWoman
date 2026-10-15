@@ -1,0 +1,5 @@
+--- Funkin.js (original HTML5 0.8.6 build, preloader)
++++ Funkin.js (direct title)
+@@ updateGraphics(percent, elapsed): after assets complete and native fade finishes
+-				this.currentState = "TouchHereToPlay";
++				this.immediatelyStartGame();

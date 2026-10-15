@@ -1,7 +1,7 @@
 /* Hosts the compiled original game. No menus, charts, or gameplay are reimplemented here. */
 (() => {
   'use strict';
-  const ENTRY = 'fnf-original/index.html?v=home-pc-monitor-20261014';
+  const ENTRY = 'fnf-original/index.html?v=home-pc-start-20261014';
 
   class FnfOriginalHost extends HTMLElement {
     constructor() {
@@ -34,13 +34,13 @@
         .return{position:absolute;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:5;min-width:44px;min-height:34px;color:#edf6ff;background:#101620c9;border:1px solid #e5f2ff35;border-radius:7px;padding:6px 9px;font:11px 'Segoe UI',system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 12px #0007;backdrop-filter:blur(9px)}
         .return:hover{background:#293749ed}.return:focus-visible{outline:2px solid #90e1ff;outline-offset:3px}
         .loading{position:absolute;inset:0;z-index:2;background:#080b13;display:flex;align-items:center;justify-content:center;text-align:center;padding:35px;color:#d6e4f5;font-size:13px;line-height:1.7}
-        .loading-content{max-width:430px}.loading strong{display:block;font-size:15px;font-weight:500;margin-bottom:5px}.spinner{display:block;margin:0 auto 19px;width:22px;height:22px;border:2px solid #a1dfff25;border-top-color:#a1dfff;border-radius:50%;animation:spin .9s linear infinite}
+        .loading-content{display:grid;place-items:center}.spinner{display:block;width:56px;height:56px;border:4px solid #a1dfff25;border-top-color:#a1dfff;border-radius:50%;animation:spin .9s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spinner{animation:none;border-color:#a1dfff55}}
         @media(max-width:650px){.return{font-size:9px;padding:6px 8px;left:6px;top:6px}.loading{font-size:11px}}
         .touch-controls{position:absolute;inset:0;z-index:3;pointer-events:none;user-select:none;-webkit-user-select:none}
         .touch-zones{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);gap:0;pointer-events:auto;touch-action:none}
         .touch-zone{position:relative;background:transparent;touch-action:none;-webkit-tap-highlight-color:transparent}
-      </style><div class="native-stage"></div><div class="loading" hidden><div class="loading-content"><i class="spinner" aria-hidden="true"></i><strong>Abriendo Friday Night Funkin’</strong><span class="loading-text">Cargando el juego original…</span></div></div><button class="return" type="button">← Volver al escritorio</button>`;
+      </style><div class="native-stage"></div><div class="loading" role="status" aria-label="Cargando Friday Night Funkin’" hidden><div class="loading-content"><i class="spinner" aria-hidden="true"></i></div></div><button class="return" type="button">← Volver al escritorio</button>`;
       this.shadowRoot.querySelector('.return').addEventListener('click', () => this._emit('fnf-original:exit'));
       const controls = document.createElement('div');
       controls.className = 'touch-controls';controls.hidden = true;controls.dataset.mode = 'menu';
@@ -119,7 +119,6 @@
       const token = ++this._token;
       const loading = this.shadowRoot.querySelector('.loading');
       loading.hidden = false;
-      this.shadowRoot.querySelector('.loading-text').textContent = 'Cargando el juego original…';
       this._state = 'loading';
       this._controller = new AbortController();
       try {

@@ -1,3 +1,28 @@
+# HOME experimental · PC en primera persona · 14 de octubre de 2026
+
+Versión `home-pc-room-20261014`. La vista de la PC usa el mismo rincón que
+su sprite en la habitación de Ryon: pared gris cálida, tres cuadros crema,
+revestimiento claro y mesa gris oliva. Monitor y teclado comparten eje; torre
+a la derecha con dos ventiladores cian/violeta, costado interior y tapa poco
+profunda. La escena escala completa desde una sola geometría para conservar
+apoyos y perspectiva. El monitor permanece16:9 también en teléfono.
+
+La decoración se oculta al ampliar la pantalla. Apps, guardados, audio, arte
+y mods conservan sus datos. Del modo de espera del título FNF se conserva
+solo boyfriendEverywhere (el muñequito de Boyfriend); el temporizador,
+los controles de omisión y el regreso al título siguen siendo nativos.
+La única sustitución nueva en el motor es esa lista; parche/fuente/auditoría
+en fnf-original/title-attract-boyfriend*. La entrada y caché se actualizan
+para servir el motor correcto y reutilizar los recursos cuyo hash no cambia.
+
+Verificación de esta mejora:9 pruebas portables de monitor/arranque/rotación y el
+puente original/táctil; navegador con calculadora, ampliación/reducción y
+geometría en1280x800,1920x1080,390x844 y844x390. No se repiten las canciones
+completas ni la IA real, y no se prueba un teléfono físico. La verificación
+de la entrega anterior que sigue debajo se conserva como antecedente.
+
+---
+
 # HOME experimental · inicio directo · 14 de octubre de 2026
 
 Versión `home-pc-start-20261014`. Incluye toda la casa integrada, PC, apps,

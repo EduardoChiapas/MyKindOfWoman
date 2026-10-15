@@ -1,7 +1,7 @@
 /* Hosts the compiled original game. No menus, charts, or gameplay are reimplemented here. */
 (() => {
   'use strict';
-  const ENTRY = 'fnf-original/index.html?v=home-pc-start-20261014';
+  const ENTRY = 'fnf-original/index.html?v=home-pc-room-20261014';
 
   class FnfOriginalHost extends HTMLElement {
     constructor() {

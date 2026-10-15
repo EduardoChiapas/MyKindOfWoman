@@ -1796,5 +1796,13 @@
         "physicalAudioListening": false
       }
     }
+  },
+  "pcPerspectiveAndBoyfriendAttract": {
+    "date": "2026-10-14",
+    "version": "home-pc-room-20261014",
+    "engineSha256": "17fc1e0a96390639f024f6d3ad949dfd5cfbd0ce10006c29e0f25f69ff7d7bc5",
+    "audit": "fnf-original/title-attract-boyfriend-audit.json",
+    "scope": "Physical PC presentation and native idle-video catalog only; previous full-song checks remain historical.",
+    "newFullSongReplay": false
   }
 }

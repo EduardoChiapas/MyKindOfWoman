@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-14",
+  "beforeSha256": "520d419fb2719384f4d1ea80d85366623a124847fb0e1842609abcf03520e541",
+  "afterSha256": "17fc1e0a96390639f024f6d3ad949dfd5cfbd0ce10006c29e0f25f69ff7d7bc5",
+  "bytes": 16411013,
+  "patch": "title-attract-boyfriend.patch",
+  "nativeSource": "title-attract-boyfriend-source.hx",
+  "change": "Only the native idle-video catalog is reduced to boyfriendEverywhere. The title timer and native return/skip controls remain unchanged.",
+  "videos": [
+    "boyfriendEverywhere"
+  ],
+  "previousVideos": [
+    "riftCollabTrailer",
+    "mobileRelease",
+    "boyfriendEverywhere"
+  ],
+  "removedVideoFiles": false,
+  "globalVideoPlaybackChanged": false,
+  "modCutscenesChanged": false,
+  "gameplayChanges": false,
+  "existingDirectTitlePatchPreserved": true,
+  "verification": {
+    "static": "Exact one-list replacement; reverse patch reconstructs previous engine byte for byte.",
+    "runtime": {
+      "status": "pass",
+      "method": "Local browser8817: original FNF iframe inside the new PC; native log selects assets/videos/videos/boyfriendEverywhere.mp4, followed by the original GF title. The Boyfriend figurine MP4 was also visually identified and played in a private native-video review page.",
+      "nativeTitleAfterVideo": true,
+      "physicalAudioListening": false,
+      "physicalPhone": false,
+      "newFullSongReplay": false
+    },
+    "automated": {
+      "tests": 9,
+      "passed": 9,
+      "nativeRepeatedVideoSelections": 9,
+      "nativeFinishCallback": true,
+      "log": "work/pc-perspective-validation-2026-10-14.log"
+    }
+  }
+}

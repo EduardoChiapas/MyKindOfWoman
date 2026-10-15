@@ -1,0 +1,5 @@
+--- Funkin.js (direct title build)
++++ Funkin.js (Boyfriend plush attract video only)
+@@ native AttractState video catalog
+-funkin_ui_title_AttractState.VIDEO_PATHS = [{ path : funkin_Paths.videos("riftCollabTrailer")},{ path : funkin_Paths.videos("mobileRelease")},{ path : funkin_Paths.videos("boyfriendEverywhere")}];
++funkin_ui_title_AttractState.VIDEO_PATHS = [{ path : funkin_Paths.videos("boyfriendEverywhere")}];
